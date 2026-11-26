@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
   // Empty turbopack config silences the Turbopack/webpack warning
   turbopack: {},
   images: { domains: [] },
+  // Hide the dev-mode "Rendering..." build indicator
+  devIndicators: false,
   // PWA headers for service-worker scope
   async headers() {
     return [

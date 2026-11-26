@@ -27,6 +27,20 @@ export function resetMTProtoSession(): void {
   instance = null;
   if (typeof window !== 'undefined') {
     try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (
+          k &&
+          (k.includes('authKey') ||
+           k.includes('serverSalt') ||
+           k === 'defaultDcId' ||
+           k === 'timeOffset')
+        ) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach((k) => window.localStorage.removeItem(k));
       for (let i = 1; i <= 5; i++) {
         window.localStorage.removeItem(`${i}authKey`);
         window.localStorage.removeItem(`${i}serverSalt`);
@@ -37,35 +51,41 @@ export function resetMTProtoSession(): void {
   }
 }
 
-/** Typed RPC wrapper with auto DC migration */
+/** Typed RPC wrapper with auto DC migration and auth-key auto-recovery */
 export async function call<T = unknown>(
   method: string,
   params: Record<string, unknown> = {},
-  options?: { dcId?: number; syncAuth?: boolean }
+  options?: { dcId?: number; syncAuth?: boolean; _retryCount?: number }
 ): Promise<T> {
   const mt = getMTProto();
+  const { _retryCount = 0, ...mtOptions } = options ?? {};
   try {
-    return (await mt.call(method, params, options)) as T;
+    return (await mt.call(method, params, mtOptions)) as T;
   } catch (err: unknown) {
-    const e = err as { error_code?: number; error_message?: string };
+    const e = err as { error_code?: number; error_message?: string; message?: string };
+    const errorMsg = String(e?.error_message ?? e?.message ?? err);
+
     // Migrate to correct DC on PHONE_MIGRATE / NETWORK_MIGRATE / USER_MIGRATE
-    if (e?.error_message?.includes('_MIGRATE_')) {
-      const dcId = parseInt(e.error_message!.split('_').at(-1)!, 10);
-      await mt.setDefaultDc(dcId);
-      return (await mt.call(method, params, { dcId })) as T;
+    if (errorMsg.includes('_MIGRATE_')) {
+      const parts = errorMsg.split('_');
+      const dcId = parseInt(parts.at(-1) || '2', 10);
+      if (!isNaN(dcId)) {
+        await mt.setDefaultDc(dcId);
+        return call<T>(method, params, { ...options, dcId });
+      }
     }
 
     // Auto-recover from AUTH_KEY_DUPLICATED or corrupted session key
-    if (
-      e?.error_message === 'AUTH_KEY_DUPLICATED' ||
-      e?.error_message === 'AUTH_KEY_UNREGISTERED' ||
-      e?.error_message === 'SESSION_REVOKED' ||
-      e?.error_message === 'SESSION_EXPIRED'
-    ) {
-      console.warn('[MTProto] Clearing duplicate/invalid auth key and recreating session:', e.error_message);
+    const isAuthKeyCorrupt =
+      errorMsg.includes('AUTH_KEY_DUPLICATED') ||
+      errorMsg.includes('AUTH_KEY_UNREGISTERED') ||
+      errorMsg.includes('SESSION_REVOKED') ||
+      errorMsg.includes('SESSION_EXPIRED');
+
+    if (isAuthKeyCorrupt && _retryCount < 2) {
+      console.warn('[MTProto] Clearing duplicate/invalid auth key and recreating session:', errorMsg);
       resetMTProtoSession();
-      const freshMt = getMTProto();
-      return (await freshMt.call(method, params, options)) as T;
+      return call<T>(method, params, { ...options, _retryCount: _retryCount + 1 });
     }
 
     throw err;

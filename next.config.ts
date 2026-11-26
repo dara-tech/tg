@@ -1,0 +1,23 @@
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
+  reactStrictMode: true,
+  serverExternalPackages: ['telegram'],
+  // Empty turbopack config silences the Turbopack/webpack warning
+  turbopack: {},
+  images: { domains: [] },
+  // PWA headers for service-worker scope
+  async headers() {
+    return [
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Content-Type',  value: 'application/javascript; charset=utf-8' },
+        ],
+      },
+    ];
+  },
+};
+
+export default nextConfig;

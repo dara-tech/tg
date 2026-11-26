@@ -1,0 +1,199 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&display=swap');
+
+/* Khmer Battambang scoped strictly to Khmer Unicode ranges (U+1780-17FF, U+19E0-19FF) so English always uses modern Google Sans */
+@font-face {
+  font-family: 'BattambangKhmer';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/battambang/v26/uk-lEGe7raEw-HjkzZabNtmL9yhQ86RJ5IxcMg.woff2') format('woff2');
+  unicode-range: U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC;
+}
+@font-face {
+  font-family: 'BattambangKhmer';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/battambang/v26/uk-mEGe7raEw-HjkzZabPnmp4g5y_o5z7Q.woff2') format('woff2');
+  unicode-range: U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC;
+}
+@font-face {
+  font-family: 'BattambangKhmer';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/battambang/v26/uk-lEGe7raEw-HjkzZabNsmM9yhQ86RJ5IxcMg.woff2') format('woff2');
+  unicode-range: U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC;
+}
+@font-face {
+  font-family: 'BattambangKhmer';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/battambang/v26/uk-lEGe7raEw-HjkzZabNvGO9yhQ86RJ5IxcMg.woff2') format('woff2');
+  unicode-range: U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC;
+}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root,
+[data-theme='black'] {
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --tg-blue: #7C3AED;
+  --tg-blue-rgb: 124 58 237;
+  --tg-blue-dark: #6D28D9;
+  --tg-blue-dark-rgb: 109 40 217;
+  --tg-bg: #000000;
+  --tg-bg-rgb: 0 0 0;
+  --tg-bg-secondary: #121216;
+  --tg-bg-secondary-rgb: 18 18 22;
+  --tg-bg-tertiary: #000000;
+  --tg-bg-tertiary-rgb: 0 0 0;
+  --tg-surface: #1A1A20;
+  --tg-surface-rgb: 26 26 32;
+  --tg-text: #F8FAFC;
+  --tg-text-rgb: 248 250 252;
+  --tg-text-secondary: #94A3B8;
+  --tg-text-secondary-rgb: 148 163 184;
+  --tg-text-hint: #64748B;
+  --tg-text-hint-rgb: 100 116 139;
+  --tg-border: #26262E;
+  --tg-border-rgb: 38 38 46;
+  --tg-bubble: #7C3AED;
+  --tg-bubble-rgb: 124 58 237;
+}
+
+[data-theme='dark'] {
+  --tg-bg: #0F172A;
+  --tg-bg-rgb: 15 23 42;
+  --tg-bg-secondary: #1E293B;
+  --tg-bg-secondary-rgb: 30 41 59;
+  --tg-bg-tertiary: #0B1120;
+  --tg-bg-tertiary-rgb: 11 17 32;
+  --tg-surface: #1E293B;
+  --tg-surface-rgb: 30 41 59;
+  --tg-text: #F8FAFC;
+  --tg-text-rgb: 248 250 252;
+  --tg-text-secondary: #94A3B8;
+  --tg-text-secondary-rgb: 148 163 184;
+  --tg-text-hint: #64748B;
+  --tg-text-hint-rgb: 100 116 139;
+  --tg-border: #334155;
+  --tg-border-rgb: 51 65 85;
+}
+
+[data-theme='white'] {
+  --tg-bg: #FFFFFF;
+  --tg-bg-rgb: 255 255 255;
+  --tg-bg-secondary: #F8FAFC;
+  --tg-bg-secondary-rgb: 248 250 252;
+  --tg-bg-tertiary: #FFFFFF;
+  --tg-bg-tertiary-rgb: 255 255 255;
+  --tg-surface: #F1F5F9;
+  --tg-surface-rgb: 241 245 249;
+  --tg-text: #0F172A;
+  --tg-text-rgb: 15 23 42;
+  --tg-text-secondary: #64748B;
+  --tg-text-secondary-rgb: 100 116 139;
+  --tg-text-hint: #94A3B8;
+  --tg-text-hint-rgb: 148 163 184;
+  --tg-border: #E2E8F0;
+  --tg-border-rgb: 226 232 240;
+}
+
+[data-theme='clay'] {
+  --tg-bg: #F1F5F9;
+  --tg-bg-rgb: 241 245 249;
+  --tg-bg-secondary: #FFFFFF;
+  --tg-bg-secondary-rgb: 255 255 255;
+  --tg-bg-tertiary: #F1F5F9;
+  --tg-bg-tertiary-rgb: 241 245 249;
+  --tg-surface: #E2E8F0;
+  --tg-surface-rgb: 226 232 240;
+  --tg-text: #0F172A;
+  --tg-text-rgb: 15 23 42;
+  --tg-text-secondary: #64748B;
+  --tg-text-secondary-rgb: 100 116 139;
+  --tg-text-hint: #94A3B8;
+  --tg-text-hint-rgb: 148 163 184;
+  --tg-border: #E2E8F0;
+  --tg-border-rgb: 226 232 240;
+}
+
+[data-theme='cream'] {
+  --tg-bg: #FAF7F2;
+  --tg-bg-rgb: 250 247 242;
+  --tg-bg-secondary: #FFFFFF;
+  --tg-bg-secondary-rgb: 255 255 255;
+  --tg-bg-tertiary: #FAF7F2;
+  --tg-bg-tertiary-rgb: 250 247 242;
+  --tg-surface: #F0EBE1;
+  --tg-surface-rgb: 240 235 225;
+  --tg-text: #1C1917;
+  --tg-text-rgb: 28 25 23;
+  --tg-text-secondary: #78716C;
+  --tg-text-secondary-rgb: 120 113 108;
+  --tg-text-hint: #A8A29E;
+  --tg-text-hint-rgb: 168 162 158;
+  --tg-border: #E8E2D8;
+  --tg-border-rgb: 232 226 216;
+}
+
+* { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+
+html,
+body {
+  font-family: 'ActiveKhmerFont', 'BattambangKhmer', 'Google Sans', 'Google Sans Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: manipulation;
+  user-select: none;
+  background-color: var(--tg-bg-tertiary);
+  color: var(--tg-text);
+}
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Clean, modern scrollbar for desktop */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--tg-border) transparent;
+}
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--tg-border);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--tg-text-hint);
+}
+
+.safe-top    { padding-top:    max(12px, var(--safe-top)); }
+.safe-bottom { padding-bottom: max(12px, var(--safe-bottom)); }
+
+.chat-go-gradient {
+  background: linear-gradient(135deg, var(--tg-blue) 0%, var(--tg-blue-dark) 100%);
+}
+
+@keyframes typing-pulse {
+  0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+  30%            { opacity: 1;   transform: scale(1); }
+}
+.typing-dot { animation: typing-pulse 1.4s infinite; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-fade-in { animation: fadeIn 0.18s ease-out; }

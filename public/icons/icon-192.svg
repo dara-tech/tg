@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="tgBg" x1="48" y1="32" x2="464" y2="480" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="55%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <radialGradient id="tgGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(150 120) rotate(45) scale(340)">
+      <stop offset="0%" stop-color="#6EE7B7" stop-opacity="0.38" />
+      <stop offset="100%" stop-color="#059669" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="116" fill="url(#tgBg)" />
+  <rect width="512" height="512" rx="116" fill="url(#tgGlow)" />
+  <rect x="4" y="4" width="504" height="504" rx="112" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="4" />
+
+  <path d="M116 244C106 248 106 256 116 260L206 286L400 136L116 244Z" fill="#FFFFFF" />
+  <path d="M400 136L244 302L320 368C331 376 340 373 344 358L406 150C409 138 404 133 400 136Z" fill="#FFFFFF" />
+  <path d="M206 286L224 356C226 364 231 364 237 358L278 331L244 302L400 136L206 286Z" fill="#D1FAE5" />
+  <path d="M244 302L278 331L231 362C227 364 225 361 226 355L244 302Z" fill="#6EE7B7" />
+</svg>

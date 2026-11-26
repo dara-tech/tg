@@ -1,0 +1,934 @@
+'use client';
+import { TelegramTicks } from '@/components/ui/TelegramTicks';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  AtSign,
+  Bell,
+  Camera,
+  Check,
+  ChevronRight,
+  Database,
+  Globe,
+  Hash,
+  HelpCircle,
+  Image as ImageIcon,
+  LogOut,
+  Palette,
+  Pencil,
+  Phone,
+  QrCode,
+  Shield,
+  Trash2,
+  Type,
+  Upload,
+} from 'lucide-react';
+import { Avatar }      from '@/components/ui/Avatar';
+import { BottomSheet } from '@/components/ui/BottomSheet';
+import { Button }      from '@/components/ui/Button';
+import { ChatWallpaperLayer } from '@/components/ui/ChatWallpaperLayer';
+import { Input }       from '@/components/ui/Input';
+import { toast }       from '@/components/ui/Toast';
+import { useAuthStore } from '@/store/auth.store';
+import { ALL_KHMER_GOOGLE_FONTS_URL, ACCENT_COLORS, BG_THEMES, CHAT_WALLPAPERS, KHMER_FONTS, NAV_STYLES, useUIStore, type AccentId, type BgThemeId, type ChatWallpaperId, type KhmerFontId, type NavStyleId } from '@/store/ui.store';
+import { fetchRealProfile, isMTProtoConfigured, updateRealProfile } from '@/services/telegram.real';
+import { call } from '@/core/telegram/mtproto.client';
+import { logOut } from '@/services/auth.real';
+
+type PanelId = 'notifications' | 'privacy' | 'storage' | 'appearance' | 'wallpaper' | 'khmerFont' | 'language' | 'help' | null;
+
+const LANGUAGES = ['English', 'ភាសាខ្មែរ', '日本語', '한국어', '中文'];
+
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      onClick={() => onChange(!checked)}
+      className={`w-11 h-6 rounded-full transition-colors shrink-0 ${checked ? 'bg-tg-blue' : 'bg-tg-border'}`}
+    >
+      <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-5' : 'translate-x-0.5'}`} />
+    </button>
+  );
+}
+
+export default function SettingsScreen() {
+  const router = useRouter();
+  const { reset, userId } = useAuthStore();
+  const ui = useUIStore();
+
+  const [name, setName] = useState('Account');
+  const [username, setUsername] = useState('');
+  const [phone, setPhone] = useState('');
+  const [bio, setBio] = useState('');
+  const [profileId, setProfileId] = useState<number>(0);
+  const [profileAccessHash, setProfileAccessHash] = useState('0');
+  const [hasPhoto, setHasPhoto] = useState(false);
+  const [photoId, setPhotoId] = useState<string | undefined>(undefined);
+  const [avatarColor, setAvatarColor] = useState('#2563EB');
+  const [editOpen, setEditOpen] = useState(false);
+  const [panel, setPanel] = useState<PanelId>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [fontSearch, setFontSearch] = useState('');
+  const safeKhmerFont: KhmerFontId = KHMER_FONTS[ui.khmerFont] ? ui.khmerFont : 'hanuman';
+
+  useEffect(() => {
+    if (panel !== 'khmerFont') return;
+    const id = 'tg-all-khmer-fonts';
+    if (!document.getElementById(id)) {
+      const link = document.createElement('link');
+      link.id = id;
+      link.rel = 'stylesheet';
+      link.href = ALL_KHMER_GOOGLE_FONTS_URL;
+      document.head.appendChild(link);
+    }
+  }, [panel]);
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('tg-my-profile');
+      if (cached) {
+        const p = JSON.parse(cached) as {
+          id?: number;
+          accessHash?: string;
+          name?: string;
+          username?: string;
+          phone?: string;
+          bio?: string;
+          hasPhoto?: boolean;
+          photoId?: string;
+          color?: string;
+        };
+        if (p.id) setProfileId(p.id);
+        if (p.accessHash) setProfileAccessHash(p.accessHash);
+        if (p.name) setName(p.name);
+        if (p.username !== undefined) setUsername(p.username);
+        if (p.phone !== undefined) setPhone(p.phone);
+        if (p.bio !== undefined) setBio(p.bio);
+        if (p.hasPhoto !== undefined) setHasPhoto(p.hasPhoto);
+        if (p.photoId) setPhotoId(p.photoId);
+        if (p.color) setAvatarColor(p.color);
+      }
+    } catch {}
+
+    if (!isMTProtoConfigured()) return;
+    let cancelled = false;
+    const load = () =>
+      fetchRealProfile('me').then((p) => {
+        if (cancelled) return;
+        setProfileId(p.id);
+        setProfileAccessHash(p.accessHash);
+        setName(p.name);
+        setUsername(p.username);
+        setPhone(p.phone);
+        setBio(p.bio);
+        setHasPhoto(p.hasPhoto);
+        setPhotoId(p.photoId);
+        setAvatarColor(p.color);
+        try {
+          localStorage.setItem('tg-my-profile', JSON.stringify({
+            id: p.id,
+            accessHash: p.accessHash,
+            name: p.name,
+            username: p.username,
+            phone: p.phone,
+            bio: p.bio,
+            hasPhoto: p.hasPhoto,
+            photoId: p.photoId,
+            color: p.color,
+          }));
+        } catch {}
+      });
+
+    load().catch(() => {
+      setTimeout(() => { if (!cancelled) load().catch(() => {}); }, 1500);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleSaveProfile = async () => {
+    if (!name.trim()) {
+      toast('Display name cannot be empty', 'error');
+      return;
+    }
+    setSavingProfile(true);
+    if (isMTProtoConfigured()) {
+      try {
+        const [first, ...rest] = name.trim().split(' ');
+        await updateRealProfile(first || '', rest.join(' '), bio);
+        try {
+          localStorage.setItem('tg-my-profile', JSON.stringify({ name: name.trim(), username, phone, bio }));
+        } catch {}
+        toast('Profile updated', 'success');
+        setEditOpen(false);
+      } catch (e: unknown) {
+        const err = e as { error_message?: string; message?: string };
+        toast(err?.error_message || err?.message || 'Failed to update profile', 'error');
+      } finally {
+        setSavingProfile(false);
+      }
+    } else {
+      toast('Profile updated locally', 'success');
+      setSavingProfile(false);
+      setEditOpen(false);
+    }
+  };
+
+  const handlePrivacyChange = async (val: 'everybody' | 'contacts' | 'nobody') => {
+    ui.setLastSeenPrivacy(val);
+    if (!isMTProtoConfigured()) return;
+    const rule =
+      val === 'everybody'
+        ? { _: 'inputPrivacyValueAllowAll' }
+        : val === 'contacts'
+        ? { _: 'inputPrivacyValueAllowContacts' }
+        : { _: 'inputPrivacyValueDisallowAll' };
+    try {
+      await call('account.setPrivacy', {
+        key: { _: 'inputPrivacyKeyStatusTimestamp' },
+        rules: [rule],
+      });
+      toast('Privacy updated', 'success');
+    } catch {
+      toast('Saved locally', 'info');
+    }
+  };
+
+  const handleClearCache = async () => {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+    toast('Cache cleared', 'success');
+    setPanel(null);
+  };
+
+  const handleLogout = async () => {
+    if (isMTProtoConfigured()) {
+      await logOut().catch(() => {});
+    }
+    reset();
+    router.replace('/auth');
+  };
+
+  const safeTheme = BG_THEMES[ui.theme] ? ui.theme : 'black';
+  const safeAccent = ACCENT_COLORS[ui.accent] ? ui.accent : 'purple';
+  const safeNavStyle = NAV_STYLES[ui.navStyle] ? ui.navStyle : 'pill';
+
+  return (
+    <div className="flex flex-col h-full bg-tg-bg-tertiary">
+      {/* Header matching Screenshot 8 */}
+      <div className="flex items-center justify-between px-4 pt-3 pb-3 safe-top bg-tg-bg-tertiary">
+        <h1 className="text-tg-text text-[26px] font-bold tracking-tight">Profile</h1>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => router.push('/qr-scan')}
+            className="w-9 h-9 rounded-full bg-tg-bg-secondary border border-tg-border/40 flex items-center justify-center text-tg-text-secondary active:scale-95"
+            aria-label="Scan QR"
+          >
+            <QrCode className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setEditOpen(true)}
+            className="w-9 h-9 rounded-full bg-tg-bg-secondary border border-tg-border/40 flex items-center justify-center text-tg-text-secondary active:scale-95"
+            aria-label="Edit profile"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 space-y-4 pb-6">
+        {/* Profile Hero Card */}
+        <button
+          onClick={() => setEditOpen(true)}
+          className="w-full bg-tg-bg-secondary border border-tg-border/35 shadow-sm rounded-2xl p-4 flex items-center gap-3.5 text-left active:bg-tg-surface transition-colors"
+        >
+          <Avatar
+            letters={name.slice(0, 2).toUpperCase()}
+            color={avatarColor}
+            size="lg"
+            peerType="user"
+            peerId={profileId || userId || undefined}
+            accessHash={profileAccessHash}
+            hasPhoto={hasPhoto}
+            photoId={photoId}
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-tg-text text-base font-bold truncate">{name}</p>
+            <p className="text-tg-text-secondary text-xs truncate">
+              {[phone, username ? `@${username.replace(/^@/, '')}` : ''].filter(Boolean).join(' · ') || 'Tap to edit profile'}
+            </p>
+            {bio && <p className="text-tg-text-hint text-xs truncate mt-0.5">{bio}</p>}
+          </div>
+          <Pencil className="w-4 h-4 text-tg-text-hint shrink-0" />
+        </button>
+
+        {/* Inline Accent Color + 5 Background Themes Card (Screenshot 8) */}
+        <div className="bg-tg-bg-secondary border border-tg-border/35 shadow-sm rounded-2xl p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-tg-blue/20 text-tg-blue flex items-center justify-center">
+                <Palette className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-tg-text text-sm font-semibold">Accent Color</p>
+                <p className="text-tg-blue text-xs">{ACCENT_COLORS[safeAccent].name}</p>
+              </div>
+            </div>
+            <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-[11px] font-semibold">
+              Active
+            </span>
+          </div>
+
+          <div className="grid grid-cols-6 gap-2">
+            {(Object.keys(ACCENT_COLORS) as AccentId[]).map((id) => {
+              const active = safeAccent === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => ui.setAccent(id)}
+                  className="flex flex-col items-center gap-1"
+                >
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-transform ${
+                      active ? 'ring-2 ring-white scale-105' : ''
+                    }`}
+                    style={{ backgroundColor: ACCENT_COLORS[id].primary }}
+                  >
+                    {active && <Check className="w-4 h-4 text-white" />}
+                  </div>
+                  <span className={`text-[10px] ${active ? 'text-tg-blue font-semibold' : 'text-tg-text-hint'}`}>
+                    {ACCENT_COLORS[id].short}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="pt-3 border-t border-tg-border/35 space-y-2.5">
+            <div>
+              <p className="text-tg-text text-sm font-semibold">Background Theme</p>
+              <p className="text-tg-text-hint text-xs">{BG_THEMES[safeTheme].name} · {BG_THEMES[safeTheme].subtitle}</p>
+            </div>
+            <div className="grid grid-cols-5 gap-2">
+              {(Object.keys(BG_THEMES) as BgThemeId[]).map((id) => {
+                const active = safeTheme === id;
+                const t = BG_THEMES[id];
+                return (
+                  <button
+                    key={id}
+                    onClick={() => ui.setTheme(id)}
+                    className="flex flex-col items-center gap-1.5"
+                  >
+                    <div
+                      className={`w-12 h-10 rounded-xl flex items-center justify-center transition-all ${
+                        active
+                          ? 'ring-2 ring-tg-blue ring-offset-2 ring-offset-tg-bg-secondary'
+                          : 'border border-tg-border/40'
+                      }`}
+                      style={{ backgroundColor: t.preview }}
+                    >
+                      {active && <Check className={`w-4 h-4 ${t.isDark ? 'text-white' : 'text-slate-900'}`} />}
+                    </div>
+                    <span className={`text-[10px] ${active ? 'text-tg-blue font-semibold' : 'text-tg-text-hint'}`}>
+                      {t.short}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-tg-border/35 space-y-2.5">
+            <div>
+              <p className="text-tg-text text-sm font-semibold">Navigation Bar Style</p>
+              <p className="text-tg-text-hint text-xs">{NAV_STYLES[safeNavStyle].name} · {NAV_STYLES[safeNavStyle].desc}</p>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {(Object.keys(NAV_STYLES) as NavStyleId[]).map((id) => {
+                const active = safeNavStyle === id;
+                const s = NAV_STYLES[id];
+                return (
+                  <button
+                    key={id}
+                    onClick={() => ui.setNavStyle(id)}
+                    className="flex flex-col items-center gap-1.5"
+                  >
+                    <div
+                      className={`w-full h-10 rounded-xl bg-tg-bg-tertiary flex items-end justify-center p-1.5 transition-all ${
+                        active
+                          ? 'ring-2 ring-tg-blue ring-offset-2 ring-offset-tg-bg-secondary'
+                          : 'border border-tg-border/40'
+                      }`}
+                    >
+                      {id === 'pill' && (
+                        <div className="w-full h-3.5 rounded-full bg-tg-bg-secondary border border-tg-border flex items-center justify-around px-1">
+                          <span className="w-2.5 h-1.5 rounded-full bg-tg-blue" />
+                          <span className="w-1.5 h-1 rounded-full bg-tg-text-hint/50" />
+                          <span className="w-1.5 h-1 rounded-full bg-tg-text-hint/50" />
+                        </div>
+                      )}
+                      {id === 'classic' && (
+                        <div className="w-full h-3 border-t border-tg-border bg-tg-bg-secondary flex items-center justify-around px-1">
+                          <span className="w-2 h-1.5 rounded-sm bg-tg-blue" />
+                          <span className="w-1.5 h-1 rounded-sm bg-tg-text-hint/50" />
+                          <span className="w-1.5 h-1 rounded-sm bg-tg-text-hint/50" />
+                        </div>
+                      )}
+                      {id === 'card' && (
+                        <div className="w-full h-3.5 rounded-md bg-tg-bg-secondary border border-tg-border flex items-center justify-around px-0.5">
+                          <span className="w-3 h-2 rounded-sm bg-tg-blue" />
+                          <span className="w-1.5 h-1 rounded-sm bg-tg-text-hint/50" />
+                          <span className="w-1.5 h-1 rounded-sm bg-tg-text-hint/50" />
+                        </div>
+                      )}
+                      {id === 'minimal' && (
+                        <div className="w-full h-3 border-t border-tg-border/60 flex items-center justify-around px-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-tg-blue" />
+                          <span className="w-1 h-1 rounded-full bg-tg-text-hint/40" />
+                          <span className="w-1 h-1 rounded-full bg-tg-text-hint/40" />
+                        </div>
+                      )}
+                    </div>
+                    <span className={`text-[10px] ${active ? 'text-tg-blue font-semibold' : 'text-tg-text-hint'}`}>
+                      {s.short}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* ACCOUNT section (Screenshot 8) */}
+        <div>
+          <p className="text-tg-text-hint text-[11px] font-semibold uppercase tracking-wider px-1 mb-1.5">Account</p>
+          <div className="bg-tg-bg-secondary border border-tg-border/35 shadow-sm rounded-2xl overflow-hidden divide-y divide-tg-border/35">
+            <button onClick={() => router.push('/profile/me')} className="w-full px-4 py-3 flex items-center justify-between active:bg-tg-surface">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center text-white">
+                  <Avatar letters={name.slice(0, 2).toUpperCase()} color="transparent" size="sm" />
+                </div>
+                <span className="text-tg-text text-sm font-medium">Name</span>
+              </div>
+              <span className="text-tg-text-secondary text-sm">{name}</span>
+            </button>
+            <div className="px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-violet-500 flex items-center justify-center text-white">
+                  <AtSign className="w-4 h-4" />
+                </div>
+                <span className="text-tg-text text-sm font-medium">Username</span>
+              </div>
+              <span className="text-tg-text-secondary text-sm">{username || 'Not set'}</span>
+            </div>
+            <div className="px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-sky-500 flex items-center justify-center text-white">
+                  <Hash className="w-4 h-4" />
+                </div>
+                <span className="text-tg-text text-sm font-medium">User ID</span>
+              </div>
+              <span className="text-tg-text-secondary text-sm">#{userId ?? 0}</span>
+            </div>
+            {phone && (
+              <div className="px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-white">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                  <span className="text-tg-text text-sm font-medium">Phone</span>
+                </div>
+                <span className="text-tg-text-secondary text-sm">{phone}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* PREFERENCES */}
+        <div>
+          <p className="text-tg-text-hint text-[11px] font-semibold uppercase tracking-wider px-1 mb-1.5">Preferences</p>
+          <div className="bg-tg-bg-secondary border border-tg-border/35 shadow-sm rounded-2xl overflow-hidden divide-y divide-tg-border/35">
+            {[
+              { id: 'notifications' as const, bg: 'bg-amber-500',   icon: <Bell className="w-4 h-4 text-white" />,       label: 'Notifications & Sounds', desc: ui.notifySound ? 'On' : 'Muted' },
+              { id: 'privacy'       as const, bg: 'bg-emerald-500', icon: <Shield className="w-4 h-4 text-white" />,     label: 'Privacy & Security',     desc: ui.lastSeenPrivacy },
+              { id: 'storage'       as const, bg: 'bg-cyan-500',    icon: <Database className="w-4 h-4 text-white" />,   label: 'Data & Storage',         desc: ui.autoDownloadPhotos ? 'Auto' : 'Manual' },
+              { id: 'wallpaper'     as const, bg: 'bg-pink-500',    icon: <ImageIcon className="w-4 h-4 text-white" />,  label: 'Chat Wallpaper',         desc: ui.chatWallpaper === 'custom' ? 'Custom Image' : (CHAT_WALLPAPERS[ui.chatWallpaper]?.name ?? 'Theme Default') },
+              { id: 'khmerFont'     as const, bg: 'bg-violet-500',  icon: <Type className="w-4 h-4 text-white" />,       label: 'Khmer Font',             desc: KHMER_FONTS[safeKhmerFont].name },
+              { id: 'language'      as const, bg: 'bg-indigo-500',  icon: <Globe className="w-4 h-4 text-white" />,      label: 'Language',               desc: ui.language },
+              { id: 'help'          as const, bg: 'bg-slate-500',   icon: <HelpCircle className="w-4 h-4 text-white" />, label: 'Help & FAQ',             desc: '' },
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setPanel(item.id)}
+                className="w-full flex items-center gap-3 px-4 py-3 active:bg-tg-surface text-left"
+              >
+                <div className={`w-8 h-8 rounded-lg ${item.bg} flex items-center justify-center shrink-0`}>
+                  {item.icon}
+                </div>
+                <span className="text-tg-text text-sm font-medium flex-1">{item.label}</span>
+                {item.desc && <span className="text-tg-text-hint text-xs capitalize">{item.desc}</span>}
+                <ChevronRight className="w-4 h-4 text-tg-text-hint shrink-0" />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-semibold text-sm py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.99]"
+        >
+          <span>Log Out</span>
+        </button>
+      </div>
+
+      {/* Edit Profile */}
+      <BottomSheet
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit Profile"
+        description="Update your photo, name and bio"
+        maxWidth="sm:max-w-md"
+      >
+        <div className="p-5 space-y-4">
+          {/* Avatar / Photo preview */}
+          <div className="flex flex-col items-center justify-center gap-2 pt-1 pb-1">
+            <div className="relative group">
+              <Avatar
+                letters={name.trim().slice(0, 2).toUpperCase() || 'ME'}
+                size="xl"
+                className="shadow-md border-2 border-tg-border"
+              />
+              <label
+                className="absolute -bottom-1 -right-1 p-2 rounded-full bg-tg-blue text-white shadow-lg cursor-pointer hover:bg-tg-blue-dark active:scale-95 transition-all"
+                title="Change Photo"
+              >
+                <Camera className="w-4 h-4" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      toast('Profile photo selected', 'info');
+                    }
+                  }}
+                />
+              </label>
+            </div>
+            <span className="text-xs text-tg-text-secondary font-medium">Change Profile Photo</span>
+          </div>
+
+          {/* Form fields */}
+          <div className="space-y-3">
+            <div>
+              <Input
+                label="Display Name"
+                placeholder="Enter your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={64}
+              />
+              <p className="text-[11px] text-tg-text-hint mt-1 px-1">
+                This name will be displayed in your chats and contacts.
+              </p>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-tg-text-secondary text-sm">Bio</label>
+                <span className="text-[11px] text-tg-text-hint">{bio.length}/70</span>
+              </div>
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value.slice(0, 70))}
+                rows={3}
+                placeholder="A few words about yourself..."
+                className="w-full bg-tg-surface border border-tg-border rounded-xl px-4 py-2.5 text-tg-text placeholder:text-tg-text-hint focus:outline-none focus:border-tg-blue transition-colors text-sm resize-none"
+              />
+              <p className="text-[11px] text-tg-text-hint mt-1 px-1">
+                Any details such as age, occupation or city. Example: 23 y.o. designer from San Francisco.
+              </p>
+            </div>
+
+            {/* Read-only account info */}
+            {(username || phone) && (
+              <div className="bg-tg-surface/60 border border-tg-border/60 rounded-xl p-3 space-y-1.5 text-xs">
+                {username && (
+                  <div className="flex items-center justify-between text-tg-text-secondary">
+                    <span>Username</span>
+                    <span className="text-tg-text font-medium">{username.startsWith('@') ? username : `@${username}`}</span>
+                  </div>
+                )}
+                {phone && (
+                  <div className="flex items-center justify-between text-tg-text-secondary">
+                    <span>Phone</span>
+                    <span className="text-tg-text font-medium">{phone}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2.5 pt-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setEditOpen(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={handleSaveProfile}
+              loading={savingProfile}
+              className="flex-1"
+            >
+              Save Changes
+            </Button>
+          </div>
+        </div>
+      </BottomSheet>
+
+      {/* Live Preview Appearance Sheet (Screenshot 6) */}
+      <BottomSheet open={panel === 'appearance'} onClose={() => setPanel(null)} title="Theme & Appearance" maxWidth="sm:max-w-md">
+        <div className="p-5 space-y-4">
+          <div className="bg-tg-bg-tertiary border border-tg-border rounded-2xl p-3 space-y-2">
+            <div className="flex justify-start">
+              <div className="bg-tg-bg-secondary border border-tg-border rounded-2xl rounded-bl-[4px] px-3 py-2 text-xs text-tg-text">
+                How do you like this format?
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <div className="chat-go-gradient rounded-2xl rounded-br-[4px] px-3 py-2 text-xs text-white flex items-center gap-1">
+                <span>Noted</span>
+                <span className="text-[10px] text-white/75">11:39</span>
+                <TelegramTicks variant="double" className="w-3.5 h-2.5 text-sky-300 shrink-0" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex justify-between mb-1">
+              <p className="text-tg-text-secondary text-xs font-semibold uppercase tracking-wider">Text Size</p>
+              <span className="text-tg-blue text-xs font-bold">{ui.fontSize}px</span>
+            </div>
+            <input
+              type="range"
+              min={12}
+              max={18}
+              value={ui.fontSize}
+              onChange={(e) => ui.setFontSize(Number(e.target.value))}
+              className="w-full accent-tg-blue"
+            />
+          </div>
+
+          <Button onClick={() => setPanel(null)}>Done</Button>
+        </div>
+      </BottomSheet>
+
+      {/* Notifications Panel */}
+      <BottomSheet open={panel === 'notifications'} onClose={() => setPanel(null)} title="Notifications & Sounds" maxWidth="sm:max-w-md">
+        <div className="p-5 space-y-3">
+          {[
+            { key: 'notifySound' as const, label: 'In-App Sounds', val: ui.notifySound },
+            { key: 'notifyVibration' as const, label: 'Vibration', val: ui.notifyVibration },
+            { key: 'notifyPreview' as const, label: 'Message Preview', val: ui.notifyPreview },
+          ].map((row) => (
+            <div key={row.key} className="flex items-center justify-between py-2 border-b border-tg-border last:border-0">
+              <span className="text-tg-text text-sm">{row.label}</span>
+              <Toggle checked={row.val} onChange={(v) => ui.setNotify(row.key, v)} />
+            </div>
+          ))}
+          <Button onClick={() => setPanel(null)}>Done</Button>
+        </div>
+      </BottomSheet>
+
+      {/* Privacy Panel */}
+      <BottomSheet open={panel === 'privacy'} onClose={() => setPanel(null)} title="Last Seen & Online" maxWidth="sm:max-w-md">
+        <div className="p-5 space-y-2">
+          {(['everybody', 'contacts', 'nobody'] as const).map((opt) => (
+            <button
+              key={opt}
+              onClick={() => handlePrivacyChange(opt)}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border ${
+                ui.lastSeenPrivacy === opt
+                  ? 'border-tg-blue bg-tg-blue/10 text-tg-blue'
+                  : 'border-tg-border text-tg-text'
+              }`}
+            >
+              <span className="text-sm font-medium capitalize">{opt === 'everybody' ? 'Everybody' : opt === 'contacts' ? 'My Contacts' : 'Nobody'}</span>
+              {ui.lastSeenPrivacy === opt && <span className="text-xs font-bold">Active</span>}
+            </button>
+          ))}
+        </div>
+      </BottomSheet>
+
+      {/* Data & Storage Panel */}
+      <BottomSheet open={panel === 'storage'} onClose={() => setPanel(null)} title="Data & Storage" maxWidth="sm:max-w-md">
+        <div className="p-5 space-y-3">
+          <div className="flex items-center justify-between py-2 border-b border-tg-border">
+            <span className="text-tg-text text-sm">Auto-download Photos</span>
+            <Toggle checked={ui.autoDownloadPhotos} onChange={(v) => ui.setAutoDownload('autoDownloadPhotos', v)} />
+          </div>
+          <div className="flex items-center justify-between py-2 border-b border-tg-border">
+            <span className="text-tg-text text-sm">Auto-download Videos</span>
+            <Toggle checked={ui.autoDownloadVideos} onChange={(v) => ui.setAutoDownload('autoDownloadVideos', v)} />
+          </div>
+          <Button variant="danger" onClick={handleClearCache}>
+            <Trash2 className="w-4 h-4" />
+            <span>Clear Cache</span>
+          </Button>
+        </div>
+      </BottomSheet>
+
+      {/* Chat Wallpaper Panel */}
+      <BottomSheet
+        open={panel === 'wallpaper'}
+        onClose={() => setPanel(null)}
+        title="Chat Wallpaper"
+        description="Choose a preset pattern or upload your own photo"
+        maxWidth="sm:max-w-md"
+      >
+        <div className="p-4 space-y-4 max-h-[75vh] overflow-y-auto scrollbar-hide">
+          {/* Live Chat Wallpaper Preview */}
+          <div className="relative h-36 rounded-2xl overflow-hidden border border-tg-border/35 bg-tg-bg-tertiary p-3 flex flex-col justify-end gap-2">
+            <ChatWallpaperLayer
+              wallpaper={ui.chatWallpaper}
+              customImage={ui.chatWallpaperImage}
+              dim={ui.chatWallpaper === 'default' ? 0 : ui.chatWallpaperDim}
+              blur={ui.chatWallpaperBlur}
+            />
+            <div className="relative z-10 flex justify-start">
+              <div className="bg-tg-bg-secondary/95 border border-tg-border/35 rounded-2xl rounded-bl-[4px] px-3 py-1.5 text-xs text-tg-text shadow-sm">
+                Look at this wallpaper! ✨
+              </div>
+            </div>
+            <div className="relative z-10 flex justify-end">
+              <div className="chat-go-gradient text-white rounded-2xl rounded-br-[4px] px-3 py-1.5 text-xs shadow-sm flex items-center gap-1.5">
+                <span>Clean & sharp</span>
+                <TelegramTicks variant="double" className="w-3.5 h-3 text-sky-200 shrink-0" />
+              </div>
+            </div>
+          </div>
+
+          {/* Choose Custom Image Button */}
+          <label className="w-full py-2.5 px-4 rounded-xl bg-tg-blue/12 text-tg-blue text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] transition-transform">
+            <Upload className="w-4 h-4" />
+            <span>Choose Photo from Device</span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const img = new Image();
+                const objUrl = URL.createObjectURL(file);
+                img.onload = () => {
+                  const maxSide = 1280;
+                  const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+                  const canvas = document.createElement('canvas');
+                  canvas.width = Math.round(img.width * scale);
+                  canvas.height = Math.round(img.height * scale);
+                  const ctx = canvas.getContext('2d');
+                  if (ctx) {
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const compressed = canvas.toDataURL('image/jpeg', 0.82);
+                    ui.setChatWallpaperImage(compressed);
+                    ui.setChatWallpaper('custom');
+                    toast('Chat wallpaper updated', 'success');
+                  }
+                  URL.revokeObjectURL(objUrl);
+                };
+                img.onerror = () => {
+                  URL.revokeObjectURL(objUrl);
+                  toast('Could not load image', 'error');
+                };
+                img.src = objUrl;
+              }}
+            />
+          </label>
+
+          {/* Preset Wallpapers Grid */}
+          <div className="grid grid-cols-3 gap-2.5">
+            {(Object.keys(CHAT_WALLPAPERS) as Array<Exclude<ChatWallpaperId, 'custom'>>).map((wid) => {
+              const w = CHAT_WALLPAPERS[wid];
+              const active = ui.chatWallpaper === wid;
+              return (
+                <button
+                  key={wid}
+                  onClick={() => ui.setChatWallpaper(wid)}
+                  className="flex flex-col items-center gap-1.5"
+                >
+                  <div
+                    className={`w-full h-16 rounded-xl relative overflow-hidden flex items-center justify-center transition-all ${
+                      active
+                        ? 'ring-2 ring-tg-blue ring-offset-2 ring-offset-tg-bg-secondary'
+                        : 'border border-tg-border/40'
+                    }`}
+                    style={w.gradient ? { backgroundImage: w.gradient } : undefined}
+                  >
+                    {!w.gradient && <span className="text-[11px] text-tg-text-hint">Default</span>}
+                    {active && (
+                      <div className="w-6 h-6 rounded-full bg-tg-blue text-white flex items-center justify-center shadow">
+                        <Check className="w-3.5 h-3.5" />
+                      </div>
+                    )}
+                  </div>
+                  <span className={`text-[11px] truncate w-full text-center ${active ? 'text-tg-blue font-semibold' : 'text-tg-text-hint'}`}>
+                    {w.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Dim & Blur Controls when wallpaper is active */}
+          {ui.chatWallpaper !== 'default' && (
+            <div className="bg-tg-surface/70 border border-tg-border/35 rounded-2xl p-3.5 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-tg-text text-sm font-medium">Blur Background</span>
+                <Toggle checked={ui.chatWallpaperBlur} onChange={ui.setChatWallpaperBlur} />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-tg-text-secondary font-medium">Dimming</span>
+                  <span className="text-tg-text-hint tabular-nums">{ui.chatWallpaperDim}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={60}
+                  step={5}
+                  value={ui.chatWallpaperDim}
+                  onChange={(e) => ui.setChatWallpaperDim(Number(e.target.value))}
+                  className="w-full accent-tg-blue"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  ui.setChatWallpaper('default');
+                  ui.setChatWallpaperImage(null);
+                  ui.setChatWallpaperBlur(false);
+                  ui.setChatWallpaperDim(20);
+                  toast('Reset to default theme background', 'info');
+                }}
+                className="w-full py-2 rounded-xl text-xs font-semibold text-rose-500 bg-rose-500/10 active:bg-rose-500/20"
+              >
+                Reset Wallpaper
+              </button>
+            </div>
+          )}
+        </div>
+      </BottomSheet>
+
+      {/* Khmer Font Panel */}
+      <BottomSheet
+        open={panel === 'khmerFont'}
+        onClose={() => { setPanel(null); setFontSearch(''); }}
+        title="Khmer Font"
+        description="English stays modern Google Sans · Khmer uses your selected Google Font"
+        maxWidth="sm:max-w-md"
+      >
+        <div className="p-4 space-y-3">
+          <Input
+            placeholder="Search 26 Khmer Google Fonts…"
+            value={fontSearch}
+            onChange={(e) => setFontSearch(e.target.value)}
+          />
+          <div className="max-h-[55vh] overflow-y-auto scrollbar-hide space-y-2 pr-0.5">
+            {(Object.keys(KHMER_FONTS) as KhmerFontId[])
+              .filter((fid) => {
+                const q = fontSearch.trim().toLowerCase();
+                if (!q) return true;
+                const f = KHMER_FONTS[fid];
+                return f.name.toLowerCase().includes(q) || f.category.toLowerCase().includes(q);
+              })
+              .map((fid) => {
+                const f = KHMER_FONTS[fid];
+                const active = safeKhmerFont === fid;
+                return (
+                  <button
+                    key={fid}
+                    onClick={() => {
+                      ui.setKhmerFont(fid);
+                      toast(`Khmer font: ${f.name}`, 'success');
+                      setPanel(null);
+                      setFontSearch('');
+                    }}
+                    className={`w-full flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl border text-left transition-colors ${
+                      active
+                        ? 'border-tg-blue bg-tg-blue/10'
+                        : 'border-tg-border bg-tg-bg-secondary active:bg-tg-surface'
+                    }`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm font-semibold ${active ? 'text-tg-blue' : 'text-tg-text'}`}>
+                          {f.name}
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-tg-surface text-tg-text-hint">
+                          {f.category}
+                        </span>
+                      </div>
+                      <p className="text-xs text-tg-text-secondary mt-1 truncate">
+                        <span style={{ fontFamily: `"${f.googleFamily}", serif` }}>
+                          សួស្តី! ភាសាខ្មែរ
+                        </span>
+                        <span className="mx-1.5 text-tg-text-hint">·</span>
+                        <span className="font-modern">Modern English 123</span>
+                      </p>
+                    </div>
+                    {active && <Check className="w-4 h-4 text-tg-blue shrink-0" />}
+                  </button>
+                );
+              })}
+          </div>
+        </div>
+      </BottomSheet>
+
+      {/* Language Panel */}
+      <BottomSheet open={panel === 'language'} onClose={() => setPanel(null)} title="Language" maxWidth="sm:max-w-md">
+        <div className="p-5 space-y-2">
+          {LANGUAGES.map((lang) => (
+            <button
+              key={lang}
+              onClick={() => { ui.setLanguage(lang); toast(`Language: ${lang}`, 'success'); setPanel(null); }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border ${
+                ui.language === lang
+                  ? 'border-tg-blue bg-tg-blue/10 text-tg-blue'
+                  : 'border-tg-border text-tg-text'
+              }`}
+            >
+              <span className="text-sm font-medium">{lang}</span>
+              {ui.language === lang && <span className="text-xs font-bold">Active</span>}
+            </button>
+          ))}
+        </div>
+      </BottomSheet>
+
+      {/* Help & FAQ Panel */}
+      <BottomSheet open={panel === 'help'} onClose={() => setPanel(null)} title="Help & FAQ" maxWidth="sm:max-w-md">
+        <div className="p-5 space-y-3">
+          <p className="text-tg-text-secondary text-sm leading-relaxed">
+            Connected directly to Telegram servers via MTProto WebSocket. Sessions are encrypted and stored locally in your browser.
+          </p>
+          <a
+            href="https://telegram.org/faq"
+            target="_blank"
+            rel="noreferrer"
+            className="block w-full text-center py-3 rounded-xl bg-tg-surface text-tg-blue text-sm font-semibold"
+          >
+            Open Telegram FAQ
+          </a>
+        </div>
+      </BottomSheet>
+    </div>
+  );
+}

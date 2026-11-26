@@ -1,0 +1,164 @@
+'use client';
+import { usePathname, useRouter } from 'next/navigation';
+import clsx from 'clsx';
+import { CircleUserRound, MessagesSquare, PhoneCall, UsersRound } from 'lucide-react';
+import { useDialogsStore } from '@/store/dialogs.store';
+import { NAV_STYLES, useUIStore } from '@/store/ui.store';
+
+const TABS = [
+  {
+    href: '/dialogs',
+    label: 'Chats',
+    Icon: MessagesSquare,
+  },
+  {
+    href: '/contacts',
+    label: 'People',
+    Icon: UsersRound,
+  },
+  {
+    href: '/calls',
+    label: 'Calls',
+    Icon: PhoneCall,
+  },
+  {
+    href: '/settings',
+    label: 'Profile',
+    Icon: CircleUserRound,
+  },
+];
+
+function renderTabIcon(Icon: typeof MessagesSquare, active: boolean, activeClass = 'text-tg-blue', badgeCount = 0) {
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <Icon
+        className={clsx('w-5 h-5 transition-transform', active ? `${activeClass} scale-105` : 'text-tg-text-hint')}
+        strokeWidth={active ? 2.2 : 1.75}
+        fill={active ? 'currentColor' : 'none'}
+        fillOpacity={active ? 0.2 : 0}
+      />
+      {badgeCount > 0 && (
+        <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold leading-none tabular-nums inline-flex items-center justify-center">
+          {badgeCount > 99 ? '99+' : badgeCount}
+        </span>
+      )}
+    </div>
+  );
+}
+
+export function BottomNav() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const rawNavStyle = useUIStore((s) => s.navStyle);
+  const navStyle = NAV_STYLES[rawNavStyle] ? rawNavStyle : 'pill';
+  const totalUnread = useDialogsStore((s) =>
+    s.dialogs.reduce((acc, d) => acc + (!d.isMuted && d.unreadCount > 0 ? d.unreadCount : 0), 0)
+  );
+
+  const hide = pathname.startsWith('/chat/') || pathname.startsWith('/profile/') || pathname === '/auth' || pathname === '/';
+  if (hide) return null;
+
+  if (navStyle === 'classic') {
+    return (
+      <nav className="shrink-0 bg-tg-bg-secondary/95 backdrop-blur-xl border-t border-tg-border px-2 pt-1.5 pb-2.5 safe-bottom">
+        <div className="flex items-center justify-around">
+          {TABS.map(tab => {
+            const active = pathname.startsWith(tab.href);
+            return (
+              <button
+                key={tab.href}
+                onClick={() => router.push(tab.href)}
+                className="flex-1 flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl transition-colors active:bg-tg-surface"
+              >
+                {renderTabIcon(tab.Icon, active, 'text-tg-blue', tab.href === '/dialogs' ? totalUnread : 0)}
+                <span className={clsx('text-[10px] font-semibold tracking-tight', active ? 'text-tg-blue' : 'text-tg-text-hint')}>
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+    );
+  }
+
+  if (navStyle === 'card') {
+    return (
+      <nav className="shrink-0 px-4 pb-3 pt-1 bg-transparent pointer-events-none">
+        <div className="pointer-events-auto rounded-2xl bg-tg-bg-secondary/90 backdrop-blur-xl shadow-xl shadow-black/25 p-1.5 flex items-center justify-around gap-1">
+          {TABS.map(tab => {
+            const active = pathname.startsWith(tab.href);
+            return (
+              <button
+                key={tab.href}
+                onClick={() => router.push(tab.href)}
+                className={clsx(
+                  'flex-1 flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-xl transition-all',
+                  active ? 'bg-tg-blue text-white' : 'active:bg-tg-surface'
+                )}
+              >
+                {renderTabIcon(tab.Icon, active, 'text-white', tab.href === '/dialogs' ? totalUnread : 0)}
+                <span className={clsx('text-[10px] font-semibold tracking-tight', active ? 'text-white' : 'text-tg-text-hint')}>
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+    );
+  }
+
+  if (navStyle === 'minimal') {
+    return (
+      <nav className="shrink-0 bg-tg-bg-secondary/80 backdrop-blur-xl border-t border-tg-border/60 px-4 pt-2 pb-3 safe-bottom">
+        <div className="flex items-center justify-around">
+          {TABS.map(tab => {
+            const active = pathname.startsWith(tab.href);
+            return (
+              <button
+                key={tab.href}
+                onClick={() => router.push(tab.href)}
+                aria-label={tab.label}
+                className="flex-1 flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all active:scale-95"
+              >
+                {renderTabIcon(tab.Icon, active, 'text-tg-blue', tab.href === '/dialogs' ? totalUnread : 0)}
+                <span
+                  className={clsx(
+                    'w-1.5 h-1.5 rounded-full transition-all',
+                    active ? 'bg-tg-blue scale-100' : 'bg-transparent scale-0'
+                  )}
+                />
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+    );
+  }
+
+  return (
+    <nav className="shrink-0 px-3 pb-2 pt-1 bg-transparent pointer-events-none">
+      <div className="pointer-events-auto rounded-3xl bg-tg-bg-secondary/95 backdrop-blur-xl shadow-xl shadow-black/30 p-1.5 flex items-center justify-around">
+        {TABS.map(tab => {
+          const active = pathname.startsWith(tab.href);
+          return (
+            <button
+              key={tab.href}
+              onClick={() => router.push(tab.href)}
+              className={clsx(
+                'flex-1 flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl transition-all',
+                active ? 'bg-tg-blue text-white shadow-sm' : 'text-tg-text-hint active:bg-tg-surface'
+              )}
+            >
+              {renderTabIcon(tab.Icon, active, 'text-white', tab.href === '/dialogs' ? totalUnread : 0)}
+              <span className={clsx('text-[10px] font-semibold tracking-tight', active ? 'text-white' : 'text-tg-text-hint')}>
+                {tab.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}

@@ -218,34 +218,42 @@
 }
 
 /* =========================================
-   MANGA UI AESTHETICS (NATIVE & CLEAN)
+   MANGA UI AESTHETICS (NATIVE & ULTRA-CLEAN)
    ========================================= */
 
-/* Top app headers & safe-top navigation bars: clean manga panel frame */
+/* Top app headers & safe-top navigation bars: clean 1px ink rule */
 [data-theme='manga'] header,
 [data-theme='manga'] .safe-top {
-  border-bottom: 1.5px solid #000000 !important;
+  border-bottom: 1px solid #000000 !important;
   background-color: #FFFFFF !important;
 }
 
-/* Comic speech bubbles with bold ink border and flat comic drop shadow */
-[data-theme='manga'] [data-slot='bubble-surface'] {
-  border: 1.5px solid #000000 !important;
-  box-shadow: 2px 2px 0px #000000 !important;
+/* Base borders across all divider lines: crisp 1px ink hairlines */
+[data-theme='manga'] .border-tg-border,
+[data-theme='manga'] .border-tg-border\/35,
+[data-theme='manga'] .border-tg-border\/40,
+[data-theme='manga'] .border-tg-border\/50,
+[data-theme='manga'] .border-tg-border\/60,
+[data-theme='manga'] .border-tg-border\/70 {
+  border-color: #000000 !important;
 }
 
-/* Incoming message: crisp white comic paper */
+/* Comic speech balloons: perfectly smooth rounded corners with crisp 1px ink outline */
+[data-theme='manga'] [data-slot='bubble-surface'] {
+  border: 1px solid #000000 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Incoming speech balloon: pure comic paper white with jet-black text */
 [data-theme='manga'] [data-align='start'] [data-slot='bubble-surface'] {
   background-color: #FFFFFF !important;
   color: #000000 !important;
-  border-bottom-left-radius: 4px !important;
 }
 
-/* Outgoing message: deep jet-black manga ink with pure white text */
+/* Outgoing speech balloon: solid jet-black manga ink with pure white text */
 [data-theme='manga'] [data-align='end'] [data-slot='bubble-surface'] {
   background-color: #000000 !important;
   color: #FFFFFF !important;
-  border-bottom-right-radius: 4px !important;
 }
 
 /* Outgoing status ticks & time: high contrast white */
@@ -255,16 +263,16 @@
 
 /* Reply quote line inside message bubbles */
 [data-theme='manga'] [data-align='end'] .border-l-2 {
-  border-left: 2.5px solid #FFFFFF !important;
+  border-left: 2px solid #FFFFFF !important;
 }
 [data-theme='manga'] [data-align='start'] .border-l-2 {
-  border-left: 2.5px solid #000000 !important;
+  border-left: 2px solid #000000 !important;
 }
 
-/* Message reaction stamp pills */
+/* Message reaction stamp pills: perfectly rounded clean pills */
 [data-theme='manga'] [data-slot='bubble-reactions'] button {
-  border: 1.5px solid #000000 !important;
-  box-shadow: 1.5px 1.5px 0px #000000 !important;
+  border: 1px solid #000000 !important;
+  box-shadow: none !important;
   background-color: #FFFFFF !important;
   color: #000000 !important;
   font-weight: 600;
@@ -273,47 +281,47 @@
 [data-theme='manga'] [data-slot='bubble-reactions'] button.bg-white\/25 {
   background-color: #000000 !important;
   color: #FFFFFF !important;
+  border: 1px solid #000000 !important;
 }
 
-/* Date / Chapter divider: classic manga caption box */
+/* Date / Chapter divider: clean crisp manga chapter pill */
 [data-theme='manga'] .bg-tg-bg-secondary\/90 {
   background-color: #FFFFFF !important;
   color: #000000 !important;
-  border: 1.5px solid #000000 !important;
-  box-shadow: 1.5px 1.5px 0px #000000 !important;
+  border: 1px solid #000000 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
   font-weight: 700 !important;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  border-radius: 6px !important;
 }
 
-/* Unread badges: authentic Japanese comic red ink stamp */
+/* Unread badges: clean Japanese comic crimson stamp with razor-sharp 1px ink border */
 [data-theme='manga'] span.bg-tg-blue,
 [data-theme='manga'] span.bg-rose-500 {
   background-color: #E11D48 !important;
   color: #FFFFFF !important;
   border: 1px solid #000000 !important;
-  box-shadow: 1px 1px 0px #000000 !important;
+  box-shadow: none !important;
   font-weight: 800 !important;
 }
 
-/* Character avatars: subtle comic portrait ink outline */
+/* Character avatars: smooth circular ink outline */
 [data-theme='manga'] div.rounded-full.overflow-hidden {
-  border: 1.5px solid #000000;
-  box-shadow: 1.5px 1.5px 0px rgba(0, 0, 0, 0.9);
+  border: 1px solid #000000 !important;
+  box-shadow: none !important;
 }
 
-/* Bottom composer / message input area */
+/* Bottom composer input pill: perfectly smooth rounded pill with clean 1px ink border */
 [data-theme='manga'] .rounded-\[22px\] {
-  border: 1.5px solid #000000 !important;
-  box-shadow: 2px 2px 0px #000000 !important;
+  border: 1px solid #000000 !important;
+  box-shadow: none !important;
   background-color: #FAFAFA !important;
 }
 
-/* Floating round buttons (Attach, Mic, Send, Emoji, AI) */
+/* Circular action buttons (Attach, Mic, Send, Emoji, AI): perfectly round clean ink circles */
 [data-theme='manga'] .w-10.h-10.rounded-full {
-  border: 1.5px solid #000000 !important;
-  box-shadow: 2px 2px 0px #000000 !important;
+  border: 1px solid #000000 !important;
+  box-shadow: none !important;
   background-color: #FFFFFF !important;
   color: #000000 !important;
 }
@@ -322,35 +330,35 @@
 [data-theme='manga'] .chat-go-gradient {
   background: #000000 !important;
   color: #FFFFFF !important;
-  border: 1.5px solid #000000;
-  box-shadow: 2px 2px 0px #000000;
+  border: 1px solid #000000 !important;
+  box-shadow: none !important;
 }
 
-/* Bottom Navigation Bar in Manga mode */
+/* Bottom Navigation Bar in Manga mode: clean 1px top ink hairline */
 [data-theme='manga'] nav {
   background-color: #FFFFFF !important;
-  border-top: 1.5px solid #000000 !important;
+  border-top: 1px solid #000000 !important;
 }
 
 [data-theme='manga'] nav a.bg-tg-blue {
   background-color: #000000 !important;
   color: #FFFFFF !important;
-  border: 1.5px solid #000000 !important;
-  box-shadow: 1.5px 1.5px 0px #000000 !important;
+  border: 1px solid #000000 !important;
+  box-shadow: none !important;
 }
 
-/* Manga comic panel cards (Settings, Profile Hero, Dialog Context menus) */
+/* Manga comic panel cards (Settings, Profile Hero, Context menus): clean 1px borders */
 [data-theme='manga'] .rounded-2xl.border,
 [data-theme='manga'] .rounded-2xl.bg-tg-bg-secondary {
-  border: 1.5px solid #000000 !important;
-  box-shadow: 2px 2px 0px #000000 !important;
+  border: 1px solid #000000 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
 }
 
-/* Search bars: clean manga panel slot */
+/* Search bars: clean smooth rounded-full with 1px border */
 [data-theme='manga'] .h-9.rounded-full.bg-tg-surface,
 [data-theme='manga'] .h-9.rounded-full.bg-tg-surface.border {
-  border: 1.5px solid #000000 !important;
-  box-shadow: 1.5px 1.5px 0px #000000 !important;
+  border: 1px solid #000000 !important;
+  box-shadow: none !important;
   background-color: #FAFAFA !important;
 }
 

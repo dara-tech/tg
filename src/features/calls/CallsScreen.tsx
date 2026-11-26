@@ -5,8 +5,9 @@ import { Avatar }      from '@/components/ui/Avatar';
 import { DialogSkeletonList } from '@/components/ui/Skeleton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useUIStore }  from '@/store/ui.store';
+import { useDialogsStore } from '@/store/dialogs.store';
 import { toast }       from '@/components/ui/Toast';
-import { fetchRealCallHistory, fetchRealContacts, isMTProtoConfigured, type RealCallItem, type RealContactItem } from '@/services/telegram.real';
+import { fetchRealCallHistory, fetchRealContacts, isMTProtoConfigured } from '@/services/telegram.real';
 import { format, isToday } from 'date-fns';
 
 function formatCallTime(ts: number) {
@@ -16,9 +17,8 @@ function formatCallTime(ts: number) {
 
 export default function CallsScreen() {
   const { setActiveCall } = useUIStore();
-  const [calls, setCalls] = useState<RealCallItem[]>([]);
-  const [contacts, setContacts] = useState<RealContactItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { calls, contacts, setCalls, setContacts } = useDialogsStore();
+  const [loading, setLoading] = useState(() => calls.length === 0);
   const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function CallsScreen() {
       .then(setCalls)
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [setCalls]);
 
   const openNewCall = () => {
     setPickerOpen(true);

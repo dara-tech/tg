@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { RealCallItem, RealContactItem } from '@/services/telegram.real';
 
 export interface DialogMediaMeta {
   kind: 'photo' | 'voice' | 'video' | 'sticker' | 'document' | 'geo' | 'contact' | 'poll' | 'webpage';
@@ -39,11 +40,15 @@ export interface NormalizedDialog {
 
 interface DialogsState {
   dialogs: NormalizedDialog[];
+  contacts: RealContactItem[];
+  calls: RealCallItem[];
   isLoading: boolean;
   isLoadingMore: boolean;
   hasMore: boolean;
   lastFetchedAt: number;
   setDialogs: (dialogs: NormalizedDialog[], hasMore?: boolean) => void;
+  setContacts: (contacts: RealContactItem[]) => void;
+  setCalls: (calls: RealCallItem[]) => void;
   appendDialogs: (dialogs: NormalizedDialog[], hasMore?: boolean) => void;
   setLoading: (v: boolean) => void;
   setLoadingMore: (v: boolean) => void;
@@ -74,6 +79,8 @@ export const useDialogsStore = create<DialogsState>()(
   persist(
     (set) => ({
       dialogs: [],
+      contacts: [],
+      calls: [],
       isLoading: false,
       isLoadingMore: false,
       hasMore: true,
@@ -84,6 +91,8 @@ export const useDialogsStore = create<DialogsState>()(
         hasMore,
         lastFetchedAt: Date.now(),
       }),
+      setContacts: (contacts) => set({ contacts }),
+      setCalls: (calls) => set({ calls }),
 
       appendDialogs: (more, hasMore = true) => set(s => {
         const existingIds = new Set(s.dialogs.map(d => d.id));
@@ -117,7 +126,12 @@ export const useDialogsStore = create<DialogsState>()(
     }),
     {
       name: 'tg-dialogs-v2',
-      partialize: (s) => ({ dialogs: s.dialogs, lastFetchedAt: s.lastFetchedAt }),
+      partialize: (s) => ({
+        dialogs: s.dialogs,
+        contacts: s.contacts,
+        calls: s.calls,
+        lastFetchedAt: s.lastFetchedAt,
+      }),
     }
   )
 );

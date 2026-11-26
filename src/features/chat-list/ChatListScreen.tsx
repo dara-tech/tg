@@ -36,6 +36,7 @@ import { toast }      from '@/components/ui/Toast';
 import { StoriesRow } from './StoriesRow';
 import { useAuthStore } from '@/store/auth.store';
 import { useDialogsStore, type DialogMediaMeta } from '@/store/dialogs.store';
+import { getCachedMessages, setCachedMessages } from '@/features/conversations/ConversationScreen';
 import { onMTProtoUpdate } from '@/core/telegram/mtproto.client';
 import { createRealChannel, createRealGroup, downloadMediaUrl, fetchRealDialogs, fetchRealHistory, fetchRealStories, getMediaPreviewLabel, isMTProtoConfigured, parseMedia, toDialogMediaMeta, type MediaAttachment, type RawMedia, type RealDialogItem, type RealMessageItem, type RealStoryItem } from '@/services/telegram.real';
 import { format, isToday, differenceInCalendarDays } from 'date-fns';
@@ -52,12 +53,14 @@ function formatDialogTime(ts: number) {
 function PreviewMedia({
   media,
   hasCaption,
+  hasHeader = false,
   time,
   isOut,
   status,
 }: {
   media: MediaAttachment;
   hasCaption: boolean;
+  hasHeader?: boolean;
   time: string;
   isOut: boolean;
   status?: string;
@@ -94,18 +97,30 @@ function PreviewMedia({
   }, [media]);
 
   if (media.kind === 'photo') {
+    const isFullWidth = hasCaption || hasHeader;
+    const radiusClass = hasHeader
+      ? 'rounded-none'
+      : hasCaption
+      ? 'rounded-t-2xl'
+      : 'rounded-2xl';
     return (
-      <div className="relative overflow-hidden">
+      <div className={`relative overflow-hidden ${isFullWidth ? 'w-full' : ''}`}>
         {blobUrl ? (
           <img
             src={blobUrl}
             alt="Photo"
-            className={`block object-cover max-w-[220px] max-h-[220px] min-w-[140px] ${
-              hasCaption ? 'w-full rounded-t-2xl' : 'rounded-2xl'
+            className={`block object-cover ${
+              isFullWidth
+                ? `w-full max-h-[240px] ${radiusClass}`
+                : 'max-w-[220px] max-h-[220px] min-w-[140px] rounded-2xl'
             }`}
           />
         ) : (
-          <div className="w-[180px] h-[130px] bg-tg-surface flex flex-col items-center justify-center gap-1 text-tg-text-hint">
+          <div
+            className={`bg-tg-surface flex flex-col items-center justify-center gap-1 text-tg-text-hint ${
+              isFullWidth ? `w-full h-[160px] ${radiusClass}` : 'w-[180px] h-[130px]'
+            }`}
+          >
             <ImageIcon className="w-6 h-6 opacity-60" />
             <span className="text-[11px]">{loading ? 'Loading…' : 'Photo'}</span>
           </div>
@@ -140,9 +155,21 @@ function PreviewMedia({
       ? `${Math.floor(media.duration / 60)}:${String(Math.floor(media.duration % 60)).padStart(2, '0')}`
       : 'Video';
     if (blobUrl) {
+      const isFullWidth = hasCaption || hasHeader;
+      const radiusClass = hasHeader
+        ? 'rounded-none'
+        : hasCaption
+        ? 'rounded-t-2xl'
+        : 'rounded-xl';
       return (
-        <div className="relative overflow-hidden rounded-xl">
-          <img src={blobUrl} alt="Video" className="block object-cover max-w-[220px] max-h-[180px] min-w-[140px]" />
+        <div className={`relative overflow-hidden ${isFullWidth ? `w-full ${radiusClass}` : 'rounded-xl'}`}>
+          <img
+            src={blobUrl}
+            alt="Video"
+            className={`block object-cover ${
+              isFullWidth ? 'w-full max-h-[220px]' : 'max-w-[220px] max-h-[180px] min-w-[140px]'
+            }`}
+          />
           <div className="absolute inset-0 flex items-center justify-center bg-black/25">
             <div className="w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center">
               <Play className="w-4 h-4 fill-current ml-0.5" />
@@ -269,6 +296,12 @@ export default function ChatListScreen() {
   const fetchingRef = useRef(false);
   const loadingMoreRef = useRef(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    dialogs.slice(0, 6).forEach((d) => {
+      router.prefetch(`/chat/${d.id}`);
+    });
+  }, [dialogs, router]);
 
   useEffect(() => {
     if (!previewDialog) {
@@ -747,6 +780,16 @@ export default function ChatListScreen() {
                     if (editMode) toggleSelect(dialog.id);
                     else router.push(`/chat/${dialog.id}`);
                   }}
+                  onPrefetch={() => {
+                    router.prefetch(`/chat/${dialog.id}`);
+                    if (isMTProtoConfigured() && getCachedMessages(dialog.id).length === 0) {
+                      fetchRealHistory(dialog.id, dialog.accessHash || '0', 10, dialog.readOutboxMaxId ?? 0)
+                        .then((msgs) => {
+                          if (msgs.length > 0) setCachedMessages(dialog.id, msgs);
+                        })
+                        .catch(() => {});
+                    }
+                  }}
                   onLongPress={() => { if (!editMode) setPreviewDialog(dialog); }}
                 />
                 {idx < filtered.length - 1 && (
@@ -952,9 +995,10 @@ export default function ChatListScreen() {
                       );
                     }
                     const time = formatDialogTime(m.date);
-                    const isEdgePhoto = Boolean(m.media && !m.text && (m.media.kind === 'photo' || m.media.kind === 'sticker'));
+                    const hasHeader = Boolean(m.forwardedFrom);
+                    const isEdgePhoto = Boolean(m.media && !m.text && !hasHeader && (m.media.kind === 'photo' || m.media.kind === 'sticker'));
                     const hasCaption = Boolean(m.media && m.text);
-                    const hasPhotoHeader = Boolean(hasCaption && m.media?.kind === 'photo');
+                    const hasPhotoHeader = Boolean((hasCaption || hasHeader) && (m.media?.kind === 'photo' || m.media?.kind === 'video'));
                     return (
                       <div key={m.id} className={`flex ${m.out ? 'justify-end' : 'justify-start'}`}>
                         <div
@@ -967,7 +1011,7 @@ export default function ChatListScreen() {
                           }`}
                         >
                           {m.forwardedFrom && (
-                            <p className={`text-[11px] font-medium mb-0.5 truncate ${hasPhotoHeader ? 'px-3 pt-2' : ''} ${m.out ? 'text-white/85' : 'text-tg-blue'}`}>
+                            <p className={`text-[11px] font-medium mb-0.5 truncate ${hasPhotoHeader ? 'px-3 pt-2 pb-1' : ''} ${m.out ? 'text-white/85' : 'text-tg-blue'}`}>
                               Forwarded from <span className="font-semibold">{m.forwardedFrom.name}</span>
                             </p>
                           )}
@@ -975,6 +1019,7 @@ export default function ChatListScreen() {
                             <PreviewMedia
                               media={m.media}
                               hasCaption={hasCaption}
+                              hasHeader={hasHeader}
                               time={time}
                               isOut={m.out}
                               status={m.status}
@@ -1221,6 +1266,7 @@ function DialogRow({
   editMode = false,
   selected = false,
   onClick,
+  onPrefetch,
   onLongPress,
 }: {
   dialog: RealDialogItem;
@@ -1228,6 +1274,7 @@ function DialogRow({
   editMode?: boolean;
   selected?: boolean;
   onClick: () => void;
+  onPrefetch?: () => void;
   onLongPress: () => void;
 }) {
   const time = formatDialogTime(dialog.lastMessageDate);
@@ -1236,8 +1283,9 @@ function DialogRow({
   return (
     <button
       onClick={onClick}
+      onMouseEnter={onPrefetch}
       onContextMenu={(e) => { e.preventDefault(); onLongPress(); }}
-      onTouchStart={() => { timerRef.current = setTimeout(onLongPress, 450); }}
+      onTouchStart={() => { onPrefetch?.(); timerRef.current = setTimeout(onLongPress, 450); }}
       onTouchEnd={() => { if (timerRef.current) clearTimeout(timerRef.current); }}
       onTouchMove={() => { if (timerRef.current) clearTimeout(timerRef.current); }}
       className="w-full flex items-center gap-3 px-4 py-2.5 active:bg-tg-surface/60 transition-colors relative text-left"

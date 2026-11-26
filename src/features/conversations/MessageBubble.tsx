@@ -668,13 +668,14 @@ function AlbumGrid({
 }
 
 function MediaContent({
-  media, time, isOut, status, hasCaption, onOpenMedia, onOpenLocation,
+  media, time, isOut, status, hasCaption, hasHeader = false, onOpenMedia, onOpenLocation,
 }: {
   media: MediaAttachment;
   time: string;
   isOut: boolean;
   status?: string;
   hasCaption?: boolean;
+  hasHeader?: boolean;
   onOpenMedia?: (src: string, type: 'image' | 'video') => void;
   onOpenLocation?: (loc: { lat: number; long: number; title?: string }) => void;
 }) {
@@ -710,6 +711,14 @@ function MediaContent({
   };
 
   if (media.kind === 'photo') {
+    const isFullWidth = hasCaption || hasHeader;
+    const radiusClass = hasHeader
+      ? 'rounded-none'
+      : hasCaption
+      ? 'rounded-t-[18px]'
+      : isOut
+      ? 'rounded-[18px] rounded-br-[5px]'
+      : 'rounded-[18px] rounded-bl-[5px]';
     return (
       <button
         onClick={() => {
@@ -722,11 +731,7 @@ function MediaContent({
         }}
         className={clsx(
           'relative block overflow-hidden focus:outline-none transition-transform active:scale-[0.99] text-left',
-          hasCaption
-            ? 'w-full rounded-t-[18px]'
-            : isOut
-            ? 'rounded-[18px] rounded-br-[5px]'
-            : 'rounded-[18px] rounded-bl-[5px]'
+          isFullWidth ? `w-full ${radiusClass}` : radiusClass
         )}
       >
         {blobUrl ? (
@@ -735,7 +740,7 @@ function MediaContent({
             alt="Photo"
             className={clsx(
               'block object-cover',
-              hasCaption
+              isFullWidth
                 ? 'w-full max-h-[360px]'
                 : isOut
                 ? 'w-auto max-w-[280px] max-h-[380px] min-w-[180px] rounded-[18px] rounded-br-[5px]'
@@ -747,8 +752,8 @@ function MediaContent({
             className={clsx(
               'bg-tg-surface flex flex-col items-center justify-center gap-1.5 text-tg-text-hint',
               loading && 'animate-pulse',
-              hasCaption
-                ? 'w-full h-[200px] rounded-t-[18px]'
+              isFullWidth
+                ? `w-full h-[200px] ${radiusClass}`
                 : isOut
                 ? 'w-[260px] h-[180px] rounded-[18px] rounded-br-[5px]'
                 : 'w-[260px] h-[180px] rounded-[18px] rounded-bl-[5px]'
@@ -1209,6 +1214,7 @@ export function MessageBubble({
                 isOut={message.out}
                 status={message.status}
                 hasCaption={Boolean(message.text)}
+                hasHeader={hasFwd || hasSenderName}
                 onOpenMedia={onOpenMedia}
                 onOpenLocation={onOpenLocation}
               />

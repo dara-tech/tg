@@ -1,4 +1,6 @@
 'use client';
+import { useEffect } from 'react';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import { CircleUserRound, MessagesSquare, PhoneCall, UsersRound } from 'lucide-react';
@@ -37,10 +39,9 @@ function renderTabIcon(
 
 /**
  * iOS-native-style bottom tab bar.
- * - shrink-0 → stays in the flex column, never floats
- * - pt-2 → small top padding for the icons
- * - pb-[env(safe-area-inset-bottom)] → pushes content above the Home Indicator
- *   with NO extra padding on devices without a Home Indicator
+ * - Uses Next.js <Link prefetch> + eager route prefetching for instant tab switches
+ * - shrink-0 stays in the flex column
+ * - paddingBottom handles iOS Home Indicator safe area
  */
 export function BottomNav() {
   const pathname = usePathname();
@@ -56,6 +57,13 @@ export function BottomNav() {
     pathname.startsWith('/profile/') ||
     pathname === '/auth' ||
     pathname === '/';
+
+  useEffect(() => {
+    if (hide) return;
+    TABS.forEach((t) => router.prefetch(t.href));
+    router.prefetch('/search');
+  }, [hide, router]);
+
   if (hide) return null;
 
   const safeStyle: React.CSSProperties = {
@@ -73,9 +81,10 @@ export function BottomNav() {
           {TABS.map(tab => {
             const active = pathname.startsWith(tab.href);
             return (
-              <button
+              <Link
                 key={tab.href}
-                onClick={() => router.push(tab.href)}
+                href={tab.href}
+                prefetch
                 className={clsx(
                   'flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-2xl transition-all mx-0.5',
                   active ? 'bg-tg-blue' : 'active:bg-tg-surface'
@@ -85,7 +94,7 @@ export function BottomNav() {
                 <span className={clsx('text-[10px] font-semibold', active ? 'text-white' : 'text-tg-text-hint')}>
                   {tab.label}
                 </span>
-              </button>
+              </Link>
             );
           })}
         </div>
@@ -104,16 +113,17 @@ export function BottomNav() {
           {TABS.map(tab => {
             const active = pathname.startsWith(tab.href);
             return (
-              <button
+              <Link
                 key={tab.href}
-                onClick={() => router.push(tab.href)}
+                href={tab.href}
+                prefetch
                 className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-2 rounded-xl transition-colors active:bg-tg-surface"
               >
                 {renderTabIcon(tab.Icon, active, 'text-tg-blue', tab.href === '/dialogs' ? totalUnread : 0)}
                 <span className={clsx('text-[10px] font-semibold', active ? 'text-tg-blue' : 'text-tg-text-hint')}>
                   {tab.label}
                 </span>
-              </button>
+              </Link>
             );
           })}
         </div>
@@ -132,9 +142,10 @@ export function BottomNav() {
           {TABS.map(tab => {
             const active = pathname.startsWith(tab.href);
             return (
-              <button
+              <Link
                 key={tab.href}
-                onClick={() => router.push(tab.href)}
+                href={tab.href}
+                prefetch
                 className={clsx(
                   'flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-2 rounded-xl transition-all',
                   active ? 'bg-tg-blue text-white' : 'active:bg-tg-surface'
@@ -144,7 +155,7 @@ export function BottomNav() {
                 <span className={clsx('text-[10px] font-semibold', active ? 'text-white' : 'text-tg-text-hint')}>
                   {tab.label}
                 </span>
-              </button>
+              </Link>
             );
           })}
         </div>
@@ -162,9 +173,10 @@ export function BottomNav() {
         {TABS.map(tab => {
           const active = pathname.startsWith(tab.href);
           return (
-            <button
+            <Link
               key={tab.href}
-              onClick={() => router.push(tab.href)}
+              href={tab.href}
+              prefetch
               aria-label={tab.label}
               className="flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-2 rounded-xl transition-all active:scale-95"
             >
@@ -175,7 +187,7 @@ export function BottomNav() {
                   active ? 'bg-tg-blue scale-100' : 'bg-transparent scale-0'
                 )}
               />
-            </button>
+            </Link>
           );
         })}
       </div>

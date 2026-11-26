@@ -31,6 +31,7 @@ interface Props {
   onCancelReply: () => void;
   onCancelEdit:  () => void;
   recentMessages?: RecentMessageItem[];
+  isKeyboardOpen?: boolean;
 }
 
 const TONES: Array<{ id: EnhanceTone; label: string }> = [
@@ -68,7 +69,9 @@ export function MessageInput({
   onCancelReply,
   onCancelEdit,
   recentMessages = [],
+  isKeyboardOpen = false,
 }: Props) {
+  const [isFocused, setIsFocused]   = useState(false);
   const [text, setText]             = useState(initialDraft);
   const [showEmoji, setShowEmoji]   = useState(false);
   const [showAttach, setShowAttach] = useState(false);
@@ -83,6 +86,8 @@ export function MessageInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef   = useRef<BlobPart[]>([]);
+
+  const activeKeyboard = isKeyboardOpen || isFocused;
   const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastTypedRef = useRef(0);
 
@@ -362,7 +367,12 @@ export function MessageInput({
         />
       )}
 
-      <div className="px-3 pt-2 pb-[env(safe-area-inset-bottom,0px)] bg-tg-bg-tertiary">
+      <div 
+        className="px-3 pt-2 bg-tg-bg-tertiary transition-[padding] duration-150"
+        style={{
+          paddingBottom: activeKeyboard ? '6px' : 'max(8px, env(safe-area-inset-bottom, 0px))',
+        }}
+      >
         {recording ? (
           <div className="h-11 rounded-full bg-tg-bg-secondary border border-tg-border px-3 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 pl-2">
@@ -398,6 +408,8 @@ export function MessageInput({
                 ref={textareaRef}
                 value={text}
                 onChange={handleInput}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
                 onKeyDown={e => {
                   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
                 }}

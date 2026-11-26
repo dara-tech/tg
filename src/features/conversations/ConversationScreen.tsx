@@ -5,11 +5,11 @@ import { ArrowDown, Bell, BellOff, Copy, Forward, Pin, Share2, Trash2, User, X }
 import { Avatar }        from '@/components/ui/Avatar';
 import { BubbleGroup }   from '@/components/ui/bubble';
 import { BottomSheet }   from '@/components/ui/BottomSheet';
-import { MessageSkeletonList } from '@/components/ui/Skeleton';
 import { toast }         from '@/components/ui/Toast';
 import { MediaViewer }   from '@/features/media/MediaViewer';
 import { LocationPreviewModal, type LocationPreviewData } from '@/components/ui/LocationPreviewModal';
 import { ChatWallpaperLayer } from '@/components/ui/ChatWallpaperLayer';
+import { useVisualViewport } from '@/hooks/useVisualViewport';
 import { MessageBubble } from './MessageBubble';
 import { MessageInput }  from './MessageInput';
 import { useAuthStore } from '@/store/auth.store';
@@ -131,12 +131,71 @@ function describeTypingAction(action?: { _?: string }): string | null {
 }
 
 const conversationMessagesCache = new Map<string, Msg[]>();
+const MSG_STORAGE_KEY = 'tg-msg-cache-v1';
+
+export function getCachedMessages(id: string): Msg[] {
+  const mem = conversationMessagesCache.get(id);
+  if (mem && mem.length > 0) return mem;
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(MSG_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as Record<string, Msg[]>;
+    const stored = parsed?.[id];
+    if (Array.isArray(stored) && stored.length > 0) {
+      conversationMessagesCache.set(id, stored);
+      return stored;
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return [];
+}
+
+export function setCachedMessages(id: string, msgs: Msg[]) {
+  conversationMessagesCache.set(id, msgs);
+  if (typeof window === 'undefined' || msgs.length === 0) return;
+  try {
+    const raw = window.localStorage.getItem(MSG_STORAGE_KEY);
+    const parsed: Record<string, Msg[]> = raw ? JSON.parse(raw) : {};
+    // Keep only the latest 10 messages per chat and at most 20 chats in localStorage
+    const tail = msgs.slice(-10).map((m) => ({
+      ...m,
+      media: m.media ? { ...m.media, localUrl: undefined } : undefined,
+      albumMedia: undefined,
+    }));
+    delete parsed[id];
+    parsed[id] = tail;
+    const keys = Object.keys(parsed);
+    if (keys.length > 20) {
+      for (const oldKey of keys.slice(0, keys.length - 20)) {
+        delete parsed[oldKey];
+      }
+    }
+    window.localStorage.setItem(MSG_STORAGE_KEY, JSON.stringify(parsed));
+  } catch {
+    // ignore quota errors
+  }
+}
 
 export default function ConversationScreen() {
   const { id } = useParams<{ id: string }>();
   const router  = useRouter();
+  const { viewportHeight, isKeyboardOpen } = useVisualViewport();
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to latest message when keyboard pops up
+  useEffect(() => {
+    if (isKeyboardOpen && scrollRef.current) {
+      const timer = setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      }, 70);
+      return () => clearTimeout(timer);
+    }
+  }, [isKeyboardOpen]);
   const myUserId = useAuthStore((s) => s.userId);
   const { dialogs, updateUnread, updateLastMessage } = useDialogsStore();
   const { setActiveCall, chatWallpaper, chatWallpaperImage, chatWallpaperDim, chatWallpaperBlur } = useUIStore();
@@ -168,14 +227,14 @@ export default function ConversationScreen() {
     };
   }, [dialogs, id, myUserId]);
 
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const [messages, setMessages] = useState<Msg[]>(() => (id ? getCachedMessages(id) : []));
 
   useEffect(() => {
     if (id && messages.length > 0) {
-      conversationMessagesCache.set(id, messages);
+      setCachedMessages(id, messages);
     }
   }, [id, messages]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => Boolean(id && getCachedMessages(id).length === 0));
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasMoreOlder, setHasMoreOlder] = useState(true);
   const [initialDraft, setInitialDraft] = useState('');
@@ -224,9 +283,9 @@ export default function ConversationScreen() {
     let cancelled = false;
     initialScrolledRef.current = false;
 
-    // Fast memory cache (stale-while-revalidate): display immediately if already loaded
-    const cached = conversationMessagesCache.get(id);
-    if (cached && cached.length > 0) {
+    // Fast memory + localStorage cache (stale-while-revalidate): display immediately if already loaded
+    const cached = getCachedMessages(id);
+    if (cached.length > 0) {
       setMessages(cached);
       setLoading(false);
     } else {
@@ -236,13 +295,13 @@ export default function ConversationScreen() {
 
     const hash = accessHash && accessHash !== '0' ? accessHash : accessHashRef.current;
 
-    // Direct, fast message fetch (25 messages for snappy rendering)
-    fetchRealHistory(id, hash, 25, chatMeta.readOutboxMaxId || 0)
+    // Fetch latest 15 messages first for fast initial render (older messages load on scroll up)
+    fetchRealHistory(id, hash, 15, chatMeta.readOutboxMaxId || 0)
       .then((real) => {
         if (cancelled) return;
-        conversationMessagesCache.set(id, real);
+        setCachedMessages(id, real);
         setMessages(real);
-        setHasMoreOlder(real.length >= 25);
+        setHasMoreOlder(real.length >= 15);
         const latestId = real.at(-1)?.id;
         if (latestId) {
           markHistoryRead(id, latestId, hash).catch(() => {});
@@ -725,10 +784,16 @@ export default function ConversationScreen() {
   const editMsg  = editingId ? messages.find(m => m.id === editingId) : null;
 
   return (
-    <div className="flex flex-col h-full bg-tg-bg-tertiary relative">
+    <div
+      className="fixed inset-0 z-30 flex flex-col bg-tg-bg-tertiary select-none overflow-hidden"
+      style={{
+        height: viewportHeight ? `${viewportHeight}px` : '100dvh',
+        maxHeight: viewportHeight ? `${viewportHeight}px` : '100dvh',
+      }}
+    >
       {/* Header */}
       {selectMode ? (
-        <div className="flex items-center justify-between px-4 py-3 bg-tg-bg safe-top border-b border-tg-border/35 shrink-0">
+        <div className="flex items-center justify-between px-4 py-3 bg-tg-bg/95 backdrop-blur-md safe-top border-b border-tg-border/35 shrink-0 sticky top-0 z-20">
           <button
             onClick={() => { setMessages([]); setSelectMode(false); setSelectedIds([]); }}
             className="text-rose-500 text-sm font-medium"
@@ -744,7 +809,7 @@ export default function ConversationScreen() {
           </button>
         </div>
       ) : (
-        <div className="flex items-center gap-2 px-3 py-2.5 bg-tg-bg safe-top border-b border-tg-border/35 shrink-0">
+        <div className="flex items-center gap-2 px-3 py-2.5 bg-tg-bg/95 backdrop-blur-md safe-top border-b border-tg-border/35 shrink-0 sticky top-0 z-20">
         <button
           onClick={() => router.back()}
           className="w-9 h-9 rounded-full flex items-center justify-center text-tg-blue active:scale-95 transition-transform shrink-0"
@@ -863,11 +928,14 @@ export default function ConversationScreen() {
           dim={chatWallpaperDim}
           blur={chatWallpaperBlur}
         />
-        <div ref={scrollRef} onScroll={handleScroll} className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide px-3 pt-2 pb-4">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide px-3 pt-2 pb-4 overscroll-y-contain [overscroll-behavior-y:contain]"
+        >
         {loadingOlder && (
           <p className="text-tg-text-hint text-xs text-center py-2">Loading older messages…</p>
         )}
-        {loading && messages.length === 0 && <MessageSkeletonList />}
         {!loading && groups.length === 0 && (
           <p className="text-tg-text-hint text-sm text-center mt-12">No messages yet</p>
         )}
@@ -1005,6 +1073,7 @@ export default function ConversationScreen() {
       ) : (
         <MessageInput
           initialDraft={initialDraft}
+          isKeyboardOpen={isKeyboardOpen}
           onDraftChange={(txt) => { if (id) saveDraft(id, txt).catch(() => {}); }}
           onTyping={(action) => { if (isMTProtoConfigured() && id) sendTyping(id, accessHash, action).catch(() => {}); }}
           onSend={handleSend}

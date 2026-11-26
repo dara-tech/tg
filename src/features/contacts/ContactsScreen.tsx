@@ -16,26 +16,25 @@ export default function ContactsScreen() {
   const router = useRouter();
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<'all' | 'chats' | 'users' | 'online'>('all');
-  const [contacts, setContacts] = useState<RealContactItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { dialogs, contacts, setContacts } = useDialogsStore();
+  const [loading, setLoading] = useState(() => contacts.length === 0);
   const [addOpen, setAddOpen] = useState(false);
   const [phone, setPhone] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [saving, setSaving] = useState(false);
-  const { dialogs } = useDialogsStore();
 
   const loadContacts = useCallback(() => {
     if (!isMTProtoConfigured()) {
       setLoading(false);
       return;
     }
-    setLoading(true);
+    if (contacts.length === 0) setLoading(true);
     fetchRealContacts()
       .then(setContacts)
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [contacts.length, setContacts]);
 
   useEffect(() => {
     loadContacts();

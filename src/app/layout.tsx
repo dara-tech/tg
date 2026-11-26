@@ -4,6 +4,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Providers } from './providers';
 import { BottomNav } from '@/components/layout/BottomNav';
+import { KeepAliveTabs } from '@/components/layout/KeepAliveTabs';
 
 export const metadata: Metadata = {
   title: 'Telegram Web',
@@ -46,6 +47,7 @@ export const viewport: Viewport = {
   userScalable: false,
   viewportFit: 'cover',
   themeColor: '#059669',
+  interactiveWidget: 'resizes-content',
 };
 
 export default function RootLayout({
@@ -64,7 +66,7 @@ export default function RootLayout({
         />
 
         <link
-          href="https://fonts.googleapis.com/css2?family=Battambang:wght@300;400;700;900&family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Battambang:wght@300;400;700;900&family=Google+Sans:wght@400;500;600;700&family=Google+SansText:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
 
@@ -77,11 +79,11 @@ export default function RootLayout({
         <Providers>
           <div
             id="app"
-            className="flex flex-col w-full h-[100lvh] min-h-0 overflow-hidden"
+            className="flex flex-col w-full h-[100dvh] min-h-0 overflow-hidden"
           >
             {/* Main application content */}
             <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
-              {children}
+              <KeepAliveTabs>{children}</KeepAliveTabs>
             </main>
 
             {/* Global bottom navigation */}

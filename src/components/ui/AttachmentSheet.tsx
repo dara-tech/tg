@@ -577,6 +577,7 @@ export function AttachmentSheet({
           type="file"
           accept="image/*,video/*"
           multiple
+          tabIndex={-1}
           className="hidden"
           onChange={(e) => {
             if (e.target.files?.length) {
@@ -589,6 +590,7 @@ export function AttachmentSheet({
           ref={fileRef}
           type="file"
           multiple
+          tabIndex={-1}
           className="hidden"
           onChange={(e) => {
             if (e.target.files?.length) {

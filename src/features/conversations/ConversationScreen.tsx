@@ -315,13 +315,13 @@ export default function ConversationScreen() {
       ? accessHashRef.current
       : '0';
 
-    // Fetch latest 15 messages first for fast initial render (older messages load on scroll up)
-    fetchRealHistory(id, hash, 15, 0)
+    // Fetch latest 35 messages first for fast initial render (older messages load on scroll up)
+    fetchRealHistory(id, hash, 35, 0)
       .then((real) => {
         if (cancelled) return;
         setCachedMessages(id, real);
         setMessages(real);
-        setHasMoreOlder(real.length >= 15);
+        setHasMoreOlder(real.length >= 35);
         const latestId = real.at(-1)?.id;
         if (latestId) {
           markHistoryRead(id, latestId, hash).catch(() => {});
@@ -382,8 +382,8 @@ export default function ConversationScreen() {
 
     setLoadingOlder(true);
     try {
-      const older = await fetchRealHistory(id, hash, 25, 0, oldestId);
-      if (older.length < 25) setHasMoreOlder(false);
+      const older = await fetchRealHistory(id, hash, 35, 0, oldestId);
+      if (older.length < 35) setHasMoreOlder(false);
       if (older.length > 0) {
         setMessages((prev) => {
           const existing = new Set(prev.map((m) => m.id));
@@ -406,6 +406,15 @@ export default function ConversationScreen() {
   // messages is read inside a setState updater so it doesn't need to be a dep
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, loadingOlder, hasMoreOlder]);
+
+  // If initial batch doesn't fill the screen, load older messages automatically
+  useEffect(() => {
+    if (loading || loadingOlder || !hasMoreOlder || messages.length === 0) return;
+    const el = scrollRef.current;
+    if (el && el.scrollHeight <= el.clientHeight + 100) {
+      loadOlderMessages();
+    }
+  }, [loading, loadingOlder, hasMoreOlder, messages.length, loadOlderMessages]);
 
   const handleScroll = () => {
     const el = scrollRef.current;
@@ -979,6 +988,9 @@ export default function ConversationScreen() {
           blur={chatWallpaperBlur}
         />
         <div ref={scrollRef} onScroll={handleScroll} className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide px-3 pt-2 pb-4">
+        {/* Inner flex-col with mt-auto so messages anchor to bottom when few messages exist, without flex-end scroll clipping */}
+        <div className="min-h-full flex flex-col">
+        <div className="mt-auto" />
         {loadingOlder && (
           <p className="text-tg-text-hint text-xs text-center py-2">Loading older messages…</p>
         )}
@@ -1069,6 +1081,7 @@ export default function ConversationScreen() {
           </div>
         )}
         <div ref={bottomRef} className="h-3" />
+        </div>{/* end flex-col justify-end */}
         </div>
       </div>
 

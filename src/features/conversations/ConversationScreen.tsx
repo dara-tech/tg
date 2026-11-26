@@ -1011,18 +1011,18 @@ export default function ConversationScreen() {
         )}
         <div ref={bottomRef} className="h-3" />
         </div>
-      </div>
 
-      {/* Scroll to Bottom FAB */}
-      {showScrollBottom && (
-        <button
-          onClick={() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' })}
-          className="absolute bottom-20 right-4 w-10 h-10 rounded-full bg-tg-bg-secondary/95 backdrop-blur-md border border-tg-border/40 shadow-lg flex items-center justify-center text-tg-text active:scale-95 z-20"
-          aria-label="Scroll to bottom"
-        >
-          <ArrowDown className="w-4 h-4" />
-        </button>
-      )}
+        {/* Scroll to Bottom FAB — inside the relative wrapper so absolute positioning works */}
+        {showScrollBottom && (
+          <button
+            onClick={() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' })}
+            className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-tg-bg-secondary/95 backdrop-blur-md border border-tg-border/40 shadow-lg flex items-center justify-center text-tg-text active:scale-95 z-20"
+            aria-label="Scroll to bottom"
+          >
+            <ArrowDown className="w-4 h-4" />
+          </button>
+        )}
+      </div>
 
       {selectMode ? (
         <div className="bg-tg-bg border-t border-tg-border/35 px-6 py-3 safe-bottom flex items-center justify-around shrink-0">

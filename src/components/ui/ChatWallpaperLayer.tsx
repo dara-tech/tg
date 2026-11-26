@@ -13,28 +13,29 @@ export function ChatWallpaperLayer({
   blur?: boolean;
 }) {
   const theme = useUIStore((s) => s.theme);
-  const isCustom = wallpaper === 'custom' && Boolean(customImage);
 
-  // When Manga UI theme is active, guarantee pure manga screentone paper (prevents colorful gradients from clashing)
-  if (theme === 'manga' && !isCustom) {
+  // When default wallpaper is chosen with manga theme, display authentic manga screentone paper
+  if (wallpaper === 'default' && theme === 'manga') {
     return (
       <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
         <div
           className="absolute inset-0 bg-[#FFFFFF]"
           style={{
             backgroundImage:
-              wallpaper === 'manga-screentone'
-                ? 'radial-gradient(circle at 7px 7px, rgba(0, 0, 0, 0.16) 1.5px, transparent 1.5px)'
-                : 'radial-gradient(circle at 6px 6px, rgba(0, 0, 0, 0.08) 1.2px, transparent 1.2px)',
-            backgroundSize: wallpaper === 'manga-screentone' ? '14px 14px' : '12px 12px',
+              'radial-gradient(circle at 7px 7px, rgba(0, 0, 0, 0.075) 1.2px, transparent 1.2px)',
+            backgroundSize: '14px 14px',
           }}
         />
+        {/* Subtle comic book gutter / panel margin lines */}
+        <div className="absolute inset-y-0 left-0 w-px bg-black/5" />
+        <div className="absolute inset-y-0 right-0 w-px bg-black/5" />
       </div>
     );
   }
 
   if (wallpaper === 'default') return null;
 
+  const isCustom = wallpaper === 'custom' && Boolean(customImage);
   const preset = wallpaper !== 'custom' ? CHAT_WALLPAPERS[wallpaper] : undefined;
 
   return (

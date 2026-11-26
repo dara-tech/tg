@@ -782,13 +782,6 @@ export default function ChatListScreen() {
                   }}
                   onPrefetch={() => {
                     router.prefetch(`/chat/${dialog.id}`);
-                    if (isMTProtoConfigured() && getCachedMessages(dialog.id).length === 0) {
-                      fetchRealHistory(dialog.id, dialog.accessHash || '0', 10, dialog.readOutboxMaxId ?? 0)
-                        .then((msgs) => {
-                          if (msgs.length > 0) setCachedMessages(dialog.id, msgs);
-                        })
-                        .catch(() => {});
-                    }
                   }}
                   onLongPress={() => { if (!editMode) setPreviewDialog(dialog); }}
                 />
@@ -1285,7 +1278,7 @@ function DialogRow({
       onClick={onClick}
       onMouseEnter={onPrefetch}
       onContextMenu={(e) => { e.preventDefault(); onLongPress(); }}
-      onTouchStart={() => { onPrefetch?.(); timerRef.current = setTimeout(onLongPress, 450); }}
+      onTouchStart={() => { timerRef.current = setTimeout(onLongPress, 450); }}
       onTouchEnd={() => { if (timerRef.current) clearTimeout(timerRef.current); }}
       onTouchMove={() => { if (timerRef.current) clearTimeout(timerRef.current); }}
       className="w-full flex items-center gap-3 px-4 py-2.5 active:bg-tg-surface/60 transition-colors relative text-left"

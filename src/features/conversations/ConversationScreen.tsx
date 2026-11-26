@@ -323,7 +323,7 @@ export default function ConversationScreen() {
     return () => {
       cancelled = true;
     };
-  }, [id, accessHash, updateUnread, chatMeta.readOutboxMaxId]);
+  }, [id]);
 
   // Scroll to the bottom synchronously before paint on initial load to avoid top-to-bottom flicker
   useLayoutEffect(() => {
@@ -334,17 +334,29 @@ export default function ConversationScreen() {
     initialScrolledRef.current = true;
   }, [loading, messages.length]);
 
-  const loadOlderMessages = useCallback(async () => {
-    if (!isMTProtoConfigured() || !id || loadingOlder || !hasMoreOlder || messages.length === 0) return;
-    const el = scrollRef.current;
-    if (!el) return;
+  const isLoadingOlderRef = useRef(false);
 
+  const loadOlderMessages = useCallback(async () => {
+    if (
+      !isMTProtoConfigured() ||
+      !id ||
+      isLoadingOlderRef.current ||
+      loadingOlder ||
+      !hasMoreOlder ||
+      messages.length === 0
+    ) {
+      return;
+    }
+    const el = scrollRef.current;
+    if (!el || el.scrollHeight <= el.clientHeight + 100) return;
+
+    isLoadingOlderRef.current = true;
+    setLoadingOlder(true);
     const prevScrollHeight = el.scrollHeight;
     const prevScrollTop = el.scrollTop;
     const oldestId = messages[0].id;
     const hash = accessHash && accessHash !== '0' ? accessHash : accessHashRef.current;
 
-    setLoadingOlder(true);
     try {
       const older = await fetchRealHistory(id, hash, 25, chatMeta.readOutboxMaxId || 0, oldestId);
       if (older.length < 25) setHasMoreOlder(false);
@@ -356,7 +368,6 @@ export default function ConversationScreen() {
           return updated;
         });
 
-        // Retain scroll position so the view doesn't jump or slide up
         requestAnimationFrame(() => {
           if (scrollRef.current) {
             const newScrollHeight = scrollRef.current.scrollHeight;
@@ -366,6 +377,9 @@ export default function ConversationScreen() {
       }
     } finally {
       setLoadingOlder(false);
+      setTimeout(() => {
+        isLoadingOlderRef.current = false;
+      }, 500);
     }
   }, [id, accessHash, loadingOlder, hasMoreOlder, messages, chatMeta.readOutboxMaxId]);
 
@@ -375,8 +389,15 @@ export default function ConversationScreen() {
     const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
     setShowScrollBottom(distFromBottom > 240);
 
-    // Only allow older message loading AFTER initial scroll to bottom has completed!
-    if (initialScrolledRef.current && el.scrollTop < 80 && hasMoreOlder && !loadingOlder) {
+    // Only allow older message loading if the content actually overflows and user scrolled up
+    if (
+      initialScrolledRef.current &&
+      el.scrollHeight > el.clientHeight + 120 &&
+      el.scrollTop < 50 &&
+      hasMoreOlder &&
+      !loadingOlder &&
+      !isLoadingOlderRef.current
+    ) {
       loadOlderMessages();
     }
   };

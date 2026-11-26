@@ -266,7 +266,7 @@ export default function SettingsScreen() {
         <div className="bg-tg-bg-secondary border border-tg-border/35 shadow-sm rounded-2xl p-4 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-tg-blue/20 text-tg-blue flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-tg-blue/20 text-tg-blue flex items-center justify-center">
                 <Palette className="w-4 h-4" />
               </div>
               <div>
@@ -320,9 +320,9 @@ export default function SettingsScreen() {
                     className="flex flex-col items-center gap-1.5"
                   >
                     <div
-                      className={`w-full max-w-[48px] h-10 rounded-xl flex items-center justify-center transition-all ${
+                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
                         active
-                          ? 'ring-2 ring-tg-blue ring-offset-2 ring-offset-tg-bg-secondary'
+                          ? 'ring-2 ring-tg-blue ring-offset-2 ring-offset-tg-bg-secondary scale-105'
                           : 'border border-tg-border/40'
                       }`}
                       style={{ background: t.preview }}
@@ -415,7 +415,7 @@ export default function SettingsScreen() {
           <div className="bg-tg-bg-secondary border border-tg-border/35 shadow-sm rounded-2xl overflow-hidden divide-y divide-tg-border/35">
             <button onClick={() => router.push('/profile/me')} className="w-full px-4 py-3 flex items-center justify-between active:bg-tg-surface">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center text-white">
+                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
                   <Avatar letters={name.slice(0, 2).toUpperCase()} color="transparent" size="sm" />
                 </div>
                 <span className="text-tg-text text-sm font-medium">Name</span>
@@ -424,7 +424,7 @@ export default function SettingsScreen() {
             </button>
             <div className="px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-violet-500 flex items-center justify-center text-white">
+                <div className="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center text-white">
                   <AtSign className="w-4 h-4" />
                 </div>
                 <span className="text-tg-text text-sm font-medium">Username</span>
@@ -433,7 +433,7 @@ export default function SettingsScreen() {
             </div>
             <div className="px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-sky-500 flex items-center justify-center text-white">
+                <div className="w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center text-white">
                   <Hash className="w-4 h-4" />
                 </div>
                 <span className="text-tg-text text-sm font-medium">User ID</span>
@@ -443,7 +443,7 @@ export default function SettingsScreen() {
             {phone && (
               <div className="px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-white">
+                  <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white">
                     <Phone className="w-4 h-4" />
                   </div>
                   <span className="text-tg-text text-sm font-medium">Phone</span>
@@ -472,7 +472,7 @@ export default function SettingsScreen() {
                 onClick={() => setPanel(item.id)}
                 className="w-full flex items-center gap-3 px-4 py-3 active:bg-tg-surface text-left"
               >
-                <div className={`w-8 h-8 rounded-lg ${item.bg} flex items-center justify-center shrink-0`}>
+                <div className={`w-8 h-8 rounded-full ${item.bg} flex items-center justify-center shrink-0`}>
                   {item.icon}
                 </div>
                 <span className="text-tg-text text-sm font-medium flex-1">{item.label}</span>

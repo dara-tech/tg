@@ -221,21 +221,23 @@
    MANGA UI AESTHETICS (NATIVE & ULTRA-CLEAN)
    ========================================= */
 
-/* Top app headers & safe-top navigation bars: clean 1px ink rule */
+/* Top app headers & safe-top navigation bars: seamless borderless header */
 [data-theme='manga'] header,
 [data-theme='manga'] .safe-top {
-  border-bottom: 1px solid #000000 !important;
+  border-bottom: none !important;
   background-color: #FFFFFF !important;
 }
 
-/* Base borders across all divider lines: crisp 1px ink hairlines */
+/* Card outlines stay solid black ink, while interior divider lines stay subtle */
 [data-theme='manga'] .border-tg-border,
 [data-theme='manga'] .border-tg-border\/35,
-[data-theme='manga'] .border-tg-border\/40,
-[data-theme='manga'] .border-tg-border\/50,
-[data-theme='manga'] .border-tg-border\/60,
-[data-theme='manga'] .border-tg-border\/70 {
-  border-color: #000000 !important;
+[data-theme='manga'] .border-tg-border\/40 {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme='manga'] .rounded-2xl.border,
+[data-theme='manga'] .rounded-2xl.bg-tg-bg-secondary {
+  border: 1px solid #000000 !important;
 }
 
 /* Comic speech balloons: perfectly smooth rounded corners with crisp 1px ink outline */
@@ -334,10 +336,11 @@
   box-shadow: none !important;
 }
 
-/* Bottom Navigation Bar in Manga mode: clean 1px top ink hairline */
-[data-theme='manga'] nav {
+/* Bottom Navigation Bar in Manga mode: seamless border-free top */
+[data-theme='manga'] nav,
+[data-theme='manga'] nav.border-t {
   background-color: #FFFFFF !important;
-  border-top: 1px solid #000000 !important;
+  border-top: none !important;
 }
 
 [data-theme='manga'] nav a.bg-tg-blue {

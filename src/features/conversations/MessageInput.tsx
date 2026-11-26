@@ -87,7 +87,7 @@ export function MessageInput({
   const [recSec, setRecSec]         = useState(0);
   const [inputFocused, setInputFocused] = useState(false);
 
-  const inputRef    = useRef<HTMLDivElement>(null);
+  const inputRef    = useRef<HTMLTextAreaElement>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef   = useRef<BlobPart[]>([]);
   const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -96,8 +96,8 @@ export function MessageInput({
   useEffect(() => {
     if (initialDraft && !editing) {
       setText(initialDraft);
-      if (inputRef.current && inputRef.current.innerText !== initialDraft) {
-        inputRef.current.innerText = initialDraft;
+      if (inputRef.current && inputRef.current.value !== initialDraft) {
+        inputRef.current.value = initialDraft;
       }
     }
   }, [initialDraft, editing]);
@@ -106,7 +106,7 @@ export function MessageInput({
     if (editing) {
       setText(editing.text);
       if (inputRef.current) {
-        inputRef.current.innerText = editing.text;
+        inputRef.current.value = editing.text;
         inputRef.current.focus();
       }
     }
@@ -126,21 +126,21 @@ export function MessageInput({
     setText('');
     onDraftChange?.('');
     if (inputRef.current) {
-      inputRef.current.innerText = '';
+      inputRef.current.value = '';
     }
     setShowEmoji(false);
     setShowAi(false);
     setEnhancedResult(null);
   }, [text, onSend, onDraftChange]);
 
-  const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
-    const raw = e.currentTarget.innerText || '';
-    const val = raw === '\n' ? '' : raw;
-    if (!val && e.currentTarget.innerText) {
-      e.currentTarget.innerText = '';
-    }
+  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.currentTarget.value;
     setText(val);
     onDraftChange?.(val);
+    // Auto-resize textarea
+    const el = e.currentTarget;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 112) + 'px'; // max ~7 lines
 
     if (Date.now() - lastTypedRef.current > 4000) {
       lastTypedRef.current = Date.now();
@@ -151,12 +151,17 @@ export function MessageInput({
   const insertEmoji = (emoji: string) => {
     const el = inputRef.current;
     if (!el) { setText(t => t + emoji); return; }
+    const start = el.selectionStart ?? el.value.length;
+    const end = el.selectionEnd ?? el.value.length;
+    const newVal = el.value.slice(0, start) + emoji + el.value.slice(end);
+    el.value = newVal;
+    el.selectionStart = el.selectionEnd = start + emoji.length;
+    // trigger auto-resize
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 112) + 'px';
+    setText(newVal);
+    onDraftChange?.(newVal);
     el.focus();
-    document.execCommand('insertText', false, emoji);
-    const raw = el.innerText || '';
-    const val = raw === '\n' ? '' : raw;
-    setText(val);
-    onDraftChange?.(val);
   };
 
   const handleEnhance = async (tone: EnhanceTone) => {
@@ -197,8 +202,11 @@ export function MessageInput({
     setShowAi(false);
     toast('Enhanced text applied', 'success');
     if (inputRef.current) {
-      inputRef.current.innerText = enhancedResult;
+      inputRef.current.value = enhancedResult;
       inputRef.current.focus();
+      // trigger resize
+      inputRef.current.style.height = 'auto';
+      inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 112) + 'px';
     }
   };
 
@@ -208,7 +216,7 @@ export function MessageInput({
     setText('');
     onDraftChange?.('');
     if (inputRef.current) {
-      inputRef.current.innerText = '';
+      inputRef.current.value = '';
     }
     setEnhancedResult(null);
     setShowAi(false);
@@ -421,13 +429,24 @@ export function MessageInput({
 
             {/* Center Pill Input */}
             <div className="flex-1 min-w-0 min-h-[40px] rounded-[22px] bg-tg-bg-secondary border border-tg-border pl-3.5 pr-1.5 py-1 flex items-end gap-1 transition-all">
-              <div
+              <textarea
                 ref={inputRef}
-                contentEditable
-                role="textbox"
-                aria-multiline="true"
-                data-placeholder={editing ? 'Edit message...' : 'Message'}
-                onInput={handleInput}
+                rows={1}
+                value={text}
+                placeholder={editing ? 'Edit message...' : 'Message'}
+                // iOS Safari: suppress ▲▼✓ input accessory bar.
+                // In standalone PWA mode, a single textarea with these attrs
+                // tells WebKit this is NOT a form-navigation target.
+                enterKeyHint="send"
+                autoCorrect="off"
+                autoCapitalize="sentences"
+                spellCheck={false}
+                autoComplete="off"
+                data-gramm="false"
+                data-gramm_editor="false"
+                data-enable-grammarly="false"
+                tabIndex={0}
+                onChange={handleInput}
                 onFocus={() => setInputFocused(true)}
                 onBlur={() => setInputFocused(false)}
                 onKeyDown={(e) => {
@@ -436,7 +455,8 @@ export function MessageInput({
                     handleSend();
                   }
                 }}
-                className="flex-1 min-w-0 bg-transparent text-tg-text text-sm focus:outline-none max-h-28 leading-5 py-1.5 overflow-y-auto whitespace-pre-wrap break-words empty:before:content-[attr(data-placeholder)] empty:before:text-tg-text-hint empty:before:pointer-events-none scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden select-text"
+                className="flex-1 min-w-0 bg-transparent text-tg-text text-sm focus:outline-none leading-5 py-1.5 resize-none overflow-y-auto break-words placeholder:text-tg-text-hint scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden select-text"
+                style={{ maxHeight: '112px', height: 'auto' }}
               />
 
               {/* Gemini AI Enhancer Icon Button */}

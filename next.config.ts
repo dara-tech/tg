@@ -2,7 +2,6 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  devIndicators: false,
   serverExternalPackages: ['telegram'],
   // Empty turbopack config silences the Turbopack/webpack warning
   turbopack: {},

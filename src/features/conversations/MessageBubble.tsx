@@ -586,6 +586,7 @@ function AlbumGrid({
   isOut,
   status,
   hasCaption,
+  hasHeader = false,
   onOpenMedia,
 }: {
   items: Array<{ id: number; media: MediaAttachment }>;
@@ -593,6 +594,7 @@ function AlbumGrid({
   isOut: boolean;
   status?: string;
   hasCaption?: boolean;
+  hasHeader?: boolean;
   onOpenMedia?: (src: string, type: 'image' | 'video') => void;
 }) {
   const [dimsMap, setDimsMap] = useState<Record<number, { w: number; h: number }>>({});
@@ -610,7 +612,13 @@ function AlbumGrid({
     <div
       className={clsx(
         'relative flex flex-col gap-[2px] overflow-hidden bg-tg-bg-secondary',
-        hasCaption ? 'w-full rounded-t-[18px]' : 'w-[280px] sm:w-[320px] max-w-full rounded-[18px]'
+        hasCaption
+          ? hasHeader
+            ? 'w-full rounded-none'
+            : 'w-full rounded-t-[18px]'
+          : hasHeader
+          ? 'w-[280px] sm:w-[320px] max-w-full rounded-b-[18px]'
+          : 'w-[280px] sm:w-[320px] max-w-full rounded-[18px]'
       )}
     >
       {rows.map((row, rIdx) => {
@@ -1205,6 +1213,7 @@ export function MessageBubble({
                 isOut={message.out}
                 status={message.status}
                 hasCaption={Boolean(message.text)}
+                hasHeader={hasFwd || hasSenderName}
                 onOpenMedia={onOpenMedia}
               />
             ) : message.media ? (
@@ -1241,7 +1250,7 @@ export function MessageBubble({
               </div>
             )}
 
-            {!message.text && !isEdgeMedia && !isVoice && (
+            {!message.text && !isEdgeMedia && !isVoice && !(isAlbum || (message.media && ['photo', 'video', 'geo', 'sticker'].includes(message.media.kind))) && (
               <div className="flex items-center gap-1 mt-0.5 justify-end">
                 <span suppressHydrationWarning className={clsx('text-[10px]', message.out ? 'text-white/75' : 'text-tg-text-hint')}>{time}</span>
                 {message.out && <StatusTick status={message.status ?? 'sent'} />}

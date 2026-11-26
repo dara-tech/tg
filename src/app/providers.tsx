@@ -67,6 +67,38 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, [khmerFont]);
 
   useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const syncKeyboard = () => {
+      const root = document.documentElement;
+      const baseHeight = Math.max(window.innerHeight, root.clientHeight);
+      const offsetTop = Math.max(0, vv.offsetTop);
+      const keyboardOpen = baseHeight - vv.height > 40 || offsetTop > 0;
+      if (keyboardOpen) {
+        root.dataset.keyboard = 'open';
+        root.style.setProperty('--app-height', `${vv.height}px`);
+        root.style.setProperty('--app-top', `${offsetTop}px`);
+      } else {
+        delete root.dataset.keyboard;
+        root.style.removeProperty('--app-height');
+        root.style.removeProperty('--app-top');
+      }
+    };
+    const onFocusOut = () => {
+      window.scrollTo(0, 0);
+      requestAnimationFrame(syncKeyboard);
+    };
+    vv.addEventListener('resize', syncKeyboard);
+    vv.addEventListener('scroll', syncKeyboard);
+    window.addEventListener('focusout', onFocusOut);
+    return () => {
+      vv.removeEventListener('resize', syncKeyboard);
+      vv.removeEventListener('scroll', syncKeyboard);
+      window.removeEventListener('focusout', onFocusOut);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
     if (process.env.NODE_ENV === 'development') {
       navigator.serviceWorker.getRegistrations().then((regs) => {

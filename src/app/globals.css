@@ -275,7 +275,7 @@ body > div {
    ========================================= */
 
 .safe-top {
-  padding-top: var(--safe-top);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 8px) !important;
 }
 
 .safe-bottom {

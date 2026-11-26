@@ -20,7 +20,7 @@ export function KeepAliveTabs({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const activeTab = matchTab(pathname);
   const [mounted, setMounted] = useState<Record<TabPath, boolean>>({
-    '/dialogs': activeTab === '/dialogs',
+    '/dialogs': true,
     '/contacts': activeTab === '/contacts',
     '/calls': activeTab === '/calls',
     '/settings': activeTab === '/settings',

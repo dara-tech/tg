@@ -782,7 +782,7 @@ export default function ConversationScreen() {
     <div className="flex flex-col h-full bg-tg-bg-tertiary relative">
       {/* Header */}
       {selectMode ? (
-        <div className="flex items-center justify-between px-4 py-3 bg-tg-bg safe-top border-b border-tg-border/35 shrink-0">
+        <div className="flex items-center justify-between px-4 pb-3 pt-2 bg-tg-bg safe-top border-b border-tg-border/35 shrink-0">
           <button
             onClick={() => { setMessages([]); setSelectMode(false); setSelectedIds([]); }}
             className="text-rose-500 text-sm font-medium"
@@ -798,13 +798,13 @@ export default function ConversationScreen() {
           </button>
         </div>
       ) : (
-        <div className="flex items-center gap-2 px-3 py-2.5 bg-tg-bg safe-top border-b border-tg-border/35 shrink-0">
+        <div className="flex items-center gap-2 px-3 pb-2.5 pt-2 bg-tg-bg safe-top border-b border-tg-border/35 shrink-0">
         <button
           onClick={() => router.push('/dialogs')}
-          className="w-9 h-9 rounded-full flex items-center justify-center text-tg-blue active:scale-95 transition-transform shrink-0"
+          className="w-10 h-10 -ml-1 rounded-full flex items-center justify-center text-tg-blue active:scale-95 transition-transform shrink-0"
           aria-label="Back"
         >
-          <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-[24px] h-[24px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/>
           </svg>
         </button>

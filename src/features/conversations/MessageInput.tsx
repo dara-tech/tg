@@ -81,20 +81,28 @@ export function MessageInput({
   const [recSec, setRecSec]         = useState(0);
   const [inputFocused, setInputFocused] = useState(false);
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef    = useRef<HTMLDivElement>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef   = useRef<BlobPart[]>([]);
   const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastTypedRef = useRef(0);
 
   useEffect(() => {
-    if (initialDraft && !editing) setText(initialDraft);
+    if (initialDraft && !editing) {
+      setText(initialDraft);
+      if (inputRef.current && inputRef.current.innerText !== initialDraft) {
+        inputRef.current.innerText = initialDraft;
+      }
+    }
   }, [initialDraft, editing]);
 
   useEffect(() => {
     if (editing) {
       setText(editing.text);
-      textareaRef.current?.focus();
+      if (inputRef.current) {
+        inputRef.current.innerText = editing.text;
+        inputRef.current.focus();
+      }
     }
   }, [editing]);
 
@@ -106,22 +114,27 @@ export function MessageInput({
   }, []);
 
   const handleSend = useCallback(() => {
-    if (!text.trim()) return;
-    onSend(text.trim());
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    onSend(trimmed);
     setText('');
     onDraftChange?.('');
+    if (inputRef.current) {
+      inputRef.current.innerText = '';
+    }
     setShowEmoji(false);
     setShowAi(false);
     setEnhancedResult(null);
-    if (textareaRef.current) textareaRef.current.style.height = 'auto';
   }, [text, onSend, onDraftChange]);
 
-  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const val = e.target.value;
+  const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
+    const raw = e.currentTarget.innerText || '';
+    const val = raw === '\n' ? '' : raw;
+    if (!val && e.currentTarget.innerText) {
+      e.currentTarget.innerText = '';
+    }
     setText(val);
     onDraftChange?.(val);
-    e.target.style.height = 'auto';
-    e.target.style.height = Math.min(e.target.scrollHeight, 110) + 'px';
 
     if (Date.now() - lastTypedRef.current > 4000) {
       lastTypedRef.current = Date.now();
@@ -130,17 +143,14 @@ export function MessageInput({
   };
 
   const insertEmoji = (emoji: string) => {
-    const ta = textareaRef.current;
-    if (!ta) { setText(t => t + emoji); return; }
-    const start = ta.selectionStart ?? text.length;
-    const end   = ta.selectionEnd   ?? text.length;
-    const next  = text.slice(0, start) + emoji + text.slice(end);
-    setText(next);
-    onDraftChange?.(next);
-    requestAnimationFrame(() => {
-      ta.selectionStart = ta.selectionEnd = start + emoji.length;
-      ta.focus();
-    });
+    const el = inputRef.current;
+    if (!el) { setText(t => t + emoji); return; }
+    el.focus();
+    document.execCommand('insertText', false, emoji);
+    const raw = el.innerText || '';
+    const val = raw === '\n' ? '' : raw;
+    setText(val);
+    onDraftChange?.(val);
   };
 
   const handleEnhance = async (tone: EnhanceTone) => {
@@ -180,10 +190,9 @@ export function MessageInput({
     setEnhancedResult(null);
     setShowAi(false);
     toast('Enhanced text applied', 'success');
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 110) + 'px';
+    if (inputRef.current) {
+      inputRef.current.innerText = enhancedResult;
+      inputRef.current.focus();
     }
   };
 
@@ -192,9 +201,11 @@ export function MessageInput({
     onSend(enhancedResult);
     setText('');
     onDraftChange?.('');
+    if (inputRef.current) {
+      inputRef.current.innerText = '';
+    }
     setEnhancedResult(null);
     setShowAi(false);
-    if (textareaRef.current) textareaRef.current.style.height = 'auto';
   };
 
   const handleCopyResult = () => {
@@ -402,18 +413,22 @@ export function MessageInput({
 
             {/* Center Pill Input */}
             <div className="flex-1 min-w-0 min-h-[40px] rounded-[22px] bg-tg-bg-secondary border border-tg-border pl-3.5 pr-1.5 py-1 flex items-end gap-1 transition-all">
-              <textarea
-                ref={textareaRef}
-                value={text}
-                onChange={handleInput}
+              <div
+                ref={inputRef}
+                contentEditable
+                role="textbox"
+                aria-multiline="true"
+                data-placeholder={editing ? 'Edit message...' : 'Message'}
+                onInput={handleInput}
                 onFocus={() => setInputFocused(true)}
                 onBlur={() => setInputFocused(false)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
                 }}
-                placeholder={editing ? 'Edit message...' : 'Message'}
-                rows={1}
-                className="flex-1 min-w-0 bg-transparent text-tg-text text-sm placeholder:text-tg-text-hint focus:outline-none resize-none max-h-28 leading-5 py-1.5 overflow-y-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                className="flex-1 min-w-0 bg-transparent text-tg-text text-sm focus:outline-none max-h-28 leading-5 py-1.5 overflow-y-auto whitespace-pre-wrap break-words empty:before:content-[attr(data-placeholder)] empty:before:text-tg-text-hint empty:before:pointer-events-none scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden select-text"
               />
 
               {/* Gemini AI Enhancer Icon Button */}

@@ -1291,6 +1291,7 @@ function DialogRow({
   const displayTitle = isSaved ? 'Saved Messages' : dialog.title;
   return (
     <button
+      data-dialog-row="true"
       onClick={onClick}
       onMouseEnter={onPrefetch}
       onContextMenu={(e) => { e.preventDefault(); onLongPress(); }}

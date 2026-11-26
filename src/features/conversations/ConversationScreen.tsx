@@ -1000,7 +1000,7 @@ export default function ConversationScreen() {
         {groups.map(group => (
           <div key={group.label}>
             <div className="flex items-center justify-center my-3">
-              <span className="bg-tg-bg-secondary/90 border border-tg-border/35 shadow-sm text-tg-text-hint text-xs px-3 py-1 rounded-full">
+              <span data-date-divider="true" className="bg-tg-bg-secondary/90 border border-tg-border/35 shadow-sm text-tg-text-hint text-xs px-3 py-1 rounded-full">
                 {group.label}
               </span>
             </div>

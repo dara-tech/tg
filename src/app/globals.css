@@ -218,43 +218,215 @@
 }
 
 /* =========================================
-   MANGA UI AESTHETICS
+   COMPREHENSIVE NATIVE MANGA UI AESTHETICS
    ========================================= */
 
-/* Comic speech bubbles with bold ink border and comic drop shadow */
-[data-theme='manga'] [data-slot='bubble-surface'] {
-  border: 1.5px solid #000000 !important;
-  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.9) !important;
+/* Top Headers (Manga Book Title Frame) */
+[data-theme='manga'] .safe-top {
+  border-bottom: 2px solid #000000 !important;
+  background-color: #FFFFFF !important;
 }
 
-/* Incoming message: crisp white comic paper */
+/* Comic Speech Balloons */
+[data-theme='manga'] [data-slot='bubble-surface'] {
+  border: 2px solid #000000 !important;
+  box-shadow: 2.5px 2.5px 0px #000000 !important;
+  transition: transform 0.1s ease;
+}
+
+/* Incoming Speech Balloon: White Manga Paper with sharp speech corner */
 [data-theme='manga'] [data-align='start'] [data-slot='bubble-surface'] {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+  border-radius: 18px 18px 18px 4px !important;
+}
+
+/* Outgoing Speech Balloon: Solid Manga Ink with sharp speech corner */
+[data-theme='manga'] [data-align='end'] [data-slot='bubble-surface'] {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border-radius: 18px 18px 4px 18px !important;
+}
+
+/* Speech Balloon Pointer Tails */
+[data-theme='manga'] [data-align='start'] [data-slot='bubble-surface']::before {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: -7px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 7px 9px 0;
+  border-color: transparent #000000 transparent transparent;
+  pointer-events: none;
+}
+
+[data-theme='manga'] [data-align='start'] [data-slot='bubble-surface']::after {
+  content: '';
+  position: absolute;
+  bottom: 0px;
+  left: -4.5px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 5.5px 7px 0;
+  border-color: transparent #FFFFFF transparent transparent;
+  pointer-events: none;
+}
+
+[data-theme='manga'] [data-align='end'] [data-slot='bubble-surface']::before {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  right: -7px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 9px 7px 0 0;
+  border-color: #000000 transparent transparent transparent;
+  pointer-events: none;
+}
+
+/* Reply Preview Inside Comic Bubble */
+[data-theme='manga'] [data-slot='bubble-surface'] .border-l-2 {
+  border-left-width: 3.5px !important;
+  border-radius: 4px !important;
+}
+
+[data-theme='manga'] [data-align='start'] [data-slot='bubble-surface'] .border-l-2 {
+  background-color: #F4F4F6 !important;
+  border-left-color: #000000 !important;
+  color: #000000 !important;
+}
+
+[data-theme='manga'] [data-align='end'] [data-slot='bubble-surface'] .border-l-2 {
+  background-color: #1A1A1A !important;
+  border-left-color: #FFFFFF !important;
+  color: #F4F4F5 !important;
+}
+
+/* Manga Chapter Dividers (Date Banners) */
+[data-theme='manga'] [data-date-divider] {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 2.5px 2.5px 0px #000000 !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  border-radius: 4px !important;
+  padding: 3px 12px !important;
+}
+
+/* Manga Notification Stamps (Unread Badges / Hanko) */
+[data-theme='manga'] [data-badge] {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #000000 !important;
+  box-shadow: 1.5px 1.5px 0px #000000 !important;
+  border-radius: 4px !important;
+  font-weight: 800 !important;
+}
+
+/* Manga Comic Panel Dividers in Chat List */
+[data-theme='manga'] [data-dialog-row] {
+  border-bottom: 1.5px solid #000000 !important;
+}
+
+[data-theme='manga'] [data-dialog-row]:active {
+  background-color: #F0F0F2 !important;
+}
+
+/* Manga Composer: Center Pill Input */
+[data-theme='manga'] .bg-tg-bg-secondary:has(textarea) {
+  background-color: #FFFFFF !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 3px 3px 0px #000000 !important;
+  border-radius: 16px !important;
+}
+
+/* Manga Action Buttons (Paperclip, Voice, Send, Collapse) */
+[data-theme='manga'] button[aria-label='Attach'],
+[data-theme='manga'] button[aria-label='Voice message'],
+[data-theme='manga'] button[aria-label='Collapse stickers'] {
+  border: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
   background-color: #FFFFFF !important;
   color: #000000 !important;
 }
 
-/* Outgoing message: deep jet-black manga ink */
-[data-theme='manga'] [data-align='end'] [data-slot='bubble-surface'] {
+[data-theme='manga'] button[aria-label='Send'] {
+  border: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
   background-color: #000000 !important;
   color: #FFFFFF !important;
 }
 
-/* Outgoing reactions pill on manga */
-[data-theme='manga'] [data-align='end'] [data-slot='bubble-reactions'] span {
-  border-color: #000000 !important;
-}
-
-/* Manga action buttons and send button: bold comic contrast */
+/* Manga Action Gradient Buttons */
 [data-theme='manga'] .chat-go-gradient {
   background: #000000 !important;
   color: #FFFFFF !important;
-  border: 1.5px solid #000000;
-  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.85);
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0px #000000;
 }
 
-/* Manga panel cards in settings / sheets */
-[data-theme='manga'] .bg-tg-bg-secondary {
-  border-color: #0A0A0A !important;
+/* Manga Reaction Stamps (Hanko Sticker) */
+[data-theme='manga'] [data-slot='bubble-reactions'] button {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+  border: 1.5px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+  border-radius: 6px !important;
+  font-weight: 700 !important;
+  transition: transform 0.1s ease;
+}
+
+[data-theme='manga'] [data-slot='bubble-reactions'] button:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px #000000 !important;
+}
+
+/* Manga Avatar Comic Outlines */
+[data-theme='manga'] .rounded-full:not([data-badge]) {
+  border: 1.5px solid #000000;
+}
+
+/* Manga Panel Cards (Settings Hero, Preference Cards) */
+[data-theme='manga'] .rounded-2xl.border,
+[data-theme='manga'] .bg-tg-bg-secondary.border {
+  border: 2px solid #000000 !important;
+  box-shadow: 3px 3px 0px #000000 !important;
+}
+
+/* Manga Bottom Navigation Bar (Page Margin) */
+[data-theme='manga'] nav {
+  border-top: 2.5px solid #000000 !important;
+  background-color: #FFFFFF !important;
+}
+
+[data-theme='manga'] nav a.bg-tg-blue {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+  border-radius: 10px !important;
+}
+
+/* Manga Bottom Sheets & Action Menus (Comic Overlay Box) */
+[data-theme='manga'] .rounded-t-3xl {
+  border-top: 2.5px solid #000000 !important;
+  border-left: 2px solid #000000 !important;
+  border-right: 2px solid #000000 !important;
+  box-shadow: 0 -4px 0 #000000 !important;
+}
+
+/* Manga Link Previews */
+[data-theme='manga'] .bg-tg-surface:has(p),
+[data-theme='manga'] [data-link-preview] {
+  border: 1.5px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+  border-radius: 8px !important;
 }
 
 /* =========================================

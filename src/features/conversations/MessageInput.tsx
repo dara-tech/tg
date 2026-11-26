@@ -87,6 +87,20 @@ export function MessageInput({
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef   = useRef<BlobPart[]>([]);
 
+  // Automatically detect keyboard appearance via visualViewport as fallback
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+    const vv = window.visualViewport;
+    const check = () => {
+      const keyboardUp = window.innerHeight - vv.height > 80;
+      if (keyboardUp) {
+        setIsFocused(true);
+      }
+    };
+    vv.addEventListener('resize', check);
+    return () => vv.removeEventListener('resize', check);
+  }, []);
+
   const activeKeyboard = isKeyboardOpen || isFocused;
   const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastTypedRef = useRef(0);
@@ -368,9 +382,9 @@ export function MessageInput({
       )}
 
       <div 
-        className="px-3 pt-1.5 pb-2 bg-tg-bg/90 backdrop-blur-xl border-t border-tg-border/30 transition-[padding] duration-150"
+        className="chat-input-bar px-3 pt-1.5 bg-tg-bg/90 backdrop-blur-xl border-t border-tg-border/30 transition-[padding] duration-150 focus-within:!pb-1"
         style={{
-          paddingBottom: isFocused ? '6px' : 'max(8px, env(safe-area-inset-bottom, 0px))',
+          paddingBottom: isFocused ? '4px' : 'max(4px, calc(env(safe-area-inset-bottom, 0px) - 10px))',
         }}
       >
         {recording ? (
@@ -392,7 +406,10 @@ export function MessageInput({
             </div>
           </div>
         ) : (
-          <div className="w-full min-h-[42px] rounded-full bg-tg-surface/90 dark:bg-white/10 backdrop-blur-md border border-tg-border/50 px-2 py-1 flex items-center gap-1.5 transition-all">
+          <div 
+            onClick={() => textareaRef.current?.focus()}
+            className="w-full min-h-[42px] rounded-full bg-tg-surface/90 dark:bg-white/10 backdrop-blur-md border border-tg-border/50 px-2 py-1 flex items-center gap-1.5 transition-all cursor-text"
+          >
             {/* Inside Left: Attach Paperclip */}
             <button
               type="button"

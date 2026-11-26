@@ -186,6 +186,10 @@ export default function ConversationScreen() {
   const { dialogs, updateUnread, updateLastMessage } = useDialogsStore();
   const { setActiveCall, chatWallpaper, chatWallpaperImage, chatWallpaperDim, chatWallpaperBlur } = useUIStore();
 
+  const totalUnread = useMemo(() => {
+    return dialogs.reduce((sum, d) => sum + (!d.isMuted && d.unreadCount > 0 ? d.unreadCount : 0), 0);
+  }, [dialogs]);
+
   const chatMeta = useMemo(() => {
     const found = dialogs.find((d) => d.id === id);
     if (found) {
@@ -794,7 +798,7 @@ export default function ConversationScreen() {
     <div className="flex flex-col h-full bg-tg-bg-tertiary relative overflow-hidden">
       {/* Header */}
       {selectMode ? (
-        <div className="flex items-center justify-between px-4 py-3 bg-tg-bg/95 backdrop-blur-md safe-top border-b border-tg-border/35 shrink-0 sticky top-0 z-20">
+        <div className="flex items-center justify-between px-4 py-2.5 bg-tg-bg/90 backdrop-blur-xl safe-top border-b border-tg-border/30 shrink-0 sticky top-0 z-30">
           <button
             onClick={() => { setMessages([]); setSelectMode(false); setSelectedIds([]); }}
             className="text-rose-500 text-sm font-medium"
@@ -810,75 +814,63 @@ export default function ConversationScreen() {
           </button>
         </div>
       ) : (
-        <div className="flex items-center gap-2 px-3 py-2.5 bg-tg-bg/95 backdrop-blur-md safe-top border-b border-tg-border/35 shrink-0 sticky top-0 z-20">
-        <button
-          onClick={() => router.back()}
-          className="w-9 h-9 rounded-full flex items-center justify-center text-tg-blue active:scale-95 transition-transform shrink-0"
-          aria-label="Back"
-        >
-          <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/>
-          </svg>
-        </button>
+        <div className="flex items-center justify-between px-3 py-2 bg-tg-bg/90 backdrop-blur-xl border-b border-tg-border/30 shrink-0 sticky top-0 z-30 safe-top">
+          {/* Left Pill: Back with unread count */}
+          <button
+            onClick={() => router.back()}
+            className="h-9 px-3 rounded-full bg-tg-surface/90 dark:bg-white/10 backdrop-blur-md border border-tg-border/40 flex items-center gap-1 text-tg-blue font-medium text-sm active:scale-95 transition-transform shrink-0"
+            aria-label="Back"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/>
+            </svg>
+            <span className="font-semibold text-xs tabular-nums">
+              {totalUnread > 0 ? (totalUnread > 999 ? '999+' : totalUnread) : 'Chats'}
+            </span>
+          </button>
 
-        <button className="flex items-center gap-2.5 flex-1 min-w-0 text-left" onClick={() => router.push(`/profile/${chatMeta.isSavedMessages ? 'me' : chatMeta.peerId}`)}>
-          <Avatar
-            letters={chatMeta.avatarLetters}
-            color={chatMeta.avatarColor}
-            size="sm"
-            online={chatMeta.isOnline}
-            isSavedMessages={chatMeta.isSavedMessages}
-            peerType={chatMeta.peerType}
-            peerId={chatMeta.peerId}
-            accessHash={accessHash}
-            hasPhoto={chatMeta.hasPhoto}
-            photoId={chatMeta.photoId}
-          />
-          <div className="text-left min-w-0">
-            <p className="text-tg-text font-semibold text-sm leading-tight truncate">{chatMeta.title}</p>
-            <p className={`text-xs ${partnerAction || chatMeta.isOnline ? 'text-emerald-400' : 'text-tg-text-hint'}`}>
-              {partnerAction
-                ? `• ${partnerAction}…`
-                : chatMeta.isSavedMessages
-                ? '• Cloud Storage'
-                : chatMeta.isOnline
-                ? '• Online'
-                : chatMeta.peerType === 'channel'
-                ? '• Channel'
-                : chatMeta.peerType === 'chat'
-                ? '• Group'
-                : '• Offline'}
+          {/* Center Pill: Title + Status */}
+          <button
+            onClick={() => router.push(`/profile/${chatMeta.isSavedMessages ? 'me' : chatMeta.peerId}`)}
+            className="flex-1 max-w-[210px] mx-2 py-1 px-3.5 rounded-full bg-tg-surface/90 dark:bg-white/10 backdrop-blur-md border border-tg-border/40 flex flex-col items-center justify-center active:scale-95 transition-transform overflow-hidden text-center"
+          >
+            <p className="text-tg-text font-semibold text-sm leading-tight truncate w-full text-center">
+              {chatMeta.title}
             </p>
-          </div>
-        </button>
+            <p className={`text-[11px] leading-tight truncate w-full text-center ${partnerAction || chatMeta.isOnline ? 'text-emerald-400 font-medium' : 'text-tg-text-hint'}`}>
+              {partnerAction
+                ? `${partnerAction}…`
+                : chatMeta.isSavedMessages
+                ? 'Cloud Storage'
+                : chatMeta.isOnline
+                ? 'online'
+                : chatMeta.peerType === 'channel'
+                ? 'channel'
+                : chatMeta.peerType === 'chat'
+                ? 'group'
+                : 'last seen recently'}
+            </p>
+          </button>
 
-        <button
-          onClick={() => { setSearchOpen((v) => !v); setSearchQuery(''); }}
-          className="w-8 h-8 rounded-full bg-tg-surface flex items-center justify-center text-tg-text-secondary active:scale-95 shrink-0"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
-          </svg>
-        </button>
-        <button
-          onClick={() => setActiveCall(chatMeta.peerId, chatMeta.title)}
-          className="w-8 h-8 rounded-full bg-tg-surface flex items-center justify-center text-tg-blue active:scale-95 shrink-0"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498A1 1 0 0121 17.72V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-          </svg>
-        </button>
-        <button
-          onClick={() => setMenuOpen(true)}
-          className="w-8 h-8 rounded-full bg-tg-surface flex items-center justify-center text-tg-text-secondary active:scale-95 shrink-0"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <circle cx="12" cy="5"  r="1.3" fill="currentColor"/>
-            <circle cx="12" cy="12" r="1.3" fill="currentColor"/>
-            <circle cx="12" cy="19" r="1.3" fill="currentColor"/>
-          </svg>
-        </button>
-      </div>
+          {/* Right: Round Avatar */}
+          <button
+            onClick={() => router.push(`/profile/${chatMeta.isSavedMessages ? 'me' : chatMeta.peerId}`)}
+            className="w-9 h-9 rounded-full overflow-hidden active:scale-95 transition-transform shrink-0 ring-1 ring-tg-border/40 shadow-sm"
+          >
+            <Avatar
+              letters={chatMeta.avatarLetters}
+              color={chatMeta.avatarColor}
+              size="sm"
+              online={chatMeta.isOnline}
+              isSavedMessages={chatMeta.isSavedMessages}
+              peerType={chatMeta.peerType}
+              peerId={chatMeta.peerId}
+              accessHash={accessHash}
+              hasPhoto={chatMeta.hasPhoto}
+              photoId={chatMeta.photoId}
+            />
+          </button>
+        </div>
       )}
 
       {/* Pinned Message Banner */}

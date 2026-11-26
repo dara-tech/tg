@@ -368,7 +368,7 @@ export function MessageInput({
       )}
 
       <div 
-        className="px-3 pt-2 bg-tg-bg-tertiary transition-[padding] duration-150"
+        className="px-3 pt-1.5 pb-2 bg-tg-bg/90 backdrop-blur-xl border-t border-tg-border/30 transition-[padding] duration-150"
         style={{
           paddingBottom: isFocused ? '6px' : 'max(8px, env(safe-area-inset-bottom, 0px))',
         }}
@@ -385,98 +385,101 @@ export function MessageInput({
               </button>
               <button
                 onClick={() => stopRecording(true)}
-                className="w-9 h-9 rounded-full chat-go-gradient flex items-center justify-center text-white"
+                className="w-8 h-8 rounded-full chat-go-gradient flex items-center justify-center text-white"
               >
                 <Send className="w-4 h-4" />
               </button>
             </div>
           </div>
         ) : (
-          <div className="flex items-end gap-2">
-            {/* Left Floating Attach Circle */}
+          <div className="w-full min-h-[42px] rounded-full bg-tg-surface/90 dark:bg-white/10 backdrop-blur-md border border-tg-border/50 px-2 py-1 flex items-center gap-1.5 transition-all">
+            {/* Inside Left: Attach Paperclip */}
             <button
+              type="button"
               onClick={() => { setShowEmoji(false); setShowAttach(true); }}
-              className="w-10 h-10 rounded-full bg-tg-bg-secondary border border-tg-border flex items-center justify-center text-tg-text hover:text-tg-blue active:scale-95 transition-all shrink-0"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-tg-text-hint hover:text-tg-blue active:scale-90 transition-all shrink-0"
               aria-label="Attach"
             >
-              <Paperclip className="w-[18px] h-[18px]" />
+              <Paperclip className="w-5 h-5 -rotate-45" />
             </button>
 
-            {/* Center Pill Input */}
-            <div className="flex-1 min-w-0 min-h-[40px] rounded-[22px] bg-tg-bg-secondary border border-tg-border pl-3.5 pr-1.5 py-1 flex items-end gap-1 transition-all">
-              <textarea
-                ref={textareaRef}
-                value={text}
-                onChange={handleInput}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
-                }}
-                placeholder={editing ? 'Edit message...' : 'Message'}
-                rows={1}
-                className="flex-1 min-w-0 bg-transparent text-tg-text text-sm placeholder:text-tg-text-hint focus:outline-none resize-none max-h-28 leading-5 py-1.5 overflow-y-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-              />
+            {/* Center: Textarea */}
+            <textarea
+              ref={textareaRef}
+              value={text}
+              onChange={handleInput}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+              }}
+              placeholder={editing ? 'Edit message...' : 'Message'}
+              rows={1}
+              className="flex-1 min-w-0 bg-transparent text-tg-text text-sm placeholder:text-tg-text-hint focus:outline-none resize-none max-h-28 leading-5 py-1 overflow-y-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            />
 
-              {/* Gemini AI Enhancer Icon Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setShowEmoji(false);
-                  setShowAi((v) => !v);
-                }}
-                className={clsx(
-                  'w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95',
-                  showAi
-                    ? 'bg-tg-blue text-white'
-                    : 'text-tg-text-hint hover:text-tg-blue'
-                )}
-                title="Enhance with Gemini AI"
-                aria-label="Gemini AI Enhancer"
-              >
-                <GeminiTwoStars className="w-4 h-4" />
-              </button>
+            {/* Gemini AI Enhancer Icon Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowEmoji(false);
+                setShowAi((v) => !v);
+              }}
+              className={clsx(
+                'w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-90',
+                showAi
+                  ? 'bg-tg-blue text-white'
+                  : 'text-tg-text-hint hover:text-tg-blue'
+              )}
+              title="Enhance with Gemini AI"
+              aria-label="Gemini AI Enhancer"
+            >
+              <GeminiTwoStars className="w-3.5 h-3.5" />
+            </button>
 
-              {/* Stickers / Emoji / Keyboard Toggle */}
-              <button
-                onClick={() => {
-                  setShowAi(false);
-                  setShowEmoji(v => !v);
-                }}
-                className={clsx(
-                  'w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors active:scale-95',
-                  showEmoji ? 'text-tg-blue' : 'text-tg-text-hint hover:text-tg-text'
-                )}
-                aria-label={showEmoji ? 'Show keyboard' : 'Stickers & Emoji'}
-              >
-                {showEmoji ? <Keyboard className="w-[18px] h-[18px]" /> : <Smile className="w-[18px] h-[18px]" />}
-              </button>
-            </div>
+            {/* Stickers / Emoji / Keyboard Toggle */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowAi(false);
+                setShowEmoji(v => !v);
+              }}
+              className={clsx(
+                'w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors active:scale-90',
+                showEmoji ? 'text-tg-blue' : 'text-tg-text-hint hover:text-tg-text'
+              )}
+              aria-label={showEmoji ? 'Show keyboard' : 'Stickers & Emoji'}
+            >
+              {showEmoji ? <Keyboard className="w-5 h-5" /> : <Smile className="w-5 h-5" />}
+            </button>
 
-            {/* Right Floating Action Circle */}
+            {/* Right Action: Send or Mic inside the pill */}
             {text.trim() ? (
               <button
+                type="button"
                 onClick={handleSend}
-                className="w-10 h-10 rounded-full chat-go-gradient flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+                className="w-8 h-8 rounded-full chat-go-gradient flex items-center justify-center shrink-0 active:scale-95 transition-transform text-white shadow-sm"
                 aria-label="Send"
               >
-                <Send className="w-4 h-4 text-white" />
+                <Send className="w-4 h-4 ml-0.5" />
               </button>
             ) : showEmoji ? (
               <button
+                type="button"
                 onClick={() => setShowEmoji(false)}
-                className="w-10 h-10 rounded-full bg-tg-bg-secondary border border-tg-border flex items-center justify-center shrink-0 text-tg-text active:scale-95 transition-transform"
+                className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-tg-text-hint active:scale-90 transition-transform"
                 aria-label="Collapse stickers"
               >
                 <ChevronUp className="w-5 h-5" />
               </button>
             ) : (
               <button
+                type="button"
                 onClick={startRecording}
-                className="w-10 h-10 rounded-full bg-tg-bg-secondary border border-tg-border flex items-center justify-center shrink-0 text-tg-text hover:text-tg-blue active:scale-95 transition-transform"
+                className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-tg-text-hint hover:text-tg-blue active:scale-90 transition-transform"
                 aria-label="Voice message"
               >
-                <Mic className="w-[18px] h-[18px]" />
+                <Mic className="w-5 h-5" />
               </button>
             )}
           </div>

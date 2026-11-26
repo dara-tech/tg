@@ -203,19 +203,20 @@
 }
 
 html {
+  position: fixed;
+  inset: 0;
   width: 100%;
-  height: 100vh;
-  height: 100lvh;
+  height: 100%;
   overflow: hidden;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
 
 body {
+  position: fixed;
+  inset: 0;
   width: 100%;
-  height: 100vh;
-  height: 100lvh;
-  min-height: 100lvh;
+  height: 100%;
   margin: 0;
   overflow: hidden;
 

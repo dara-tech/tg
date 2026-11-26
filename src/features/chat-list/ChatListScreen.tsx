@@ -779,7 +779,7 @@ export default function ChatListScreen() {
           </div>
         )}
 
-        <div className="h-24" />
+        <div className="h-4" />
       </div>
 
       {editMode && selectedIds.length > 0 && (

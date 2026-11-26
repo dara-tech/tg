@@ -362,7 +362,7 @@ export function MessageInput({
         />
       )}
 
-      <div className="px-3 py-2 safe-bottom bg-tg-bg-tertiary">
+      <div className="px-3 pt-2 pb-[env(safe-area-inset-bottom,0px)] bg-tg-bg-tertiary">
         {recording ? (
           <div className="h-11 rounded-full bg-tg-bg-secondary border border-tg-border px-3 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 pl-2">

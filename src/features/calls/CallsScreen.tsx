@@ -58,7 +58,7 @@ export default function CallsScreen() {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-hide pb-6">
+      <div className="flex-1 overflow-y-auto scrollbar-hide pb-4">
         {loading && calls.length === 0 && <DialogSkeletonList count={5} />}
         {!loading && calls.length === 0 && (
           <p className="text-tg-text-hint text-sm text-center mt-16">No recent calls</p>

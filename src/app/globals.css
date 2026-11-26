@@ -39,8 +39,8 @@
 
 :root,
 [data-theme='black'] {
-  --safe-top: env(safe-area-inset-top);
-  --safe-bottom: env(safe-area-inset-bottom);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
   --tg-blue: #7C3AED;
   --tg-blue-rgb: 124 58 237;
   --tg-blue-dark: #6D28D9;
@@ -145,6 +145,11 @@
 
 html,
 body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
   font-family: 'ActiveKhmerFont', 'BattambangKhmer', 'Google Sans', 'Google Sans Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
@@ -177,8 +182,8 @@ body {
   background: var(--tg-text-hint);
 }
 
-.safe-top    { padding-top:    max(12px, var(--safe-top)); }
-.safe-bottom { padding-bottom: max(12px, var(--safe-bottom)); }
+.safe-top          { padding-top:    env(safe-area-inset-top, 0px); }
+.safe-bottom       { padding-bottom: env(safe-area-inset-bottom, 0px); }
 
 .chat-go-gradient {
   background: linear-gradient(135deg, var(--tg-blue) 0%, var(--tg-blue-dark) 100%);

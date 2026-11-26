@@ -67,7 +67,7 @@ export function BottomNav() {
   if (hide) return null;
 
   const safeStyle: React.CSSProperties = {
-    paddingBottom: 'max(4px, calc(env(safe-area-inset-bottom, 0px) - 10px))',
+    paddingBottom: 'max(8px, env(safe-area-inset-bottom, 0px))',
   };
 
   /* ── PILL (default) ── */

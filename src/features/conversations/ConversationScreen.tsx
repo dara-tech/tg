@@ -215,13 +215,6 @@ export default function ConversationScreen() {
 
   const [messages, setMessages] = useState<Msg[]>(() => (id ? getCachedMessages(id) : []));
   const messagesRef = useRef<Msg[]>(messages);
-  useEffect(() => { messagesRef.current = messages; }, [messages]);
-
-  useEffect(() => {
-    if (id && messages.length > 0) {
-      setCachedMessages(id, messages);
-    }
-  }, [id, messages]);
   const [loading, setLoading] = useState(() => Boolean(id && getCachedMessages(id).length === 0));
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasMoreOlder, setHasMoreOlder] = useState(true);
@@ -250,6 +243,15 @@ export default function ConversationScreen() {
   const accessHashRef = useRef(accessHash);
   accessHashRef.current = accessHash;
   const initialScrolledRef = useRef(false);
+
+  // Keep messages in a ref so loadOlderMessages can read latest without being in its deps
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+
+  useEffect(() => {
+    if (id && messages.length > 0) {
+      setCachedMessages(id, messages);
+    }
+  }, [id, messages]);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'instant') => {
     if (scrollRef.current) {

@@ -732,7 +732,7 @@ function MediaContent({
         onClick={() => {
           if (blobUrl) {
             onOpenMedia?.(blobUrl, 'image');
-          } else {
+          } else if (!loading) {
             setLoading(true);
             downloadMediaUrl(media).then(setBlobUrl).finally(() => setLoading(false));
           }

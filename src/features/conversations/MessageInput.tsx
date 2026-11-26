@@ -413,10 +413,6 @@ export function MessageInput({
                 }}
                 placeholder={editing ? 'Edit message...' : 'Message'}
                 rows={1}
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck={false}
                 className="flex-1 min-w-0 bg-transparent text-tg-text text-sm placeholder:text-tg-text-hint focus:outline-none resize-none max-h-28 leading-5 py-1.5 overflow-y-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
               />
 

@@ -370,7 +370,7 @@ export function MessageInput({
       <div 
         className="px-3 pt-2 bg-tg-bg-tertiary transition-[padding] duration-150"
         style={{
-          paddingBottom: activeKeyboard ? '6px' : 'max(8px, env(safe-area-inset-bottom, 0px))',
+          paddingBottom: isFocused ? '6px' : 'max(8px, env(safe-area-inset-bottom, 0px))',
         }}
       >
         {recording ? (

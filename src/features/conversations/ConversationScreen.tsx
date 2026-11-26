@@ -9,7 +9,6 @@ import { toast }         from '@/components/ui/Toast';
 import { MediaViewer }   from '@/features/media/MediaViewer';
 import { LocationPreviewModal, type LocationPreviewData } from '@/components/ui/LocationPreviewModal';
 import { ChatWallpaperLayer } from '@/components/ui/ChatWallpaperLayer';
-import { useVisualViewport } from '@/hooks/useVisualViewport';
 import { MessageBubble } from './MessageBubble';
 import { MessageInput }  from './MessageInput';
 import { useAuthStore } from '@/store/auth.store';
@@ -181,21 +180,19 @@ export function setCachedMessages(id: string, msgs: Msg[]) {
 export default function ConversationScreen() {
   const { id } = useParams<{ id: string }>();
   const router  = useRouter();
-  const { viewportHeight, isKeyboardOpen } = useVisualViewport();
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to latest message when keyboard pops up
+  // Prevent iOS Safari from scrolling window upwards when input is focused
   useEffect(() => {
-    if (isKeyboardOpen && scrollRef.current) {
-      const timer = setTimeout(() => {
-        if (scrollRef.current) {
-          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
-      }, 70);
-      return () => clearTimeout(timer);
-    }
-  }, [isKeyboardOpen]);
+    const lockScroll = () => {
+      if (window.scrollY !== 0) {
+        window.scrollTo(0, 0);
+      }
+    };
+    window.addEventListener('scroll', lockScroll, { passive: true });
+    return () => window.removeEventListener('scroll', lockScroll);
+  }, []);
   const myUserId = useAuthStore((s) => s.userId);
   const { dialogs, updateUnread, updateLastMessage } = useDialogsStore();
   const { setActiveCall, chatWallpaper, chatWallpaperImage, chatWallpaperDim, chatWallpaperBlur } = useUIStore();
@@ -784,13 +781,7 @@ export default function ConversationScreen() {
   const editMsg  = editingId ? messages.find(m => m.id === editingId) : null;
 
   return (
-    <div
-      className="fixed inset-0 z-30 flex flex-col bg-tg-bg-tertiary select-none overflow-hidden"
-      style={{
-        height: viewportHeight ? `${viewportHeight}px` : '100dvh',
-        maxHeight: viewportHeight ? `${viewportHeight}px` : '100dvh',
-      }}
-    >
+    <div className="flex flex-col h-full bg-tg-bg-tertiary relative select-none overflow-hidden">
       {/* Header */}
       {selectMode ? (
         <div className="flex items-center justify-between px-4 py-3 bg-tg-bg/95 backdrop-blur-md safe-top border-b border-tg-border/35 shrink-0 sticky top-0 z-20">
@@ -1073,7 +1064,6 @@ export default function ConversationScreen() {
       ) : (
         <MessageInput
           initialDraft={initialDraft}
-          isKeyboardOpen={isKeyboardOpen}
           onDraftChange={(txt) => { if (id) saveDraft(id, txt).catch(() => {}); }}
           onTyping={(action) => { if (isMTProtoConfigured() && id) sendTyping(id, accessHash, action).catch(() => {}); }}
           onSend={handleSend}

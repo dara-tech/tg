@@ -59,6 +59,7 @@ export function Avatar({
   return (
     <div className={clsx('relative shrink-0', className)}>
       <div
+        data-slot="avatar-inner"
         className={clsx('rounded-full flex items-center justify-center font-semibold text-white overflow-hidden', sizes[size])}
         style={{ background: isSavedMessages ? '#2AABEE' : resolvedSrc ? undefined : color }}
       >

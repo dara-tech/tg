@@ -221,35 +221,76 @@
    COMPREHENSIVE NATIVE MANGA UI AESTHETICS
    ========================================= */
 
+/* Universal Ink Borders across all elements & components */
+[data-theme='manga'] .border-tg-border,
+[data-theme='manga'] .border-tg-border\/35,
+[data-theme='manga'] .border-tg-border\/40,
+[data-theme='manga'] .border-tg-border\/60,
+[data-theme='manga'] .border-tg-border\/70 {
+  border-color: #000000 !important;
+}
+
+/* Base Surfaces & Contrast */
+[data-theme='manga'] .bg-tg-bg,
+[data-theme='manga'] .bg-tg-bg-secondary,
+[data-theme='manga'] .bg-tg-bg-tertiary {
+  background-color: #FFFFFF !important;
+}
+
+[data-theme='manga'] .bg-tg-surface {
+  background-color: #F4F4F6 !important;
+}
+
 /* Top Headers (Manga Book Title Frame) */
 [data-theme='manga'] .safe-top {
   border-bottom: 2px solid #000000 !important;
   background-color: #FFFFFF !important;
 }
 
-/* Comic Speech Balloons */
-[data-theme='manga'] [data-slot='bubble-surface'] {
+/* Monochrome Link and Text Hierarchy */
+[data-theme='manga'] .text-tg-blue {
+  color: #000000 !important;
+}
+
+[data-theme='manga'] .text-tg-green {
+  color: #000000 !important;
+}
+
+/* Manga Avatars: Crisp Monochrome Ink Tokens */
+[data-theme='manga'] [data-slot='avatar-inner'] {
+  background: #18181B !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #000000 !important;
+}
+
+[data-theme='manga'] [data-slot='avatar-inner'] img {
+  border-radius: 9999px;
+  border: 1.5px solid #000000;
+}
+
+/* Comic Speech Balloons (Only on actual message surfaces, not ghost/media) */
+[data-theme='manga'] [data-slot='bubble']:not([data-variant='ghost']) [data-slot='bubble-surface'] {
   border: 2px solid #000000 !important;
   box-shadow: 2.5px 2.5px 0px #000000 !important;
   transition: transform 0.1s ease;
 }
 
-/* Incoming Speech Balloon: White Manga Paper with sharp speech corner */
-[data-theme='manga'] [data-align='start'] [data-slot='bubble-surface'] {
+/* Incoming Speech Balloon: White Manga Paper */
+[data-theme='manga'] [data-slot='bubble']:not([data-variant='ghost']) [data-align='start'] [data-slot='bubble-surface'] {
   background-color: #FFFFFF !important;
   color: #000000 !important;
   border-radius: 18px 18px 18px 4px !important;
 }
 
-/* Outgoing Speech Balloon: Solid Manga Ink with sharp speech corner */
-[data-theme='manga'] [data-align='end'] [data-slot='bubble-surface'] {
+/* Outgoing Speech Balloon: Solid Manga Ink */
+[data-theme='manga'] [data-slot='bubble']:not([data-variant='ghost']) [data-align='end'] [data-slot='bubble-surface'] {
   background-color: #000000 !important;
   color: #FFFFFF !important;
   border-radius: 18px 18px 4px 18px !important;
 }
 
-/* Speech Balloon Pointer Tails */
-[data-theme='manga'] [data-align='start'] [data-slot='bubble-surface']::before {
+/* Speech Balloon Pointer Tails - Only on standard message bubbles */
+[data-theme='manga'] [data-slot='bubble']:not([data-variant='ghost']) [data-align='start'] [data-slot='bubble-surface']::before {
   content: '';
   position: absolute;
   bottom: -2px;
@@ -262,7 +303,7 @@
   pointer-events: none;
 }
 
-[data-theme='manga'] [data-align='start'] [data-slot='bubble-surface']::after {
+[data-theme='manga'] [data-slot='bubble']:not([data-variant='ghost']) [data-align='start'] [data-slot='bubble-surface']::after {
   content: '';
   position: absolute;
   bottom: 0px;
@@ -275,7 +316,7 @@
   pointer-events: none;
 }
 
-[data-theme='manga'] [data-align='end'] [data-slot='bubble-surface']::before {
+[data-theme='manga'] [data-slot='bubble']:not([data-variant='ghost']) [data-align='end'] [data-slot='bubble-surface']::before {
   content: '';
   position: absolute;
   bottom: -2px;
@@ -286,6 +327,24 @@
   border-width: 9px 7px 0 0;
   border-color: #000000 transparent transparent transparent;
   pointer-events: none;
+}
+
+/* Links inside bubbles */
+[data-theme='manga'] [data-align='start'] [data-slot='bubble-surface'] a {
+  color: #000000 !important;
+  font-weight: 700 !important;
+  text-decoration: underline !important;
+}
+
+[data-theme='manga'] [data-align='end'] [data-slot='bubble-surface'] a {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  text-decoration: underline !important;
+}
+
+/* Outgoing status ticks and SVGs */
+[data-theme='manga'] [data-align='end'] [data-slot='bubble-surface'] svg {
+  color: #FFFFFF !important;
 }
 
 /* Reply Preview Inside Comic Bubble */
@@ -399,10 +458,29 @@
   box-shadow: 3px 3px 0px #000000 !important;
 }
 
+/* Manga Settings Screen Preference Icons (Ink Stamp Badges) */
+[data-theme='manga'] .bg-amber-500,
+[data-theme='manga'] .bg-emerald-500,
+[data-theme='manga'] .bg-cyan-500,
+[data-theme='manga'] .bg-pink-500,
+[data-theme='manga'] .bg-violet-500,
+[data-theme='manga'] .bg-indigo-500,
+[data-theme='manga'] .bg-slate-500 {
+  background-color: #000000 !important;
+  border: 1.5px solid #000000 !important;
+  color: #FFFFFF !important;
+}
+
 /* Manga Bottom Navigation Bar (Page Margin) */
 [data-theme='manga'] nav {
   border-top: 2.5px solid #000000 !important;
   background-color: #FFFFFF !important;
+}
+
+[data-theme='manga'] nav .bg-rose-500 {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #000000 !important;
 }
 
 [data-theme='manga'] nav a.bg-tg-blue {

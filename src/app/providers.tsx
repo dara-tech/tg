@@ -20,13 +20,24 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const root = document.documentElement;
     const safeTheme = BG_THEMES[theme] ? theme : 'black';
     root.dataset.theme = safeTheme;
-    const colors = ACCENT_COLORS[accent] ?? ACCENT_COLORS.purple;
-    root.style.setProperty('--tg-blue', colors.primary);
-    root.style.setProperty('--tg-blue-rgb', hexToRgb(colors.primary));
-    root.style.setProperty('--tg-blue-dark', colors.dark);
-    root.style.setProperty('--tg-blue-dark-rgb', hexToRgb(colors.dark));
-    root.style.setProperty('--tg-bubble', colors.primary);
-    root.style.setProperty('--tg-bubble-rgb', hexToRgb(colors.primary));
+
+    if (safeTheme === 'manga') {
+      // Manga UI requires strict monochrome ink consistency across all elements
+      root.style.setProperty('--tg-blue', '#000000');
+      root.style.setProperty('--tg-blue-rgb', '0 0 0');
+      root.style.setProperty('--tg-blue-dark', '#18181B');
+      root.style.setProperty('--tg-blue-dark-rgb', '24 24 27');
+      root.style.setProperty('--tg-bubble', '#000000');
+      root.style.setProperty('--tg-bubble-rgb', '0 0 0');
+    } else {
+      const colors = ACCENT_COLORS[accent] ?? ACCENT_COLORS.purple;
+      root.style.setProperty('--tg-blue', colors.primary);
+      root.style.setProperty('--tg-blue-rgb', hexToRgb(colors.primary));
+      root.style.setProperty('--tg-blue-dark', colors.dark);
+      root.style.setProperty('--tg-blue-dark-rgb', hexToRgb(colors.dark));
+      root.style.setProperty('--tg-bubble', colors.primary);
+      root.style.setProperty('--tg-bubble-rgb', hexToRgb(colors.primary));
+    }
   }, [theme, accent]);
 
   useEffect(() => {

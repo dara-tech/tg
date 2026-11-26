@@ -72,6 +72,7 @@ export function MessageInput({
   isKeyboardOpen = false,
 }: Props) {
   const [isFocused, setIsFocused]   = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [text, setText]             = useState(initialDraft);
   const [showEmoji, setShowEmoji]   = useState(false);
   const [showAttach, setShowAttach] = useState(false);
@@ -87,19 +88,20 @@ export function MessageInput({
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef   = useRef<BlobPart[]>([]);
 
-  // Automatically detect keyboard appearance via visualViewport as fallback
+  // Automatically track keyboard appearance and dismiss via visualViewport
   useEffect(() => {
     if (typeof window === 'undefined' || !window.visualViewport) return;
     const vv = window.visualViewport;
     const check = () => {
-      const keyboardUp = window.innerHeight - vv.height > 80;
-      if (keyboardUp) {
-        setIsFocused(true);
-      }
+      const isUp = window.innerHeight - vv.height > 100;
+      setKeyboardOpen(isUp);
     };
     vv.addEventListener('resize', check);
+    check();
     return () => vv.removeEventListener('resize', check);
   }, []);
+
+  const isKeyboardActive = isFocused || keyboardOpen;
 
   const activeKeyboard = isKeyboardOpen || isFocused;
   const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -382,9 +384,9 @@ export function MessageInput({
       )}
 
       <div 
-        className="chat-input-bar px-3 pt-1.5 bg-tg-bg/90 backdrop-blur-xl border-t border-tg-border/30 transition-[padding] duration-150 focus-within:!pb-1"
+        className="chat-input-bar px-3 pt-1.5 bg-tg-bg/90 backdrop-blur-xl border-t border-tg-border/30 transition-[padding] duration-150"
         style={{
-          paddingBottom: isFocused ? '4px' : 'max(4px, calc(env(safe-area-inset-bottom, 0px) - 10px))',
+          paddingBottom: isKeyboardActive ? '6px' : 'max(12px, env(safe-area-inset-bottom, 16px))',
         }}
       >
         {recording ? (

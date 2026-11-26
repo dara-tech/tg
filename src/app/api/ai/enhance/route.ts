@@ -1,5 +1,3 @@
-import { NextResponse } from 'next/server';
-
 export interface RecentMessage {
   sender: 'me' | 'them';
   name?: string;
@@ -25,7 +23,7 @@ export async function POST(req: Request) {
   try {
     const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json(
+      return Response.json(
         { error: 'GEMINI_API_KEY is not configured in .env.local' },
         { status: 500 }
       );
@@ -96,7 +94,7 @@ Enhanced Message:
     if (!geminiRes.ok) {
       const errText = await geminiRes.text();
       console.error('[Gemini API Error]', geminiRes.status, errText);
-      return NextResponse.json(
+      return Response.json(
         { error: `Gemini API error: ${geminiRes.statusText}` },
         { status: geminiRes.status }
       );
@@ -110,11 +108,11 @@ Enhanced Message:
       enhanced = enhanced.slice(1, -1).trim();
     }
 
-    return NextResponse.json({ enhanced, tone });
+    return Response.json({ enhanced, tone });
   } catch (error: unknown) {
     const err = error as Error;
     console.error('[Enhance Route Error]', err);
-    return NextResponse.json(
+    return Response.json(
       { error: err.message || 'Internal server error' },
       { status: 500 }
     );

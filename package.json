@@ -25,7 +25,6 @@
     "idb": "^8.0.0",
     "jsqr": "^1.4.0",
     "lucide-react": "^1.80.0",
-    "next": "^16.4.6",
     "pako": "^2.1.0",
     "postcss": "^8",
     "qrcode": "^1.5.4",
@@ -42,7 +41,6 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^6.3.0",
     "eslint": "^8",
-    "eslint-config-next": "15.0.3",
     "vite": "^8.4.0",
     "vite-plugin-pwa": "^2.0.0"
   }

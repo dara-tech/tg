@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { Api, TelegramClient, Logger, sessions } from 'telegram';
 import { LogLevel } from 'telegram/extensions/Logger';
 
@@ -120,7 +119,7 @@ async function runWithCandidates<T>(
 }
 
 export async function GET() {
-  return NextResponse.json({
+  return Response.json({
     ok: true,
     endpoint: '/api/stories',
     usage: 'POST { action: "list" | "media" | "read", candidates: [...] }',
@@ -163,7 +162,7 @@ export async function POST(req: Request) {
         : [];
 
     if (candidates.length === 0) {
-      return NextResponse.json({ stories: [], error: 'Missing active MTProto session key' }, { status: 200 });
+      return Response.json({ stories: [], error: 'Missing active MTProto session key' }, { status: 200 });
     }
 
     const action = body.action || 'list';
@@ -178,9 +177,9 @@ export async function POST(req: Request) {
         )
       );
       if (readRes.error) {
-        return NextResponse.json({ ok: false, error: readRes.error }, { status: 200 });
+        return Response.json({ ok: false, error: readRes.error }, { status: 200 });
       }
-      return NextResponse.json({ ok: true });
+      return Response.json({ ok: true });
     }
 
     if (action === 'media' && body.peerId && body.storyId) {
@@ -210,9 +209,9 @@ export async function POST(req: Request) {
         return { dataUrl, mimeType, isVideo };
       });
       if (mediaAttempt.error || !mediaAttempt.result) {
-        return NextResponse.json({ dataUrl: null, error: mediaAttempt.error });
+        return Response.json({ dataUrl: null, error: mediaAttempt.error });
       }
-      return NextResponse.json(mediaAttempt.result);
+      return Response.json(mediaAttempt.result);
     }
 
     // Try candidate DC sessions (starting with primary defaultDcId) for 'list'
@@ -221,7 +220,7 @@ export async function POST(req: Request) {
     );
 
     if (!listAttempt.result || !listAttempt.client) {
-      return NextResponse.json(
+      return Response.json(
         { stories: [], error: listAttempt.error || 'Could not load stories' },
         { status: 200 }
       );
@@ -231,7 +230,7 @@ export async function POST(req: Request) {
     const activeClient = listAttempt.client;
 
     if (!(allRes instanceof Api.stories.AllStories)) {
-      return NextResponse.json({ stories: [], dcUsed: listAttempt.dcId });
+      return Response.json({ stories: [], dcUsed: listAttempt.dcId });
     }
 
     const userMap = new Map<string, Api.User>();
@@ -335,9 +334,9 @@ export async function POST(req: Request) {
     );
 
     const items = resolvedPeers.filter((x): x is NonNullable<typeof x> => x !== null);
-    return NextResponse.json({ stories: items, dcUsed: listAttempt.dcId });
+    return Response.json({ stories: items, dcUsed: listAttempt.dcId });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to load stories via GramJS';
-    return NextResponse.json({ stories: [], error: msg }, { status: 200 });
+    return Response.json({ stories: [], error: msg }, { status: 200 });
   }
 }

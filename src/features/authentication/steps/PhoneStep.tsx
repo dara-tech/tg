@@ -6,6 +6,8 @@ import { Input }  from '@/components/ui/Input';
 import { useAuthStore } from '@/store/auth.store';
 import { sendCode } from '@/services/auth.real';
 import { isMTProtoConfigured } from '@/services/telegram.real';
+import { resetMTProtoSession } from '@/core/telegram/mtproto.client';
+import { toast } from '@/components/ui/Toast';
 
 export function PhoneStep({ onNext, onQr }: { onNext: () => void; onQr: () => void }) {
   const [phone, setPhone]     = useState('');
@@ -60,6 +62,17 @@ export function PhoneStep({ onNext, onQr }: { onNext: () => void; onQr: () => vo
         />
         <Button onClick={handleSend} loading={loading}>Next</Button>
         <Button variant="ghost" onClick={onQr}>Log in by QR Code</Button>
+        <button
+          type="button"
+          onClick={() => {
+            resetMTProtoSession();
+            setError('');
+            toast('Session keys cleared. Ready for fresh login.', 'info');
+          }}
+          className="w-full text-center text-xs text-tg-text-hint hover:text-tg-blue py-1 transition-colors"
+        >
+          Reset connection / Clear stale keys
+        </button>
       </div>
 
       <p className="mt-6 text-tg-text-hint text-xs text-center">

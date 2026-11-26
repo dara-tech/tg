@@ -23,6 +23,20 @@ export function getMTProto(): MTProto {
   return instance;
 }
 
+export function resetMTProtoSession(): void {
+  instance = null;
+  if (typeof window !== 'undefined') {
+    try {
+      for (let i = 1; i <= 5; i++) {
+        window.localStorage.removeItem(`${i}authKey`);
+        window.localStorage.removeItem(`${i}serverSalt`);
+      }
+      window.localStorage.removeItem('defaultDcId');
+      window.localStorage.removeItem('timeOffset');
+    } catch {}
+  }
+}
+
 /** Typed RPC wrapper with auto DC migration */
 export async function call<T = unknown>(
   method: string,
@@ -40,6 +54,20 @@ export async function call<T = unknown>(
       await mt.setDefaultDc(dcId);
       return (await mt.call(method, params, { dcId })) as T;
     }
+
+    // Auto-recover from AUTH_KEY_DUPLICATED or corrupted session key
+    if (
+      e?.error_message === 'AUTH_KEY_DUPLICATED' ||
+      e?.error_message === 'AUTH_KEY_UNREGISTERED' ||
+      e?.error_message === 'SESSION_REVOKED' ||
+      e?.error_message === 'SESSION_EXPIRED'
+    ) {
+      console.warn('[MTProto] Clearing duplicate/invalid auth key and recreating session:', e.error_message);
+      resetMTProtoSession();
+      const freshMt = getMTProto();
+      return (await freshMt.call(method, params, options)) as T;
+    }
+
     throw err;
   }
 }

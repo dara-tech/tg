@@ -70,6 +70,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const vv = window.visualViewport;
     if (!vv) return;
     const syncKeyboard = () => {
+      if (window.scrollY !== 0 || window.scrollX !== 0) {
+        window.scrollTo(0, 0);
+      }
       const root = document.documentElement;
       const baseHeight = Math.max(window.innerHeight, root.clientHeight);
       const offsetTop = Math.max(0, vv.offsetTop);
@@ -84,16 +87,29 @@ export function Providers({ children }: { children: React.ReactNode }) {
         root.style.removeProperty('--app-top');
       }
     };
+    const timers: number[] = [];
+    const scheduleSync = () => {
+      syncKeyboard();
+      requestAnimationFrame(syncKeyboard);
+      timers.push(window.setTimeout(syncKeyboard, 60));
+      timers.push(window.setTimeout(syncKeyboard, 180));
+      timers.push(window.setTimeout(syncKeyboard, 350));
+    };
     const onFocusOut = () => {
       window.scrollTo(0, 0);
-      requestAnimationFrame(syncKeyboard);
+      scheduleSync();
     };
     vv.addEventListener('resize', syncKeyboard);
     vv.addEventListener('scroll', syncKeyboard);
+    window.addEventListener('scroll', syncKeyboard, { passive: true });
+    window.addEventListener('focusin', scheduleSync);
     window.addEventListener('focusout', onFocusOut);
     return () => {
+      timers.forEach((t) => clearTimeout(t));
       vv.removeEventListener('resize', syncKeyboard);
       vv.removeEventListener('scroll', syncKeyboard);
+      window.removeEventListener('scroll', syncKeyboard);
+      window.removeEventListener('focusin', scheduleSync);
       window.removeEventListener('focusout', onFocusOut);
     };
   }, []);

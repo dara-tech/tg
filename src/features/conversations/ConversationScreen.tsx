@@ -214,6 +214,8 @@ export default function ConversationScreen() {
   }, [dialogs, id, myUserId]);
 
   const [messages, setMessages] = useState<Msg[]>(() => (id ? getCachedMessages(id) : []));
+  const messagesRef = useRef<Msg[]>(messages);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
 
   useEffect(() => {
     if (id && messages.length > 0) {
@@ -279,10 +281,13 @@ export default function ConversationScreen() {
       setMessages([]);
     }
 
-    const hash = accessHash && accessHash !== '0' ? accessHash : accessHashRef.current;
+    // Always use the ref so a late-loading accessHash doesn't re-trigger this effect
+    const hash = accessHashRef.current && accessHashRef.current !== '0'
+      ? accessHashRef.current
+      : '0';
 
     // Fetch latest 15 messages first for fast initial render (older messages load on scroll up)
-    fetchRealHistory(id, hash, 15, chatMeta.readOutboxMaxId || 0)
+    fetchRealHistory(id, hash, 15, 0)
       .then((real) => {
         if (cancelled) return;
         setCachedMessages(id, real);
@@ -323,7 +328,9 @@ export default function ConversationScreen() {
     return () => {
       cancelled = true;
     };
-  }, [id, accessHash, updateUnread, chatMeta.readOutboxMaxId]);
+    // Only re-run when the chat id changes — accessHash is read from ref to avoid double-fetch
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, updateUnread]);
 
   // Scroll to the bottom synchronously before paint on initial load to avoid top-to-bottom flicker
   useLayoutEffect(() => {
@@ -335,18 +342,18 @@ export default function ConversationScreen() {
   }, [loading, messages.length]);
 
   const loadOlderMessages = useCallback(async () => {
-    if (!isMTProtoConfigured() || !id || loadingOlder || !hasMoreOlder || messages.length === 0) return;
+    if (!isMTProtoConfigured() || !id || loadingOlder || !hasMoreOlder || messagesRef.current.length === 0) return;
     const el = scrollRef.current;
     if (!el) return;
 
     const prevScrollHeight = el.scrollHeight;
     const prevScrollTop = el.scrollTop;
-    const oldestId = messages[0].id;
-    const hash = accessHash && accessHash !== '0' ? accessHash : accessHashRef.current;
+    const oldestId = messagesRef.current[0].id;
+    const hash = accessHashRef.current && accessHashRef.current !== '0' ? accessHashRef.current : '0';
 
     setLoadingOlder(true);
     try {
-      const older = await fetchRealHistory(id, hash, 25, chatMeta.readOutboxMaxId || 0, oldestId);
+      const older = await fetchRealHistory(id, hash, 25, 0, oldestId);
       if (older.length < 25) setHasMoreOlder(false);
       if (older.length > 0) {
         setMessages((prev) => {
@@ -367,7 +374,9 @@ export default function ConversationScreen() {
     } finally {
       setLoadingOlder(false);
     }
-  }, [id, accessHash, loadingOlder, hasMoreOlder, messages, chatMeta.readOutboxMaxId]);
+  // messages is read inside a setState updater so it doesn't need to be a dep
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, loadingOlder, hasMoreOlder]);
 
   const handleScroll = () => {
     const el = scrollRef.current;
@@ -791,7 +800,7 @@ export default function ConversationScreen() {
       ) : (
         <div className="flex items-center gap-2 px-3 py-2.5 bg-tg-bg safe-top border-b border-tg-border/35 shrink-0">
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push('/dialogs')}
           className="w-9 h-9 rounded-full flex items-center justify-center text-tg-blue active:scale-95 transition-transform shrink-0"
           aria-label="Back"
         >

@@ -59,7 +59,7 @@ export function BottomNav() {
   if (hide) return null;
 
   const safeStyle: React.CSSProperties = {
-    paddingBottom: '0px', // TEST: removed safe-area padding to check if this causes the gap
+    paddingBottom: 'max(4px, calc(env(safe-area-inset-bottom, 0px) - 10px))',
   };
 
   /* ── PILL (default) ── */

@@ -1,20 +1,42 @@
+
 import type { Metadata, Viewport } from 'next';
+
 import './globals.css';
 import { Providers } from './providers';
+import { BottomNav } from '@/components/layout/BottomNav';
 
 export const metadata: Metadata = {
   title: 'Telegram Web',
   description: 'Telegram Web – fast, secure messaging',
   manifest: '/manifest.json',
+
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
-      { url: '/icons/icon-192.png', type: 'image/png', sizes: '192x192' },
+      {
+        url: '/icons/icon-192.png',
+        type: 'image/png',
+        sizes: '192x192',
+      },
     ],
-    apple: [{ url: '/icons/icon-192.png', sizes: '180x180', type: 'image/png' }],
+    apple: [
+      {
+        url: '/icons/icon-192.png',
+        sizes: '180x180',
+        type: 'image/png',
+      },
+    ],
   },
-  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Telegram' },
-  formatDetection: { telephone: false },
+
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Telegram',
+  },
+
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export const viewport: Viewport = {
@@ -26,27 +48,44 @@ export const viewport: Viewport = {
   themeColor: '#059669',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+
         <link
           href="https://fonts.googleapis.com/css2?family=Battambang:wght@300;400;700;900&family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
+
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
+
       <body className="bg-tg-bg text-tg-text font-sans antialiased">
         <Providers>
           <div
-            id="app-root"
-            className="flex flex-col overflow-hidden"
-            style={{ width: '100%', height: '100%' }}
+            id="app"
+            className="flex flex-col w-full h-[100lvh] min-h-0 overflow-hidden"
           >
-            {children}
+            {/* Main application content */}
+            <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
+              {children}
+            </main>
+
+            {/* Global bottom navigation */}
+            <BottomNav />
           </div>
         </Providers>
       </body>

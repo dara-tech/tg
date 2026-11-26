@@ -1,6 +1,14 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&display=swap');
 
-/* Khmer Battambang scoped strictly to Khmer Unicode ranges (U+1780-17FF, U+19E0-19FF) so English always uses modern Google Sans */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================
+   KHMER TYPOGRAPHY
+   ========================================= */
+
 @font-face {
   font-family: 'BattambangKhmer';
   font-style: normal;
@@ -9,6 +17,7 @@
   src: url('https://fonts.gstatic.com/s/battambang/v26/uk-lEGe7raEw-HjkzZabNtmL9yhQ86RJ5IxcMg.woff2') format('woff2');
   unicode-range: U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC;
 }
+
 @font-face {
   font-family: 'BattambangKhmer';
   font-style: normal;
@@ -17,6 +26,7 @@
   src: url('https://fonts.gstatic.com/s/battambang/v26/uk-mEGe7raEw-HjkzZabPnmp4g5y_o5z7Q.woff2') format('woff2');
   unicode-range: U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC;
 }
+
 @font-face {
   font-family: 'BattambangKhmer';
   font-style: normal;
@@ -25,6 +35,7 @@
   src: url('https://fonts.gstatic.com/s/battambang/v26/uk-lEGe7raEw-HjkzZabNsmM9yhQ86RJ5IxcMg.woff2') format('woff2');
   unicode-range: U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC;
 }
+
 @font-face {
   font-family: 'BattambangKhmer';
   font-style: normal;
@@ -33,181 +44,383 @@
   src: url('https://fonts.gstatic.com/s/battambang/v26/uk-lEGe7raEw-HjkzZabNvGO9yhQ86RJ5IxcMg.woff2') format('woff2');
   unicode-range: U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC;
 }
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+
+/* =========================================
+   THEME VARIABLES
+   ========================================= */
 
 :root,
 [data-theme='black'] {
+  color-scheme: dark;
+
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
   --tg-blue: #7C3AED;
   --tg-blue-rgb: 124 58 237;
   --tg-blue-dark: #6D28D9;
   --tg-blue-dark-rgb: 109 40 217;
+
   --tg-bg: #000000;
   --tg-bg-rgb: 0 0 0;
   --tg-bg-secondary: #121216;
   --tg-bg-secondary-rgb: 18 18 22;
   --tg-bg-tertiary: #000000;
   --tg-bg-tertiary-rgb: 0 0 0;
+
   --tg-surface: #1A1A20;
   --tg-surface-rgb: 26 26 32;
+
   --tg-text: #F8FAFC;
   --tg-text-rgb: 248 250 252;
   --tg-text-secondary: #94A3B8;
   --tg-text-secondary-rgb: 148 163 184;
   --tg-text-hint: #64748B;
   --tg-text-hint-rgb: 100 116 139;
+
   --tg-border: #26262E;
   --tg-border-rgb: 38 38 46;
+
   --tg-bubble: #7C3AED;
   --tg-bubble-rgb: 124 58 237;
 }
 
 [data-theme='dark'] {
+  color-scheme: dark;
+
   --tg-bg: #0F172A;
   --tg-bg-rgb: 15 23 42;
   --tg-bg-secondary: #1E293B;
   --tg-bg-secondary-rgb: 30 41 59;
   --tg-bg-tertiary: #0B1120;
   --tg-bg-tertiary-rgb: 11 17 32;
+
   --tg-surface: #1E293B;
   --tg-surface-rgb: 30 41 59;
+
   --tg-text: #F8FAFC;
   --tg-text-rgb: 248 250 252;
   --tg-text-secondary: #94A3B8;
   --tg-text-secondary-rgb: 148 163 184;
   --tg-text-hint: #64748B;
   --tg-text-hint-rgb: 100 116 139;
+
   --tg-border: #334155;
   --tg-border-rgb: 51 65 85;
+  --tg-bubble: #7C3AED;
+  --tg-bubble-rgb: 124 58 237;
 }
 
 [data-theme='white'] {
+  color-scheme: light;
+
   --tg-bg: #FFFFFF;
   --tg-bg-rgb: 255 255 255;
   --tg-bg-secondary: #F8FAFC;
   --tg-bg-secondary-rgb: 248 250 252;
   --tg-bg-tertiary: #FFFFFF;
   --tg-bg-tertiary-rgb: 255 255 255;
+
   --tg-surface: #F1F5F9;
   --tg-surface-rgb: 241 245 249;
+
   --tg-text: #0F172A;
   --tg-text-rgb: 15 23 42;
   --tg-text-secondary: #64748B;
   --tg-text-secondary-rgb: 100 116 139;
   --tg-text-hint: #94A3B8;
   --tg-text-hint-rgb: 148 163 184;
+
   --tg-border: #E2E8F0;
   --tg-border-rgb: 226 232 240;
+  --tg-bubble: #7C3AED;
+  --tg-bubble-rgb: 124 58 237;
 }
 
 [data-theme='clay'] {
+  color-scheme: light;
+
   --tg-bg: #F1F5F9;
   --tg-bg-rgb: 241 245 249;
   --tg-bg-secondary: #FFFFFF;
   --tg-bg-secondary-rgb: 255 255 255;
   --tg-bg-tertiary: #F1F5F9;
   --tg-bg-tertiary-rgb: 241 245 249;
+
   --tg-surface: #E2E8F0;
   --tg-surface-rgb: 226 232 240;
+
   --tg-text: #0F172A;
   --tg-text-rgb: 15 23 42;
   --tg-text-secondary: #64748B;
   --tg-text-secondary-rgb: 100 116 139;
   --tg-text-hint: #94A3B8;
   --tg-text-hint-rgb: 148 163 184;
+
   --tg-border: #E2E8F0;
   --tg-border-rgb: 226 232 240;
+  --tg-bubble: #7C3AED;
+  --tg-bubble-rgb: 124 58 237;
 }
 
 [data-theme='cream'] {
+  color-scheme: light;
+
   --tg-bg: #FAF7F2;
   --tg-bg-rgb: 250 247 242;
   --tg-bg-secondary: #FFFFFF;
   --tg-bg-secondary-rgb: 255 255 255;
   --tg-bg-tertiary: #FAF7F2;
   --tg-bg-tertiary-rgb: 250 247 242;
+
   --tg-surface: #F0EBE1;
   --tg-surface-rgb: 240 235 225;
+
   --tg-text: #1C1917;
   --tg-text-rgb: 28 25 23;
   --tg-text-secondary: #78716C;
   --tg-text-secondary-rgb: 120 113 108;
   --tg-text-hint: #A8A29E;
   --tg-text-hint-rgb: 168 162 158;
+
   --tg-border: #E8E2D8;
   --tg-border-rgb: 232 226 216;
+  --tg-bubble: #7C3AED;
+  --tg-bubble-rgb: 124 58 237;
 }
 
-* { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+/* =========================================
+   GLOBAL RESET
+   ========================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
 
 html {
-  /* iOS PWA: position:fixed + 100% is the ONLY reliable way to fill
-     exactly the visible viewport without dvh overflow bugs */
-  position: fixed;
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  height: 100lvh;
   overflow: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
-  position: relative;
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  height: 100lvh;
+  min-height: 100lvh;
   margin: 0;
-  padding: 0;
   overflow: hidden;
-  font-family: 'ActiveKhmerFont', 'BattambangKhmer', 'Google Sans', 'Google Sans Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  font-family:
+    'Google Sans',
+    'Google Sans Text',
+    'BattambangKhmer',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+
+  background: var(--tg-bg-tertiary);
+  color: var(--tg-text);
+
   overscroll-behavior: none;
-  -webkit-overflow-scrolling: touch;
   touch-action: manipulation;
   user-select: none;
-  background-color: var(--tg-bg-tertiary);
-  color: var(--tg-text);
+  -webkit-user-select: none;
 }
 
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+/* =========================================
+   APPLICATION ROOT
+   ========================================= */
 
-/* Clean, modern scrollbar for desktop */
+body > div {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+
+  position: relative;
+  isolation: isolate;
+
+  width: 100%;
+  height: 100vh;
+  height: 100lvh;
+
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#app > main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* =========================================
+   IOS SAFE AREAS
+   ========================================= */
+
+.safe-top {
+  padding-top: var(--safe-top);
+}
+
+.safe-bottom {
+  padding-bottom: var(--safe-bottom);
+}
+
+.safe-left {
+  padding-left: var(--safe-left);
+}
+
+.safe-right {
+  padding-right: var(--safe-right);
+}
+
+/* =========================================
+   SCROLLING
+   ========================================= */
+
+.scroll-container {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--tg-border) transparent;
 }
+
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--tg-border);
   border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--tg-text-hint);
 }
 
-.safe-top          { padding-top:    env(safe-area-inset-top, 0px); }
-.safe-bottom       { padding-bottom: env(safe-area-inset-bottom, 0px); }
+/* =========================================
+   TEXT SELECTION & INTERACTION
+   ========================================= */
+
+button,
+a,
+[role='button'] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.selectable,
+.message-text,
+input,
+textarea,
+[contenteditable='true'] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* =========================================
+   BRAND GRADIENT
+   ========================================= */
 
 .chat-go-gradient {
-  background: linear-gradient(135deg, var(--tg-blue) 0%, var(--tg-blue-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--tg-blue) 0%,
+    var(--tg-blue-dark) 100%
+  );
 }
+
+/* =========================================
+   ANIMATIONS
+   ========================================= */
 
 @keyframes typing-pulse {
-  0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
-  30%            { opacity: 1;   transform: scale(1); }
+  0%, 60%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+
+  30% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
-.typing-dot { animation: typing-pulse 1.4s infinite; }
-.typing-dot:nth-child(2) { animation-delay: 0.2s; }
-.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+.typing-dot {
+  animation: typing-pulse 1.4s infinite;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.97); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
-.animate-fade-in { animation: fadeIn 0.18s ease-out; }
+
+.animate-fade-in {
+  animation: fadeIn 0.18s ease-out;
+}
+
+/* =========================================
+   ACCESSIBILITY
+   ========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

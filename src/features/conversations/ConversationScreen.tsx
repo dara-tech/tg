@@ -182,17 +182,6 @@ export default function ConversationScreen() {
   const router  = useRouter();
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Prevent iOS Safari from scrolling window upwards when input is focused
-  useEffect(() => {
-    const lockScroll = () => {
-      if (window.scrollY !== 0) {
-        window.scrollTo(0, 0);
-      }
-    };
-    window.addEventListener('scroll', lockScroll, { passive: true });
-    return () => window.removeEventListener('scroll', lockScroll);
-  }, []);
   const myUserId = useAuthStore((s) => s.userId);
   const { dialogs, updateUnread, updateLastMessage } = useDialogsStore();
   const { setActiveCall, chatWallpaper, chatWallpaperImage, chatWallpaperDim, chatWallpaperBlur } = useUIStore();
@@ -781,7 +770,7 @@ export default function ConversationScreen() {
   const editMsg  = editingId ? messages.find(m => m.id === editingId) : null;
 
   return (
-    <div className="flex flex-col h-full bg-tg-bg-tertiary relative select-none overflow-hidden">
+    <div className="flex flex-col h-full bg-tg-bg-tertiary relative overflow-hidden">
       {/* Header */}
       {selectMode ? (
         <div className="flex items-center justify-between px-4 py-3 bg-tg-bg/95 backdrop-blur-md safe-top border-b border-tg-border/35 shrink-0 sticky top-0 z-20">

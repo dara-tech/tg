@@ -17,6 +17,7 @@ import { useUIStore }    from '@/store/ui.store';
 import {
   deleteRealMessages,
   editRealMessage,
+  fetchChatPermissions,
   fetchPeerReadOutboxMaxId,
   fetchPinnedMessage,
   fetchRealHistory,
@@ -38,6 +39,7 @@ import {
   type RealMessageItem,
   type StickerItem,
 } from '@/services/telegram.real';
+import type { ChatPermissions } from '@/store/dialogs.store';
 import { onMTProtoUpdate } from '@/core/telegram/mtproto.client';
 import { getDraft, saveDraft } from '@/core/storage/messages';
 import { format, isToday, isYesterday } from 'date-fns';
@@ -243,6 +245,9 @@ export default function ConversationScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [muted, setMuted] = useState(chatMeta.isMuted);
+  const [chatPermissions, setChatPermissions] = useState<ChatPermissions | null>(
+    () => ('permissions' in chatMeta ? chatMeta.permissions ?? null : null)
+  );
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const accessHash = chatMeta.accessHash ?? '0';
@@ -250,6 +255,30 @@ export default function ConversationScreen() {
   const accessHashRef = useRef(accessHash);
   accessHashRef.current = accessHash;
   const initialScrolledRef = useRef(false);
+
+  // Load / refresh permissions for group and channel chats
+  useEffect(() => {
+    if (!id || !isMTProtoConfigured()) return;
+    // Seed immediately from dialog meta if available (avoids flicker)
+    const metaPerms = 'permissions' in chatMeta ? chatMeta.permissions : undefined;
+    if (metaPerms) {
+      setChatPermissions(metaPerms);
+    }
+    // Then fetch fresh from API (groups / channels only)
+    if (id.startsWith('c_') || id.startsWith('g_')) {
+      fetchChatPermissions(id, accessHashRef.current).then((p) => {
+        if (p) setChatPermissions(p);
+      }).catch(() => {});
+    } else {
+      // DMs are always fully open
+      setChatPermissions({
+        isBroadcast: false, isMegagroup: false, isCreator: false, isAdmin: false, isLeft: false,
+        canSendMessages: true, canSendMedia: true, canSendStickers: true, canSendPolls: true,
+        canPinMessages: false, canChangeInfo: false, canInviteUsers: false,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'instant') => {
     if (scrollRef.current) {
@@ -489,6 +518,38 @@ export default function ConversationScreen() {
       unsub?.();
     };
   }, [id, accessHash, chatMeta.title]);
+
+  // ── Periodic poll: fetch newest messages every 8 s when the tab is visible ──
+  useEffect(() => {
+    if (!isMTProtoConfigured() || !id) return;
+    let cancelled = false;
+
+    const poll = async () => {
+      if (cancelled || document.hidden) return;
+      const hash = accessHashRef.current && accessHashRef.current !== '0' ? accessHashRef.current : '0';
+      try {
+        const fresh = await fetchRealHistory(id, hash, 20, 0);
+        if (cancelled || fresh.length === 0) return;
+        setMessages((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id));
+          const newOnes = fresh.filter((m) => !existingIds.has(m.id));
+          if (newOnes.length === 0) return prev;
+          const merged = [...prev, ...newOnes].sort((a, b) => a.id - b.id);
+          conversationMessagesCache.set(id, merged);
+          return merged;
+        });
+      } catch {
+        // silent – don't disrupt UX
+      }
+    };
+
+    const iv = setInterval(poll, 8_000);
+    return () => {
+      cancelled = true;
+      clearInterval(iv);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const visibleMessages = useMemo(() => {
     if (!searchQuery.trim()) return messages;
@@ -1055,6 +1116,19 @@ export default function ConversationScreen() {
           <Forward className="w-5 h-5" />
         </button>
         </div>
+      ) : chatPermissions && !chatPermissions.canSendMessages ? (
+        /* ── Read-only / restricted banner ── */
+        <div className="bg-tg-bg border-t border-tg-border shrink-0 px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom,0px))]">
+          <div className="flex items-center justify-center gap-2 py-1">
+            <svg className="w-4 h-4 text-tg-text-hint shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+                d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+            <span className="text-tg-text-hint text-sm text-center leading-tight">
+              {chatPermissions.restrictionReason ?? (chatPermissions.isBroadcast ? 'Channel is read-only' : 'You cannot send messages here')}
+            </span>
+          </div>
+        </div>
       ) : (
         <MessageInput
           initialDraft={initialDraft}
@@ -1070,6 +1144,9 @@ export default function ConversationScreen() {
           editing={editMsg ? { id: editMsg.id, text: editMsg.text } : undefined}
           onCancelReply={() => setReplyTo(null)}
           onCancelEdit={() => setEditingId(null)}
+          canSendMedia={chatPermissions?.canSendMedia ?? true}
+          canSendStickers={chatPermissions?.canSendStickers ?? true}
+          canSendPolls={chatPermissions?.canSendPolls ?? true}
           recentMessages={messages.slice(-10).map((m) => ({
             sender: m.out ? ('me' as const) : ('them' as const),
             name: m.out ? 'Me' : chatMeta.title,

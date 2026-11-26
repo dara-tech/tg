@@ -1,7 +1,9 @@
 'use client';
 import { call } from '@/core/telegram/mtproto.client';
-import { getAvatarColor, getInitials, type DialogMediaMeta } from '@/store/dialogs.store';
+import { getAvatarColor, getInitials, type DialogMediaMeta, type ChatPermissions } from '@/store/dialogs.store';
 import { useAuthStore } from '@/store/auth.store';
+
+export type { ChatPermissions } from '@/store/dialogs.store';
 
 export function isMTProtoConfigured(): boolean {
   const apiId = parseInt(process.env.NEXT_PUBLIC_API_ID ?? '0', 10);
@@ -46,6 +48,12 @@ export interface RealDialogItem {
   topMessageId?: number;
   isSavedMessages?: boolean;
   lastMessageMedia?: DialogMediaMeta;
+  isBroadcast?: boolean;
+  isMegagroup?: boolean;
+  isCreator?: boolean;
+  isAdmin?: boolean;
+  isLeft?: boolean;
+  permissions?: ChatPermissions;
 }
 
 export interface MediaAttachment {
@@ -390,6 +398,304 @@ export function fetchRealDialogs(
   return p;
 }
 
+export const chatPermissionsCache = new Map<string, ChatPermissions>();
+
+export function computeChatPermissions(
+  c?: {
+    _: string;
+    broadcast?: boolean;
+    megagroup?: boolean;
+    creator?: boolean;
+    left?: boolean;
+    deactivated?: boolean;
+    kicked?: boolean;
+    admin_rights?: {
+      post_messages?: boolean;
+      change_info?: boolean;
+      invite_users?: boolean;
+      pin_messages?: boolean;
+      [key: string]: unknown;
+    };
+    banned_rights?: {
+      send_messages?: boolean;
+      send_media?: boolean;
+      send_stickers?: boolean;
+      send_polls?: boolean;
+      pin_messages?: boolean;
+      change_info?: boolean;
+      invite_users?: boolean;
+      until_date?: number;
+      [key: string]: unknown;
+    };
+    default_banned_rights?: {
+      send_messages?: boolean;
+      send_media?: boolean;
+      send_stickers?: boolean;
+      send_polls?: boolean;
+      pin_messages?: boolean;
+      change_info?: boolean;
+      invite_users?: boolean;
+      [key: string]: unknown;
+    };
+  },
+  peerType?: 'user' | 'chat' | 'channel'
+): ChatPermissions {
+  if (peerType === 'user' || !c) {
+    return {
+      isBroadcast: false,
+      isMegagroup: false,
+      isCreator: false,
+      isAdmin: false,
+      isLeft: false,
+      canSendMessages: true,
+      canSendMedia: true,
+      canSendStickers: true,
+      canSendPolls: true,
+      canPinMessages: true,
+      canChangeInfo: false,
+      canInviteUsers: false,
+    };
+  }
+
+  const isBroadcast = Boolean(c.broadcast);
+  const isMegagroup = Boolean(c.megagroup);
+  const isCreator = Boolean(c.creator);
+  const isAdmin = Boolean(c.admin_rights);
+  const isLeft = Boolean(c.left);
+  const isDeactivated = Boolean(c.deactivated || c.kicked);
+
+  // Check ban expiry
+  const now = Math.floor(Date.now() / 1000);
+  const isBanActive = Boolean(
+    c.banned_rights && (!c.banned_rights.until_date || c.banned_rights.until_date === 0 || c.banned_rights.until_date > now)
+  );
+
+  // 1. Broadcast Channels
+  if (isBroadcast) {
+    if (isLeft) {
+      return {
+        isBroadcast: true,
+        isMegagroup: false,
+        isCreator,
+        isAdmin,
+        isLeft: true,
+        canSendMessages: false,
+        canSendMedia: false,
+        canSendStickers: false,
+        canSendPolls: false,
+        canPinMessages: false,
+        canChangeInfo: false,
+        canInviteUsers: false,
+        restrictionReason: 'Join channel to view updates',
+      };
+    }
+
+    if (isCreator) {
+      return {
+        isBroadcast: true,
+        isMegagroup: false,
+        isCreator: true,
+        isAdmin: true,
+        isLeft: false,
+        canSendMessages: true,
+        canSendMedia: true,
+        canSendStickers: true,
+        canSendPolls: true,
+        canPinMessages: true,
+        canChangeInfo: true,
+        canInviteUsers: true,
+      };
+    }
+
+    if (isAdmin) {
+      const canPost = Boolean(c.admin_rights?.post_messages);
+      return {
+        isBroadcast: true,
+        isMegagroup: false,
+        isCreator: false,
+        isAdmin: true,
+        isLeft: false,
+        canSendMessages: canPost,
+        canSendMedia: canPost,
+        canSendStickers: canPost,
+        canSendPolls: canPost,
+        canPinMessages: Boolean(c.admin_rights?.pin_messages),
+        canChangeInfo: Boolean(c.admin_rights?.change_info),
+        canInviteUsers: Boolean(c.admin_rights?.invite_users),
+        restrictionReason: canPost ? undefined : 'Only channel administrators can post messages',
+      };
+    }
+
+    // Regular channel subscriber / viewer: cannot post in broadcast channels
+    return {
+      isBroadcast: true,
+      isMegagroup: false,
+      isCreator: false,
+      isAdmin: false,
+      isLeft: false,
+      canSendMessages: false,
+      canSendMedia: false,
+      canSendStickers: false,
+      canSendPolls: false,
+      canPinMessages: false,
+      canChangeInfo: false,
+      canInviteUsers: false,
+      restrictionReason: 'Channel is read-only',
+    };
+  }
+
+  // 2. Groups and Supergroups
+  if (isLeft) {
+    return {
+      isBroadcast: false,
+      isMegagroup,
+      isCreator,
+      isAdmin,
+      isLeft: true,
+      canSendMessages: false,
+      canSendMedia: false,
+      canSendStickers: false,
+      canSendPolls: false,
+      canPinMessages: false,
+      canChangeInfo: false,
+      canInviteUsers: false,
+      restrictionReason: 'You are no longer a member of this group',
+    };
+  }
+
+  if (isDeactivated) {
+    return {
+      isBroadcast: false,
+      isMegagroup,
+      isCreator,
+      isAdmin,
+      isLeft: false,
+      canSendMessages: false,
+      canSendMedia: false,
+      canSendStickers: false,
+      canSendPolls: false,
+      canPinMessages: false,
+      canChangeInfo: false,
+      canInviteUsers: false,
+      restrictionReason: 'This group is deactivated',
+    };
+  }
+
+  if (isCreator) {
+    return {
+      isBroadcast: false,
+      isMegagroup,
+      isCreator: true,
+      isAdmin: true,
+      isLeft: false,
+      canSendMessages: true,
+      canSendMedia: true,
+      canSendStickers: true,
+      canSendPolls: true,
+      canPinMessages: true,
+      canChangeInfo: true,
+      canInviteUsers: true,
+    };
+  }
+
+  if (isAdmin) {
+    return {
+      isBroadcast: false,
+      isMegagroup,
+      isCreator: false,
+      isAdmin: true,
+      isLeft: false,
+      canSendMessages: true,
+      canSendMedia: true,
+      canSendStickers: true,
+      canSendPolls: true,
+      canPinMessages: Boolean(c.admin_rights?.pin_messages ?? true),
+      canChangeInfo: Boolean(c.admin_rights?.change_info ?? true),
+      canInviteUsers: Boolean(c.admin_rights?.invite_users ?? true),
+    };
+  }
+
+  // Regular group member
+  const bannedRights = isBanActive ? c.banned_rights : undefined;
+  const defBanned = c.default_banned_rights;
+
+  const isSendMsgBanned = Boolean(bannedRights?.send_messages || defBanned?.send_messages);
+  const isSendMediaBanned = Boolean(bannedRights?.send_media || defBanned?.send_media);
+  const isSendStickersBanned = Boolean(bannedRights?.send_stickers || defBanned?.send_stickers);
+  const isSendPollsBanned = Boolean(bannedRights?.send_polls || defBanned?.send_polls);
+  const isPinBanned = Boolean(bannedRights?.pin_messages ?? defBanned?.pin_messages ?? false);
+  const isChangeInfoBanned = Boolean(bannedRights?.change_info ?? defBanned?.change_info ?? false);
+  const isInviteBanned = Boolean(bannedRights?.invite_users ?? defBanned?.invite_users ?? false);
+
+  let reason: string | undefined;
+  if (isSendMsgBanned) {
+    if (bannedRights?.send_messages) {
+      reason = 'You were restricted from sending messages in this group';
+    } else if (defBanned?.send_messages) {
+      reason = 'The admins of this group have disabled sending messages';
+    } else {
+      reason = 'Sending messages is not allowed in this group';
+    }
+  }
+
+  return {
+    isBroadcast: false,
+    isMegagroup,
+    isCreator: false,
+    isAdmin: false,
+    isLeft: false,
+    canSendMessages: !isSendMsgBanned,
+    canSendMedia: !isSendMsgBanned && !isSendMediaBanned,
+    canSendStickers: !isSendMsgBanned && !isSendStickersBanned,
+    canSendPolls: !isSendMsgBanned && !isSendPollsBanned,
+    canPinMessages: !isPinBanned,
+    canChangeInfo: !isChangeInfoBanned,
+    canInviteUsers: !isInviteBanned,
+    restrictionReason: reason,
+  };
+}
+
+export async function fetchChatPermissions(id: string, accessHash?: string): Promise<ChatPermissions | null> {
+  if (id.startsWith('u_')) {
+    return computeChatPermissions(undefined, 'user');
+  }
+
+  if (chatPermissionsCache.has(id)) {
+    return chatPermissionsCache.get(id)!;
+  }
+
+  try {
+    const rawNum = parseInt(id.split('_')[1] || '0', 10);
+    if (!rawNum) return null;
+
+    if (id.startsWith('c_')) {
+      const hash = accessHash && accessHash !== '0' ? accessHash : (peerAccessHashMap.get(String(rawNum)) ?? '0');
+      const res = await call<{ chats?: Array<{ [key: string]: unknown }> }>('channels.getChannels', {
+        id: [{ _: 'inputChannel', channel_id: rawNum, access_hash: hash }],
+      });
+      const chat = res.chats?.[0] as any;
+      if (chat) {
+        const perms = computeChatPermissions(chat, chat.broadcast ? 'channel' : 'chat');
+        chatPermissionsCache.set(id, perms);
+        return perms;
+      }
+    } else if (id.startsWith('g_')) {
+      const res = await call<{ chats?: Array<{ [key: string]: unknown }> }>('messages.getChats', {
+        id: [rawNum],
+      });
+      const chat = res.chats?.[0] as any;
+      if (chat) {
+        const perms = computeChatPermissions(chat, 'chat');
+        chatPermissionsCache.set(id, perms);
+        return perms;
+      }
+    }
+  } catch (err) {
+    console.warn('[Permissions] Failed to fetch chat permissions:', err);
+  }
+  return null;
+}
+
 async function _fetchRealDialogs(
   limit = 40,
   offsetDate = 0,
@@ -437,6 +743,13 @@ async function _fetchRealDialogs(
       _: string;
       megagroup?: boolean;
       broadcast?: boolean;
+      creator?: boolean;
+      left?: boolean;
+      deactivated?: boolean;
+      kicked?: boolean;
+      admin_rights?: any;
+      banned_rights?: any;
+      default_banned_rights?: any;
       photo?: { _: string; photo_id?: string | number };
     }>;
   }>('messages.getDialogs', {
@@ -485,6 +798,7 @@ async function _fetchRealDialogs(
         ? 'Saved Messages'
         : [u?.first_name, u?.last_name].filter(Boolean).join(' ') || `User ${uid}`;
       const photoId = isSelf ? undefined : (u?.photo?.photo_id ? String(u.photo.photo_id) : undefined);
+      const userPermissions = computeChatPermissions(undefined, 'user');
       items.push({
         id: `u_${uid}`,
         title,
@@ -508,6 +822,7 @@ async function _fetchRealDialogs(
         topMessageId: d.top_message,
         isSavedMessages: isSelf,
         lastMessageMedia,
+        permissions: userPermissions,
       });
       continue;
     }
@@ -519,11 +834,16 @@ async function _fetchRealDialogs(
     const title = c?.title || `Chat ${cid}`;
     const numId = Number(cid) || 0;
     const isMegagroup = Boolean(c?.megagroup);
+    const isBroadcast = Boolean(c?.broadcast);
     if (isMegagroup) megagroupIds.add(numId);
     const peerType = d.peer.channel_id !== undefined && !isMegagroup ? 'channel' : 'chat';
     const photoId = c?.photo?.photo_id ? String(c.photo.photo_id) : undefined;
+    const permissions = computeChatPermissions(c as any, peerType);
+    const peerKey = `${d.peer.channel_id !== undefined ? 'c' : 'g'}_${cid}`;
+    chatPermissionsCache.set(peerKey, permissions);
+
     items.push({
-      id: `${d.peer.channel_id !== undefined ? 'c' : 'g'}_${cid}`,
+      id: peerKey,
       title,
       avatarLetters: getInitials(title) || 'C',
       avatarColor: getAvatarColor(numId),
@@ -544,6 +864,12 @@ async function _fetchRealDialogs(
       photoId,
       topMessageId: d.top_message,
       lastMessageMedia,
+      isBroadcast,
+      isMegagroup,
+      isCreator: Boolean(c?.creator),
+      isAdmin: Boolean(c?.admin_rights),
+      isLeft: Boolean(c?.left),
+      permissions,
     });
   }
 

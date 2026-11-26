@@ -33,6 +33,7 @@ interface AttachmentSheetProps {
   onSendLocation?: (lat: number, long: number) => void;
   onSendContact?: (contact: RealContactItem) => void;
   onSendPoll?: (question: string, options: string[]) => void;
+  canSendPoll?: boolean;
 }
 
 type AttachTab = 'gallery' | 'file' | 'location' | 'poll' | 'contact';
@@ -52,6 +53,7 @@ export function AttachmentSheet({
   onSendLocation,
   onSendContact,
   onSendPoll,
+  canSendPoll = true,
 }: AttachmentSheetProps) {
   const galleryRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -177,7 +179,7 @@ export function AttachmentSheet({
     { id: 'gallery',  label: 'Gallery',  icon: <ImageIcon className="w-[18px] h-[18px]" /> },
     { id: 'file',     label: 'File',     icon: <FileText  className="w-[18px] h-[18px]" /> },
     { id: 'location', label: 'Location', icon: <MapPin    className="w-[18px] h-[18px]" /> },
-    { id: 'poll',     label: 'Poll',     icon: <BarChart2 className="w-[18px] h-[18px]" /> },
+    ...(canSendPoll ? [{ id: 'poll' as const, label: 'Poll', icon: <BarChart2 className="w-[18px] h-[18px]" /> }] : []),
     { id: 'contact',  label: 'Contact',  icon: <User      className="w-[18px] h-[18px]" /> },
   ];
 

@@ -13,6 +13,22 @@ export interface DialogMediaMeta {
   fileName?: string;
 }
 
+export interface ChatPermissions {
+  isBroadcast: boolean;
+  isMegagroup: boolean;
+  isCreator: boolean;
+  isAdmin: boolean;
+  isLeft: boolean;
+  canSendMessages: boolean;
+  canSendMedia: boolean;
+  canSendStickers: boolean;
+  canSendPolls: boolean;
+  canPinMessages: boolean;
+  canChangeInfo: boolean;
+  canInviteUsers: boolean;
+  restrictionReason?: string;
+}
+
 export interface NormalizedDialog {
   id: string;
   title: string;
@@ -36,6 +52,12 @@ export interface NormalizedDialog {
   topMessageId?: number;
   isSavedMessages?: boolean;
   lastMessageMedia?: DialogMediaMeta;
+  isBroadcast?: boolean;
+  isMegagroup?: boolean;
+  isCreator?: boolean;
+  isAdmin?: boolean;
+  isLeft?: boolean;
+  permissions?: ChatPermissions;
 }
 
 interface DialogsState {

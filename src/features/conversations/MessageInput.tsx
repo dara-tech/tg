@@ -31,6 +31,9 @@ interface Props {
   onCancelReply: () => void;
   onCancelEdit:  () => void;
   recentMessages?: RecentMessageItem[];
+  canSendMedia?: boolean;
+  canSendStickers?: boolean;
+  canSendPolls?: boolean;
 }
 
 const TONES: Array<{ id: EnhanceTone; label: string }> = [
@@ -68,6 +71,9 @@ export function MessageInput({
   onCancelReply,
   onCancelEdit,
   recentMessages = [],
+  canSendMedia = true,
+  canSendStickers = true,
+  canSendPolls = true,
 }: Props) {
   const [text, setText]             = useState(initialDraft);
   const [showEmoji, setShowEmoji]   = useState(false);
@@ -369,7 +375,7 @@ export function MessageInput({
       {showEmoji && (
         <EmojiPanel
           onSelect={insertEmoji}
-          onSelectSticker={onSendSticker}
+          onSelectSticker={canSendStickers ? onSendSticker : undefined}
           onClose={() => setShowEmoji(false)}
         />
       )}
@@ -403,13 +409,15 @@ export function MessageInput({
         ) : (
           <div className="flex items-end gap-2">
             {/* Left Floating Attach Circle */}
-            <button
-              onClick={() => { setShowEmoji(false); setShowAttach(true); }}
-              className="w-10 h-10 rounded-full bg-tg-bg-secondary border border-tg-border flex items-center justify-center text-tg-text hover:text-tg-blue active:scale-95 transition-all shrink-0"
-              aria-label="Attach"
-            >
-              <Paperclip className="w-[18px] h-[18px]" />
-            </button>
+            {canSendMedia ? (
+              <button
+                onClick={() => { setShowEmoji(false); setShowAttach(true); }}
+                className="w-10 h-10 rounded-full bg-tg-bg-secondary border border-tg-border flex items-center justify-center text-tg-text hover:text-tg-blue active:scale-95 transition-all shrink-0"
+                aria-label="Attach"
+              >
+                <Paperclip className="w-[18px] h-[18px]" />
+              </button>
+            ) : null}
 
             {/* Center Pill Input */}
             <div className="flex-1 min-w-0 min-h-[40px] rounded-[22px] bg-tg-bg-secondary border border-tg-border pl-3.5 pr-1.5 py-1 flex items-end gap-1 transition-all">
@@ -503,6 +511,7 @@ export function MessageInput({
         onSendLocation={onSendLocation}
         onSendContact={onSendContact}
         onSendPoll={onSendPoll}
+        canSendPoll={canSendPolls}
       />
     </div>
   );

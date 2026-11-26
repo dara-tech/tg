@@ -537,6 +537,15 @@ export default function ChatListScreen() {
     // loadDialogs is stable via useCallback
   }, [loadDialogs]);
 
+  // ── Periodic silent refresh every 30 s when visible ──
+  useEffect(() => {
+    if (!isMTProtoConfigured()) return;
+    const iv = setInterval(() => {
+      if (!document.hidden) loadDialogs(false);
+    }, 30_000);
+    return () => clearInterval(iv);
+  }, [loadDialogs]);
+
   const filtered = dialogs.filter((d) => {
     const matchesTab =
       tab === 'all'      ? true :

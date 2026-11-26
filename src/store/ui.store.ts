@@ -2,11 +2,12 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type AccentId = 'blue' | 'purple' | 'emerald' | 'orange' | 'rose' | 'slate';
-export type BgThemeId = 'white' | 'clay' | 'cream' | 'dark' | 'black';
+export type BgThemeId = 'white' | 'clay' | 'cream' | 'manga' | 'dark' | 'black';
 export type NavStyleId = 'pill' | 'classic' | 'card' | 'minimal';
 export type ChatWallpaperId =
   | 'default'
   | 'telegram-doodle'
+  | 'manga-screentone'
   | 'emerald-mist'
   | 'ocean-dusk'
   | 'sunset-linen'
@@ -17,12 +18,13 @@ export const CHAT_WALLPAPERS: Record<
   Exclude<ChatWallpaperId, 'custom'>,
   { name: string; gradient?: string; pattern?: boolean }
 > = {
-  'default':         { name: 'Theme Default' },
-  'telegram-doodle': { name: 'Telegram Classic', gradient: 'linear-gradient(155deg, rgba(16,185,129,0.18) 0%, rgba(14,165,233,0.16) 50%, rgba(139,92,246,0.18) 100%)', pattern: true },
-  'emerald-mist':    { name: 'Emerald Mist',     gradient: 'linear-gradient(160deg, #064e3b 0%, #0f766e 48%, #022c22 100%)', pattern: true },
-  'ocean-dusk':      { name: 'Ocean Dusk',       gradient: 'linear-gradient(160deg, #0f172a 0%, #1e3a8a 52%, #0c4a6e 100%)', pattern: true },
-  'sunset-linen':    { name: 'Warm Sunset',      gradient: 'linear-gradient(155deg, #fef3c7 0%, #fed7aa 48%, #fecdd3 100%)', pattern: true },
-  'midnight-aurora': { name: 'Midnight Aurora',  gradient: 'linear-gradient(160deg, #09090b 0%, #312e81 50%, #581c87 100%)', pattern: true },
+  'default':          { name: 'Theme Default' },
+  'telegram-doodle':  { name: 'Telegram Classic', gradient: 'linear-gradient(155deg, rgba(16,185,129,0.18) 0%, rgba(14,165,233,0.16) 50%, rgba(139,92,246,0.18) 100%)', pattern: true },
+  'manga-screentone': { name: 'Manga Halftone',   gradient: 'radial-gradient(circle at 7px 7px, rgba(0,0,0,0.18) 1.5px, #FFFFFF 1.5px)', pattern: true },
+  'emerald-mist':     { name: 'Emerald Mist',     gradient: 'linear-gradient(160deg, #064e3b 0%, #0f766e 48%, #022c22 100%)', pattern: true },
+  'ocean-dusk':       { name: 'Ocean Dusk',       gradient: 'linear-gradient(160deg, #0f172a 0%, #1e3a8a 52%, #0c4a6e 100%)', pattern: true },
+  'sunset-linen':     { name: 'Warm Sunset',      gradient: 'linear-gradient(155deg, #fef3c7 0%, #fed7aa 48%, #fecdd3 100%)', pattern: true },
+  'midnight-aurora':  { name: 'Midnight Aurora',  gradient: 'linear-gradient(160deg, #09090b 0%, #312e81 50%, #581c87 100%)', pattern: true },
 };
 export type KhmerFontId =
   | 'hanuman'
@@ -110,11 +112,12 @@ export const ACCENT_COLORS: Record<AccentId, { name: string; short: string; prim
 };
 
 export const BG_THEMES: Record<BgThemeId, { name: string; subtitle: string; short: string; preview: string; isDark: boolean }> = {
-  white: { name: 'Pure White',  subtitle: 'Clean & Bright',  short: 'White', preview: '#FFFFFF', isDark: false },
-  clay:  { name: 'Clay Dim',    subtitle: 'Soft Ceramic',    short: 'Dim',   preview: '#F1F5F9', isDark: false },
-  cream: { name: 'Warm Cream',  subtitle: 'Paper & Linen',   short: 'Cream', preview: '#FAF7F2', isDark: false },
-  dark:  { name: 'Dark Slate',  subtitle: 'Modern Charcoal', short: 'Slate', preview: '#0F172A', isDark: true },
-  black: { name: 'OLED Black',  subtitle: 'Pitch Dark',      short: 'Black', preview: '#000000', isDark: true },
+  white: { name: 'Pure White',  subtitle: 'Clean & Bright',   short: 'White', preview: '#FFFFFF', isDark: false },
+  clay:  { name: 'Clay Dim',    subtitle: 'Soft Ceramic',     short: 'Dim',   preview: '#F1F5F9', isDark: false },
+  cream: { name: 'Warm Cream',  subtitle: 'Paper & Linen',    short: 'Cream', preview: '#FAF7F2', isDark: false },
+  manga: { name: 'Manga UI',    subtitle: 'Ink & Screentone', short: 'Manga', preview: 'linear-gradient(135deg, #000000 50%, #FFFFFF 50%)', isDark: false },
+  dark:  { name: 'Dark Slate',  subtitle: 'Modern Charcoal',  short: 'Slate', preview: '#0F172A', isDark: true },
+  black: { name: 'OLED Black',  subtitle: 'Pitch Dark',       short: 'Black', preview: '#000000', isDark: true },
 };
 
 interface UIState {

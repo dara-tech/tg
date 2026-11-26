@@ -309,7 +309,7 @@ export default function SettingsScreen() {
               <p className="text-tg-text text-sm font-semibold">Background Theme</p>
               <p className="text-tg-text-hint text-xs">{BG_THEMES[safeTheme].name} · {BG_THEMES[safeTheme].subtitle}</p>
             </div>
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
               {(Object.keys(BG_THEMES) as BgThemeId[]).map((id) => {
                 const active = safeTheme === id;
                 const t = BG_THEMES[id];
@@ -320,14 +320,24 @@ export default function SettingsScreen() {
                     className="flex flex-col items-center gap-1.5"
                   >
                     <div
-                      className={`w-12 h-10 rounded-xl flex items-center justify-center transition-all ${
+                      className={`w-full max-w-[48px] h-10 rounded-xl flex items-center justify-center transition-all ${
                         active
                           ? 'ring-2 ring-tg-blue ring-offset-2 ring-offset-tg-bg-secondary'
                           : 'border border-tg-border/40'
                       }`}
-                      style={{ backgroundColor: t.preview }}
+                      style={{ background: t.preview }}
                     >
-                      {active && <Check className={`w-4 h-4 ${t.isDark ? 'text-white' : 'text-slate-900'}`} />}
+                      {active && (
+                        <Check
+                          className={`w-4 h-4 ${
+                            id === 'manga'
+                              ? 'text-tg-blue drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]'
+                              : t.isDark
+                              ? 'text-white'
+                              : 'text-slate-900'
+                          }`}
+                        />
+                      )}
                     </div>
                     <span className={`text-[10px] ${active ? 'text-tg-blue font-semibold' : 'text-tg-text-hint'}`}>
                       {t.short}
@@ -771,7 +781,10 @@ export default function SettingsScreen() {
                         ? 'ring-2 ring-tg-blue ring-offset-2 ring-offset-tg-bg-secondary'
                         : 'border border-tg-border/40'
                     }`}
-                    style={w.gradient ? { backgroundImage: w.gradient } : undefined}
+                    style={{
+                      backgroundImage: w.gradient,
+                      backgroundSize: wid === 'manga-screentone' ? '14px 14px' : undefined,
+                    }}
                   >
                     {!w.gradient && <span className="text-[11px] text-tg-text-hint">Default</span>}
                     {active && (

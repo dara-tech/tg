@@ -1,5 +1,5 @@
 'use client';
-import { CHAT_WALLPAPERS, type ChatWallpaperId } from '@/store/ui.store';
+import { CHAT_WALLPAPERS, useUIStore, type ChatWallpaperId } from '@/store/ui.store';
 
 export function ChatWallpaperLayer({
   wallpaper,
@@ -12,6 +12,24 @@ export function ChatWallpaperLayer({
   dim?: number;
   blur?: boolean;
 }) {
+  const theme = useUIStore((s) => s.theme);
+
+  // When default wallpaper is chosen with manga theme, display authentic manga screentone paper
+  if (wallpaper === 'default' && theme === 'manga') {
+    return (
+      <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
+        <div
+          className="absolute inset-0 bg-[#FAFAFA]"
+          style={{
+            backgroundImage:
+              'radial-gradient(circle at 6px 6px, rgba(0, 0, 0, 0.08) 1.2px, transparent 1.2px)',
+            backgroundSize: '12px 12px',
+          }}
+        />
+      </div>
+    );
+  }
+
   if (wallpaper === 'default') return null;
 
   const isCustom = wallpaper === 'custom' && Boolean(customImage);
@@ -28,6 +46,15 @@ export function ChatWallpaperLayer({
             transform: blur ? 'scale(1.06)' : undefined,
           }}
         />
+      ) : wallpaper === 'manga-screentone' ? (
+        <div
+          className="absolute inset-0 bg-[#FFFFFF]"
+          style={{
+            backgroundImage:
+              'radial-gradient(circle at 7px 7px, rgba(0, 0, 0, 0.16) 1.5px, transparent 1.5px)',
+            backgroundSize: '14px 14px',
+          }}
+        />
       ) : preset?.gradient ? (
         <div
           className="absolute inset-0 transition-all duration-300"
@@ -40,7 +67,7 @@ export function ChatWallpaperLayer({
       ) : null}
 
       {/* Subtle Telegram geometric pattern overlay for preset wallpapers */}
-      {!isCustom && preset?.pattern && (
+      {!isCustom && preset?.pattern && wallpaper !== 'manga-screentone' && (
         <div
           className="absolute inset-0 opacity-[0.07]"
           style={{

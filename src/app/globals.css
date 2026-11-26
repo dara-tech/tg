@@ -191,6 +191,72 @@
   --tg-bubble-rgb: 124 58 237;
 }
 
+[data-theme='manga'] {
+  color-scheme: light;
+
+  --tg-bg: #FFFFFF;
+  --tg-bg-rgb: 255 255 255;
+  --tg-bg-secondary: #FAFAFA;
+  --tg-bg-secondary-rgb: 250 250 250;
+  --tg-bg-tertiary: #FFFFFF;
+  --tg-bg-tertiary-rgb: 255 255 255;
+
+  --tg-surface: #F0F0F2;
+  --tg-surface-rgb: 240 240 242;
+
+  --tg-text: #000000;
+  --tg-text-rgb: 0 0 0;
+  --tg-text-secondary: #1F1F1F;
+  --tg-text-secondary-rgb: 31 31 31;
+  --tg-text-hint: #595959;
+  --tg-text-hint-rgb: 89 89 89;
+
+  --tg-border: #0A0A0A;
+  --tg-border-rgb: 10 10 10;
+  --tg-bubble: #0A0A0A;
+  --tg-bubble-rgb: 10 10 10;
+}
+
+/* =========================================
+   MANGA UI AESTHETICS
+   ========================================= */
+
+/* Comic speech bubbles with bold ink border and comic drop shadow */
+[data-theme='manga'] [data-slot='bubble-surface'] {
+  border: 1.5px solid #000000 !important;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* Incoming message: crisp white comic paper */
+[data-theme='manga'] [data-align='start'] [data-slot='bubble-surface'] {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+}
+
+/* Outgoing message: deep jet-black manga ink */
+[data-theme='manga'] [data-align='end'] [data-slot='bubble-surface'] {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+/* Outgoing reactions pill on manga */
+[data-theme='manga'] [data-align='end'] [data-slot='bubble-reactions'] span {
+  border-color: #000000 !important;
+}
+
+/* Manga action buttons and send button: bold comic contrast */
+[data-theme='manga'] .chat-go-gradient {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #000000;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.85);
+}
+
+/* Manga panel cards in settings / sheets */
+[data-theme='manga'] .bg-tg-bg-secondary {
+  border-color: #0A0A0A !important;
+}
+
 /* =========================================
    GLOBAL RESET
    ========================================= */

@@ -43,8 +43,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <div
             id="app-root"
-            className="flex flex-col overflow-hidden w-full"
-            style={{ height: '100dvh' }}
+            className="flex flex-col overflow-hidden"
+            style={{ width: '100%', height: '100%' }}
           >
             {children}
           </div>

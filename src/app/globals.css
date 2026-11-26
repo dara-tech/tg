@@ -143,10 +143,19 @@
 
 * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
 
-html,
-body {
-  height: 100%;
+html {
+  /* iOS PWA: position:fixed + 100% is the ONLY reliable way to fill
+     exactly the visible viewport without dvh overflow bugs */
+  position: fixed;
   width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  position: relative;
+  width: 100%;
+  height: 100%;
   margin: 0;
   padding: 0;
   overflow: hidden;

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, PhoneOff, Smartphone, Volume2, Users, X } from 'lucide-react';
+import { Mic, MicOff, PhoneOff, Smartphone, Volume2, VolumeX, Users, X, Check } from 'lucide-react';
 import { useUIStore } from '@/store/ui.store';
 import { usePersonaStore } from '@/store/persona.store';
 import { createAiCall, stopAiCall, getActiveAiCall } from '@/services/aiCall/aiCallService';
@@ -29,6 +29,9 @@ export function ActiveCallOverlay() {
   const [userVol, setUserVol] = useState<number>(0);
   const [aiVol, setAiVol] = useState<number>(0);
   const [showPicker, setShowPicker] = useState<boolean>(false);
+  const [audioOutputs, setAudioOutputs] = useState<{ deviceId: string; label: string }[]>([]);
+  const [selectedSinkId, setSelectedSinkId] = useState<string>('default');
+  const [showSpeakerMenu, setShowSpeakerMenu] = useState<boolean>(false);
 
   // Smooth Wire-Signal Animation (60FPS GPU lerp)
   const ring1Ref = useRef<HTMLDivElement>(null);
@@ -106,6 +109,29 @@ export function ActiveCallOverlay() {
     return () => clearInterval(t);
   }, [activeCallId]);
 
+  // Audio output devices enumeration
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.enumerateDevices) {
+      const updateOutputs = async () => {
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const outputs = devices
+            .filter((d) => d.kind === 'audiooutput' && d.deviceId)
+            .map((d, i) => ({
+              deviceId: d.deviceId,
+              label: d.label || (d.deviceId === 'default' ? 'Speaker / Default' : `Output ${i + 1}`),
+            }));
+          setAudioOutputs(outputs);
+        } catch {}
+      };
+      updateOutputs();
+      navigator.mediaDevices.addEventListener?.('devicechange', updateOutputs);
+      return () => {
+        navigator.mediaDevices.removeEventListener?.('devicechange', updateOutputs);
+      };
+    }
+  }, []);
+
   // AI Call Lifecycle
   useEffect(() => {
     if (!activeCallId || !isAiCall) {
@@ -121,6 +147,11 @@ export function ActiveCallOverlay() {
 
     try {
       service = createAiCall((aiPersona || 'telegram').toLowerCase() as AIPersona, aiApiKey);
+      service.setMuted(muted);
+      service.setSpeaker(speaker);
+      if (selectedSinkId && selectedSinkId !== 'default') {
+        service.setAudioOutputDevice(selectedSinkId).catch(() => {});
+      }
 
       const handleStateChange = (e: Event) => {
         setAiState((e as CustomEvent<AIState>).detail);
@@ -140,6 +171,11 @@ export function ActiveCallOverlay() {
         setAiVol(Math.min(1, (Number.isFinite(aRaw) ? aRaw : 0) / 100));
       };
 
+      const handleSpeakerChange = (e: Event) => {
+        const detail = (e as CustomEvent<boolean>).detail;
+        setSpeaker(detail);
+      };
+
       const handleError = (e: Event) => {
         const detail = (e as CustomEvent<string | { message?: string }>).detail;
         const msg =
@@ -155,6 +191,7 @@ export function ActiveCallOverlay() {
       service.addEventListener('statechange', handleStateChange);
       service.addEventListener('transcript', handleTranscript);
       service.addEventListener('volume', handleVolume);
+      service.addEventListener('speakerchange', handleSpeakerChange);
       service.addEventListener('error', handleError);
 
       Promise.resolve(service.startCall((aiPersona || 'telegram').toLowerCase() as AIPersona, aiApiKey)).catch((err: unknown) => {
@@ -169,6 +206,7 @@ export function ActiveCallOverlay() {
           service.removeEventListener('statechange', handleStateChange);
           service.removeEventListener('transcript', handleTranscript);
           service.removeEventListener('volume', handleVolume);
+          service.removeEventListener('speakerchange', handleSpeakerChange);
           service.removeEventListener('error', handleError);
           service.endCall();
         }
@@ -193,6 +231,23 @@ export function ActiveCallOverlay() {
     setMuted(next);
     const active = getActiveAiCall();
     if (active) active.setMuted(next);
+  };
+
+  const handleToggleSpeaker = () => {
+    const next = !speaker;
+    setSpeaker(next);
+    const active = getActiveAiCall();
+    if (active) active.setSpeaker(next);
+  };
+
+  const handleSelectAudioOutput = async (deviceId: string) => {
+    setSelectedSinkId(deviceId);
+    setShowSpeakerMenu(false);
+    setSpeaker(true);
+    const active = getActiveAiCall();
+    if (active) {
+      await active.setAudioOutputDevice(deviceId);
+    }
   };
 
   const handleSwitchPersona = (pId: AIPersona) => {
@@ -232,11 +287,15 @@ export function ActiveCallOverlay() {
 
         {isAiCall && (
           <button
-            onClick={() => setShowPicker((v) => !v)}
-            className="w-8 h-8 rounded-full bg-tg-surface border border-tg-border/40 flex items-center justify-center text-tg-text-secondary active:scale-95 transition-transform"
-            aria-label="Switch Companion"
+            onClick={() => {
+              setShowSpeakerMenu(false);
+              setShowPicker((v) => !v);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-tg-surface border border-tg-border/40 text-tg-text text-xs font-medium active:scale-95 transition-transform shadow-sm"
+            aria-label="Switch Character"
           >
-            <Users className="w-4 h-4 text-tg-text-secondary" />
+            <Users className="w-3.5 h-3.5 text-tg-blue" />
+            <span>Character</span>
           </button>
         )}
       </div>
@@ -476,32 +535,92 @@ export function ActiveCallOverlay() {
           <PhoneOff className="w-7 h-7 text-white" />
         </button>
 
-        {/* Speaker or Companion Switch */}
-        {isAiCall ? (
+        {/* Speaker Output Control */}
+        <div className="relative">
           <button
-            onClick={() => setShowPicker((v) => !v)}
-            className={`w-14 h-14 rounded-full flex items-center justify-center active:scale-90 transition-all border ${
-              showPicker
-                ? 'bg-tg-blue text-white border-tg-blue'
-                : 'bg-tg-surface border-tg-border/30 text-tg-text'
-            }`}
-            aria-label="Switch Companion"
-          >
-            <Users className="w-5 h-5 text-tg-text" />
-          </button>
-        ) : (
-          <button
-            onClick={() => setSpeaker((v) => !v)}
+            onClick={handleToggleSpeaker}
+            onContextMenu={(e) => {
+              if (audioOutputs.length > 1) {
+                e.preventDefault();
+                setShowSpeakerMenu((v) => !v);
+              }
+            }}
             className={`w-14 h-14 rounded-full flex items-center justify-center active:scale-90 transition-all border ${
               speaker
-                ? 'bg-tg-surface border-tg-blue/40 text-tg-blue'
-                : 'bg-tg-surface border-tg-border/30 text-tg-text'
+                ? 'bg-tg-surface border-tg-blue/40 text-tg-blue shadow-sm'
+                : 'bg-tg-surface border-tg-border/30 text-tg-text-hint'
             }`}
-            aria-label={speaker ? 'Speaker' : 'Earpiece'}
+            aria-label={speaker ? 'Mute speaker' : 'Unmute speaker'}
+            title={speaker ? 'Speaker (Loud)' : 'Speaker (Muted)'}
           >
-            {speaker ? <Volume2 className="w-6 h-6" /> : <Smartphone className="w-6 h-6" />}
+            {speaker ? <Volume2 className="w-6 h-6" /> : <VolumeX className="w-6 h-6" />}
           </button>
-        )}
+
+          {/* Quick badge if multiple audio devices are detected */}
+          {audioOutputs.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowSpeakerMenu((v) => !v);
+              }}
+              className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-tg-surface border border-tg-border/40 text-[10px] font-bold text-tg-text-secondary flex items-center justify-center hover:text-tg-blue shadow-sm"
+              title="Select audio output device"
+            >
+              {audioOutputs.length}
+            </button>
+          )}
+
+          {/* Audio Output Devices Popover */}
+          {showSpeakerMenu && (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="absolute bottom-16 right-0 w-64 bg-tg-surface border border-tg-border/40 rounded-2xl p-2 shadow-2xl backdrop-blur-2xl z-30 animate-in fade-in slide-in-from-bottom-2 duration-150"
+            >
+              <div className="px-2 py-1.5 text-[11px] font-semibold text-tg-text-hint uppercase tracking-wider flex items-center justify-between border-b border-tg-border/20 mb-1">
+                <span>Audio Output</span>
+                <button
+                  onClick={() => setShowSpeakerMenu(false)}
+                  className="text-tg-text-hint hover:text-tg-text text-xs"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Mute/Unmute Toggle */}
+              <button
+                onClick={() => {
+                  handleToggleSpeaker();
+                  setShowSpeakerMenu(false);
+                }}
+                className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs hover:bg-tg-bg transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  {speaker ? <Volume2 className="w-4 h-4 text-tg-blue" /> : <VolumeX className="w-4 h-4 text-tg-red" />}
+                  <span className="font-medium text-tg-text">{speaker ? 'Mute Output' : 'Enable Speaker'}</span>
+                </div>
+              </button>
+
+              {/* Devices List */}
+              {audioOutputs.map((dev) => {
+                const isSelected = selectedSinkId === dev.deviceId && speaker;
+                return (
+                  <button
+                    key={dev.deviceId}
+                    onClick={() => handleSelectAudioOutput(dev.deviceId)}
+                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition-colors ${
+                      isSelected
+                        ? 'bg-tg-blue/15 text-tg-blue font-semibold'
+                        : 'text-tg-text hover:bg-tg-bg'
+                    }`}
+                  >
+                    <span className="truncate">{dev.label}</span>
+                    {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

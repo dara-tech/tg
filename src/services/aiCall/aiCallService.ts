@@ -54,6 +54,8 @@ export class AICallService extends EventTarget {
   private silentGainNode: GainNode | null = null;
   private outputCompressor: DynamicsCompressorNode | null = null;
   private outputGain: GainNode | null = null;
+  private isSpeakerOn: boolean = true;
+  private currentSinkId: string = 'default';
 
   // Audio queue and jitter buffering
   private nextPlayTime: number = 0;
@@ -127,6 +129,48 @@ export class AICallService extends EventTarget {
     return this.isMuted;
   }
 
+  public setSpeaker(enabled: boolean) {
+    this.isSpeakerOn = enabled;
+    if (this.outputGain && this.audioContext) {
+      try {
+        const targetGain = enabled ? 1.0 : 0.0;
+        this.outputGain.gain.cancelScheduledValues(this.audioContext.currentTime);
+        this.outputGain.gain.setValueAtTime(targetGain, this.audioContext.currentTime);
+      } catch (err) {
+        console.warn('[AICallService] setSpeaker gain error:', err);
+      }
+    }
+    if (this.audioContext && typeof (this.audioContext as any).setSinkId === 'function') {
+      try {
+        (this.audioContext as any).setSinkId(enabled ? (this.currentSinkId || 'default') : 'none');
+      } catch {}
+    }
+    this.dispatchEvent(new CustomEvent('speakerchange', { detail: enabled }));
+  }
+
+  public getIsSpeaker(): boolean {
+    return this.isSpeakerOn;
+  }
+
+  public toggleSpeaker(): boolean {
+    this.setSpeaker(!this.isSpeakerOn);
+    return this.isSpeakerOn;
+  }
+
+  public async setAudioOutputDevice(deviceId: string): Promise<boolean> {
+    this.currentSinkId = deviceId;
+    if (this.audioContext && typeof (this.audioContext as any).setSinkId === 'function') {
+      try {
+        await (this.audioContext as any).setSinkId(deviceId);
+        this.setSpeaker(true);
+        return true;
+      } catch (err) {
+        console.warn('[AICallService] setSinkId error:', err);
+      }
+    }
+    return false;
+  }
+
   private setState(state: AIState) {
     if (this.currentState !== state) {
       this.currentState = state;
@@ -154,7 +198,7 @@ export class AICallService extends EventTarget {
 
     // Direct output gain connected straight to speakers
     this.outputGain = this.audioContext.createGain();
-    this.outputGain.gain.value = 1.0;
+    this.outputGain.gain.value = this.isSpeakerOn ? 1.0 : 0.0;
     this.outputGain.connect(this.audioContext.destination);
 
     // 2. Request microphone stream (guard against missing mediaDevices on non-HTTPS / restricted WebViews)
@@ -323,7 +367,7 @@ export class AICallService extends EventTarget {
       gain.gain.setValueAtTime(0.06, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
       osc.connect(gain);
-      gain.connect(this.audioContext.destination);
+      gain.connect(this.outputGain || this.audioContext.destination);
       osc.start(now);
       osc.stop(now + 0.22);
     } catch (e) {

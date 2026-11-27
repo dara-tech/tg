@@ -259,7 +259,9 @@ export default function SettingsScreen() {
             </p>
             {bio && <p className="text-tg-text-hint text-xs truncate mt-0.5">{bio}</p>}
           </div>
-          <Pencil className="w-4 h-4 text-tg-text-hint shrink-0" />
+          <div className="w-8 h-8 rounded-full bg-tg-surface flex items-center justify-center text-tg-text-hint shrink-0">
+            <Pencil className="w-4 h-4" />
+          </div>
         </button>
 
         {/* Inline Accent Color + 5 Background Themes Card (Screenshot 8) */}
@@ -290,7 +292,7 @@ export default function SettingsScreen() {
                 >
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center transition-transform ${
-                      active ? 'ring-2 ring-white scale-105' : ''
+                      active ? 'ring-2 ring-tg-blue ring-offset-2 ring-offset-tg-bg-secondary scale-105' : ''
                     }`}
                     style={{ backgroundColor: ACCENT_COLORS[id].primary }}
                   >

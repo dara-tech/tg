@@ -71,7 +71,7 @@ export default function ContactsScreen() {
   return (
     <div className="flex flex-col h-full bg-tg-bg">
       {/* Screenshot 5 Header: Search pill + filter pills */}
-      <div className="px-4 pt-3 pb-2.5 bg-tg-bg safe-top space-y-2.5 border-b border-tg-border/35">
+      <div className="px-4 pt-3 pb-2.5 bg-tg-bg safe-top space-y-2.5 border-b border-tg-border/20 [data-theme='manga']_&:border-b-0">
         <div className="flex items-center justify-between">
           <h1 className="text-tg-text text-[26px] font-bold tracking-tight">People</h1>
           <button

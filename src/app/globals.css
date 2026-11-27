@@ -196,25 +196,25 @@
 
   --tg-bg: #FFFFFF;
   --tg-bg-rgb: 255 255 255;
-  --tg-bg-secondary: #FAFAFA;
-  --tg-bg-secondary-rgb: 250 250 250;
+  --tg-bg-secondary: #F7F7F9;
+  --tg-bg-secondary-rgb: 247 247 249;
   --tg-bg-tertiary: #FFFFFF;
   --tg-bg-tertiary-rgb: 255 255 255;
 
-  --tg-surface: #F0F0F2;
-  --tg-surface-rgb: 240 240 242;
+  --tg-surface: #EFEFF3;
+  --tg-surface-rgb: 239 239 243;
 
   --tg-text: #000000;
   --tg-text-rgb: 0 0 0;
-  --tg-text-secondary: #1F1F1F;
-  --tg-text-secondary-rgb: 31 31 31;
-  --tg-text-hint: #595959;
-  --tg-text-hint-rgb: 89 89 89;
+  --tg-text-secondary: #3F3F46;
+  --tg-text-secondary-rgb: 63 63 70;
+  --tg-text-hint: #71717A;
+  --tg-text-hint-rgb: 113 113 122;
 
-  --tg-border: #0A0A0A;
-  --tg-border-rgb: 10 10 10;
-  --tg-bubble: #0A0A0A;
-  --tg-bubble-rgb: 10 10 10;
+  --tg-border: #E4E4E7;
+  --tg-border-rgb: 228 228 231;
+  --tg-bubble: #000000;
+  --tg-bubble-rgb: 0 0 0;
 }
 
 /* =========================================
@@ -223,39 +223,54 @@
 
 /* Top app headers & safe-top navigation bars: seamless borderless header */
 [data-theme='manga'] header,
-[data-theme='manga'] .safe-top {
+[data-theme='manga'] .safe-top,
+[data-theme='manga'] [class*="safe-top"] {
   border-bottom: none !important;
-  background-color: #FFFFFF !important;
+  border-bottom-width: 0 !important;
+  box-shadow: none !important;
 }
 
-/* Card outlines stay solid black ink, while interior divider lines stay subtle */
+/* Bottom Navigation Bar in Manga mode: seamless border-free top */
+[data-theme='manga'] nav,
+[data-theme='manga'] nav.border-t,
+[data-theme='manga'] nav[class*="border-t"] {
+  border-top: none !important;
+  border-top-width: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Card outlines stay clean, soft and refined (native iOS / Telegram feel) */
+[data-theme='manga'] .rounded-2xl.border,
+[data-theme='manga'] .rounded-2xl.bg-tg-bg-secondary {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Interior divider lines stay subtle hairlines */
 [data-theme='manga'] .border-tg-border,
+[data-theme='manga'] .border-tg-border\/20,
 [data-theme='manga'] .border-tg-border\/35,
 [data-theme='manga'] .border-tg-border\/40 {
-  border-color: rgba(0, 0, 0, 0.1) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
 }
 
-/* Card outlines stay clean and refined */
-[data-theme='manga'] .rounded-2xl.border {
-  border-color: rgba(0, 0, 0, 0.2) !important;
-}
-
-/* Comic speech balloons: perfectly smooth rounded corners with crisp 1px ink outline */
+/* Comic speech balloons: perfectly smooth rounded corners with crisp ink outline */
 [data-theme='manga'] [data-slot='bubble-surface'] {
-  border: 1px solid #000000 !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
 }
 
 /* Incoming speech balloon: pure comic paper white with jet-black text */
 [data-theme='manga'] [data-align='start'] [data-slot='bubble-surface'] {
   background-color: #FFFFFF !important;
   color: #000000 !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
 }
 
 /* Outgoing speech balloon: solid jet-black manga ink with pure white text */
 [data-theme='manga'] [data-align='end'] [data-slot='bubble-surface'] {
   background-color: #000000 !important;
   color: #FFFFFF !important;
+  border: 1px solid #000000 !important;
 }
 
 /* Outgoing status ticks & time: high contrast white */
@@ -273,8 +288,8 @@
 
 /* Message reaction stamp pills: perfectly rounded clean pills */
 [data-theme='manga'] [data-slot='bubble-reactions'] button {
-  border: 1px solid #000000 !important;
-  box-shadow: none !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
   background-color: #FFFFFF !important;
   color: #000000 !important;
   font-weight: 600;
@@ -290,40 +305,34 @@
 [data-theme='manga'] .bg-tg-bg-secondary\/90 {
   background-color: #FFFFFF !important;
   color: #000000 !important;
-  border: 1px solid #000000 !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+  border: 1px solid rgba(0, 0, 0, 0.14) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
   font-weight: 700 !important;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
-/* Unread badges: clean Japanese comic crimson stamp with razor-sharp 1px ink border */
+/* Unread badges: clean Japanese comic crimson stamp with razor-sharp border */
 [data-theme='manga'] span.bg-tg-blue,
 [data-theme='manga'] span.bg-rose-500 {
   background-color: #E11D48 !important;
   color: #FFFFFF !important;
-  border: 1px solid #000000 !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
   box-shadow: none !important;
   font-weight: 800 !important;
 }
 
 /* Character avatars: smooth circular ink outline */
 [data-theme='manga'] div.rounded-full.overflow-hidden {
-  border: 1px solid #000000 !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
   box-shadow: none !important;
 }
 
-/* Bottom composer input pill: perfectly smooth rounded pill with clean 1px ink border */
+/* Bottom composer input pill: perfectly smooth rounded pill */
 [data-theme='manga'] .rounded-\[22px\] {
-  border: 1px solid #000000 !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
   box-shadow: none !important;
   background-color: #FAFAFA !important;
-}
-
-/* Floating round composer buttons in message input */
-[data-theme='manga'] button.w-10.h-10.rounded-full {
-  border: 1px solid #000000 !important;
-  box-shadow: none !important;
 }
 
 [data-theme='manga'] .w-10.h-10.chat-go-gradient,
@@ -334,13 +343,6 @@
   box-shadow: none !important;
 }
 
-/* Bottom Navigation Bar in Manga mode: seamless border-free top */
-[data-theme='manga'] nav,
-[data-theme='manga'] nav.border-t {
-  background-color: #FFFFFF !important;
-  border-top: none !important;
-}
-
 [data-theme='manga'] nav a.bg-tg-blue {
   background-color: #000000 !important;
   color: #FFFFFF !important;
@@ -348,12 +350,12 @@
   box-shadow: none !important;
 }
 
-/* Search bars: clean smooth rounded-full with 1px border */
+/* Search bars: clean smooth rounded-full */
 [data-theme='manga'] .h-9.rounded-full.bg-tg-surface,
 [data-theme='manga'] .h-9.rounded-full.bg-tg-surface.border {
-  border: 1px solid #000000 !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
   box-shadow: none !important;
-  background-color: #FAFAFA !important;
+  background-color: #F4F4F6 !important;
 }
 
 /* High contrast ink scrollbar */

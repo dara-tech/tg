@@ -31,7 +31,7 @@ export default function SearchScreen() {
 
   return (
     <div className="flex flex-col h-full bg-tg-bg">
-      <div className="flex items-center gap-2 px-3 pt-3 pb-3 safe-top bg-tg-bg border-b border-tg-border">
+      <div className="flex items-center gap-2 px-3 pt-3 pb-3 safe-top bg-tg-bg border-b border-tg-border/20 [data-theme='manga']_&:border-b-0">
         <div className="relative flex-1">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tg-text-hint" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>

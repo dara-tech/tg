@@ -47,7 +47,7 @@ export default function CallsScreen() {
 
   return (
     <div className="flex flex-col h-full bg-tg-bg">
-      <div className="flex items-center justify-between px-4 pt-3 pb-3 safe-top border-b border-tg-border/35 shrink-0">
+      <div className="flex items-center justify-between px-4 pt-3 pb-3 safe-top border-b border-tg-border/20 [data-theme='manga']_&:border-b-0 shrink-0">
         <h1 className="text-tg-text text-[26px] font-bold tracking-tight">Calls</h1>
         <button
           onClick={openNewCall}

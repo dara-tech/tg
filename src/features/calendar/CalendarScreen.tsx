@@ -81,36 +81,6 @@ const DEFAULT_SYNC_CONFIG: SyncConfig = {
   syncReleases: true,
 };
 
-const INITIAL_EVENTS: CalendarEvent[] = [
-  {
-    id: 'evt-1',
-    title: 'Weekly ERP & Tech Sync',
-    date: format(new Date(), 'yyyy-MM-dd'),
-    time: '14:00',
-    category: 'work',
-    source: 'local',
-  },
-  {
-    id: 'evt-2',
-    title: 'Review Telegram Web V2 Deployment',
-    date: format(new Date(), 'yyyy-MM-dd'),
-    time: '17:30',
-    category: 'github',
-    source: 'github',
-    sourceUrl: 'https://github.com/dara-tech/tg',
-    sourceMeta: { repo: 'dara-tech/tg', type: 'pr' },
-  },
-  {
-    id: 'evt-3',
-    title: 'STI Database ERP Milestone',
-    date: format(addDays(new Date(), 2), 'yyyy-MM-dd'),
-    time: '09:00',
-    category: 'erp',
-    source: 'erp',
-    sourceMeta: { type: 'erp' },
-  },
-];
-
 function GithubIcon({ className = 'w-4 h-4' }: { className?: string }) {
   return (
     <svg className={className} fill="currentColor" viewBox="0 0 24 24">
@@ -188,12 +158,17 @@ export default function CalendarScreen() {
   const [currentTime, setCurrentTime] = useState<Date>(() => new Date());
 
   const [events, setEvents] = useState<CalendarEvent[]>(() => {
-    if (typeof window === 'undefined') return INITIAL_EVENTS;
+    if (typeof window === 'undefined') return [];
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((e: any) => !['evt-1', 'evt-2', 'evt-3'].includes(e.id));
+        }
+      }
     } catch {}
-    return INITIAL_EVENTS;
+    return [];
   });
 
   const [syncConfig, setSyncConfig] = useState<SyncConfig>(() => {

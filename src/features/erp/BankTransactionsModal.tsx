@@ -45,59 +45,6 @@ export interface BankTransaction {
 const STORAGE_KEY = 'tg_bank_transactions_v1';
 const SYNC_CONFIG_KEY = 'tg_calendar_sync_config_v2';
 
-const SAMPLE_TRANSACTIONS: BankTransaction[] = [
-  {
-    id: 'tx-1',
-    date: format(new Date(), 'yyyy-MM-dd'),
-    time: '11:20',
-    amount: 850.0,
-    currency: 'USD',
-    type: 'credit',
-    bank: 'ABA',
-    description: 'Client Milestone 1 Settlement',
-    counterparty: 'Tech Innovators Co.',
-    reference: 'ABA-FT261127001',
-    category: 'income',
-    source: 'erp',
-  },
-  {
-    id: 'tx-2',
-    date: format(new Date(), 'yyyy-MM-dd'),
-    time: '09:45',
-    amount: 120.0,
-    currency: 'USD',
-    type: 'debit',
-    bank: 'ABA',
-    description: 'Cloud Infrastructure & Hosting Server',
-    counterparty: 'Vercel / Cloudflare',
-    reference: 'ABA-POS261127022',
-    category: 'expense',
-    source: 'erp',
-  },
-  {
-    id: 'tx-3',
-    date: format(new Date(), 'yyyy-MM-dd'),
-    time: '13:00',
-    amount: 250000,
-    currency: 'KHR',
-    type: 'debit',
-    bank: 'Bakong',
-    description: 'Office Supplies & Utilities',
-    counterparty: 'City Stationery Mart',
-    reference: 'BKG-KHQR849201',
-    category: 'expense',
-    source: 'manual',
-  },
-];
-
-export const SAMPLE_ERP_DATA = `Date,Type,Amount,Currency,Bank,Description,Counterparty,Reference
-2026-11-27,credit,2500.00,USD,ABA,Web App Milestone Delivery Settlement,Acme Corp,ERP-INV-2026-089
-2026-11-27,credit,4250000,KHR,Bakong,KHQR Merchant POS Daily Settlement,Bakong Pay,BKG-SETTLE-8812
-2026-11-26,debit,120.00,USD,ABA,Cloudflare Workers AI & CDN Compute,Cloudflare Inc,INV-CF-89210
-2026-11-25,debit,850.00,USD,ABA,Office Space Lease & High-speed Fiber Internet,Rithy Plaza,OFFICE-NOV-26
-2026-11-24,debit,1500.00,USD,ABA,Senior Dev & Design Contract Payout,Dev Team,PAYROLL-2026-11B
-2026-11-23,debit,360000,KHR,Wing,Office Refreshments & Team Lunch,Phnom Penh Mart,WING-TX-9012`;
-
 export function parseErpTransactions(rawText: string): BankTransaction[] {
   const text = rawText.trim();
   if (!text) return [];
@@ -403,12 +350,17 @@ export function BankTransactionsModal({
   onSyncToCalendar,
 }: BankTransactionsModalProps) {
   const [transactions, setTransactions] = useState<BankTransaction[]>(() => {
-    if (typeof window === 'undefined') return SAMPLE_TRANSACTIONS;
+    if (typeof window === 'undefined') return [];
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((t: any) => !['tx-1', 'tx-2', 'tx-3'].includes(t.id));
+        }
+      }
     } catch {}
-    return SAMPLE_TRANSACTIONS;
+    return [];
   });
 
   const [activeTab, setActiveTab] = useState<'all' | 'credit' | 'debit'>('all');
@@ -1039,25 +991,12 @@ export function BankTransactionsModal({
         maxWidth="sm:max-w-xl"
       >
         <div className="p-4 space-y-3.5 max-h-[82vh] overflow-y-auto">
-          {/* Format Explanation & Sample Loader */}
-          <div className="flex items-center justify-between gap-2 p-2.5 rounded-2xl bg-tg-bg-secondary border border-tg-border/25 text-xs">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-              <span className="text-tg-text-secondary text-[11px]">
-                Supports CSV, TSV (Excel/Sheets), Odoo/JSON, or bank statement text
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setPastedText(SAMPLE_ERP_DATA);
-                setImportTab('paste');
-                toast('Sample ERP data loaded! Review preview below.', 'info');
-              }}
-              className="px-2.5 py-1 rounded-xl bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border border-amber-500/30 text-[11px] font-bold shrink-0 active:scale-95 transition-all"
-            >
-              Load Sample Data
-            </button>
+          {/* Format Explanation */}
+          <div className="flex items-center gap-2 p-2.5 rounded-2xl bg-tg-bg-secondary border border-tg-border/25 text-xs">
+            <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="text-tg-text-secondary text-[11px]">
+              Supports CSV, TSV (Excel/Sheets), Odoo/JSON, or raw bank statement text
+            </span>
           </div>
 
           {/* Import Method Tabs: Paste vs File */}

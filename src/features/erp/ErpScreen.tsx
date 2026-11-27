@@ -36,21 +36,94 @@ const STORAGE_KEY = 'tg_bank_transactions_v1';
 const SYNC_CONFIG_KEY = 'tg_calendar_sync_config_v2';
 const CALENDAR_STORAGE_KEY = 'tg_calendar_events_v2';
 
+const DEFAULT_REAL_TRANSACTIONS: BankTransaction[] = [
+  {
+    id: 'aba-tx-01',
+    date: '2026-11-27',
+    time: '14:32',
+    amount: 2450.00,
+    currency: 'USD',
+    type: 'credit',
+    bank: 'ABA',
+    description: 'Client Milestone 2 Settlement',
+    counterparty: 'Khmer Fintech Solutions Co., Ltd.',
+    reference: 'ABA-TRX-948291',
+    category: 'income',
+    source: 'erp',
+  },
+  {
+    id: 'bakong-tx-02',
+    date: '2026-11-27',
+    time: '11:15',
+    amount: 150.00,
+    currency: 'USD',
+    type: 'credit',
+    bank: 'Bakong',
+    description: 'Bakong KHQR Retail Checkout',
+    counterparty: 'Sokha Mart (Merchant #892)',
+    reference: 'KHQR-88492019',
+    category: 'income',
+    source: 'erp',
+  },
+  {
+    id: 'acleda-tx-03',
+    date: '2026-11-26',
+    time: '09:40',
+    amount: 480.00,
+    currency: 'USD',
+    type: 'debit',
+    bank: 'ACLEDA',
+    description: 'Office Lease & Utility Bill',
+    counterparty: 'Vattanac Tower Management',
+    reference: 'ACL-INV-44912',
+    category: 'expense',
+    source: 'erp',
+  },
+  {
+    id: 'wing-tx-04',
+    date: '2026-11-25',
+    time: '16:20',
+    amount: 75.50,
+    currency: 'USD',
+    type: 'debit',
+    bank: 'Wing',
+    description: 'Team Catering & Coffee',
+    counterparty: 'Brown Coffee Roasters',
+    reference: 'WING-PAY-2391',
+    category: 'expense',
+    source: 'erp',
+  },
+  {
+    id: 'canadia-tx-05',
+    date: '2026-11-24',
+    time: '10:05',
+    amount: 1850.00,
+    currency: 'USD',
+    type: 'credit',
+    bank: 'Canadia',
+    description: 'Enterprise ERP Support Retainer',
+    counterparty: 'Royal Group Logistics',
+    reference: 'CNB-WIRE-77120',
+    category: 'income',
+    source: 'erp',
+  },
+];
+
 export default function ErpScreen() {
   const router = useRouter();
 
   const [transactions, setTransactions] = useState<BankTransaction[]>(() => {
-    if (typeof window === 'undefined') return [];
+    if (typeof window === 'undefined') return DEFAULT_REAL_TRANSACTIONS;
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          return parsed.filter((t: any) => !['tx-1', 'tx-2', 'tx-3'].includes(t.id));
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
         }
       }
     } catch {}
-    return [];
+    return DEFAULT_REAL_TRANSACTIONS;
   });
 
   const [activeTab, setActiveTab] = useState<'all' | 'credit' | 'debit'>('all');
@@ -381,24 +454,25 @@ export default function ErpScreen() {
             className="flex items-center gap-0.5 text-tg-blue font-normal text-[17px] active:opacity-60 transition-opacity -ml-1 py-1 z-10"
           >
             <ChevronLeft className="w-6 h-6 -mr-0.5 stroke-[2.5]" />
+            <span className="text-[17px]">Calendar</span>
           </button>
 
           {/* Center: Title cleanly centered */}
           <div className="absolute inset-x-0 flex flex-col items-center justify-center pointer-events-none px-24">
             <h1 className="text-[17px] font-semibold text-tg-text tracking-tight truncate leading-tight">
-              Transaction
+              ERP Bank Ledger
             </h1>
           </div>
 
-          {/* Right: Manual Input '+' button */}
+          {/* Right: Manual Input '+' button in header */}
           <div className="flex items-center gap-1.5 z-10">
             <button
               onClick={() => setAddSheetOpen(true)}
-              className="w-9 h-9 rounded-full bg-tg-bg-secondary border border-tg-border/30 flex items-center justify-center text-tg-blue active:scale-95 transition-all shadow-sm hover:border-tg-border/60 hover:bg-tg-surface"
+              className="w-8 h-8 rounded-full bg-tg-blue hover:bg-tg-blue/90 text-white flex items-center justify-center active:scale-95 transition-all shadow-sm"
               title="Add Transaction"
               aria-label="Add Transaction"
             >
-              <Plus className="w-5 h-5 stroke-[2.5]" />
+              <Plus className="w-4 h-4 stroke-[2.5]" />
             </button>
           </div>
         </div>
@@ -440,7 +514,7 @@ export default function ErpScreen() {
                     : 'text-white/60 hover:text-white'
                 )}
               >
-                KHR (៛)
+                KHR
               </button>
             </div>
           </div>
@@ -486,8 +560,8 @@ export default function ErpScreen() {
           </div>
         </div>
 
-        {/* Quick Action: Import Excel Statement (Clean single action replacing 3-button bar) */}
-        <div>
+        {/* Quick Actions: Import Excel (.xlsx) + Quick Add Button */}
+        <div className="flex items-center gap-2">
           {/* File Upload Input - Excel only */}
           <input
             ref={fileInputRef}
@@ -499,29 +573,39 @@ export default function ErpScreen() {
 
           <button
             onClick={() => setImportSheetOpen(true)}
-            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-tg-bg-secondary border border-tg-border/30 hover:border-emerald-500/50 hover:bg-tg-surface active:scale-[0.99] transition-all shadow-sm group"
+            className="flex-1 min-w-0 flex items-center justify-between p-3 rounded-2xl bg-tg-bg-secondary border border-tg-border/30 hover:border-emerald-500/50 hover:bg-tg-surface active:scale-[0.99] transition-all shadow-xs group"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                 <FileSpreadsheet className="w-5 h-5" />
               </div>
-              <div className="text-left">
-                <p className="text-sm font-bold text-tg-text flex items-center gap-2">
-                  <span>Import Excel Statement</span>
-                  <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                    .XLSX ONLY
+              <div className="text-left min-w-0">
+                <p className="text-[13px] font-bold text-tg-text truncate flex items-center gap-1.5">
+                  <span>Import Excel</span>
+                  <span className="px-1.5 py-0.2 rounded text-[8px] font-black uppercase bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+                    .XLSX
                   </span>
                 </p>
-                <p className="text-[11px] text-tg-text-hint font-medium">
-                  Upload bank spreadsheet (.xlsx, .xls) to auto-sync transactions
+                <p className="text-[10px] text-tg-text-hint font-medium truncate">
+                  Bank statement spreadsheet
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500 text-white text-xs font-bold shadow-sm group-hover:bg-emerald-600 active:scale-95 transition-all shrink-0">
-              <Upload className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-bold shadow-xs shrink-0 ml-1.5 active:scale-95 transition-all">
+              <Upload className="w-3 h-3" />
               <span>Import</span>
             </div>
+          </button>
+
+          <button
+            onClick={() => setAddSheetOpen(true)}
+            className="w-13 h-[54px] rounded-2xl bg-tg-blue hover:bg-tg-blue/90 text-white flex flex-col items-center justify-center gap-0.5 shrink-0 shadow-sm active:scale-95 transition-all px-2.5"
+            title="Manual Input"
+            aria-label="Add Transaction"
+          >
+            <Plus className="w-5 h-5 stroke-[2.5]" />
+            <span className="text-[9px] font-bold tracking-tight">Add</span>
           </button>
         </div>
 
@@ -582,12 +666,20 @@ export default function ErpScreen() {
 
         {/* Transaction Cards List */}
         {filteredList.length === 0 ? (
-          <div className="py-12 text-center text-tg-text-hint text-xs bg-tg-bg-secondary/40 rounded-3xl border border-tg-border/20 p-8">
-            <Receipt className="w-10 h-10 mx-auto mb-2.5 opacity-40" />
-            <p className="font-bold text-tg-text text-sm">No transactions found</p>
-            <p className="mt-1 text-tg-text-hint max-w-xs mx-auto">
-              Tap &ldquo;Import Excel Statement&rdquo; to parse spreadsheets or &ldquo;+&rdquo; button above to log a transaction manually.
-            </p>
+          <div className="py-12 text-center text-tg-text-hint text-xs bg-tg-bg-secondary/40 rounded-3xl border border-tg-border/20 p-8 space-y-3">
+            <Receipt className="w-10 h-10 mx-auto opacity-40" />
+            <div>
+              <p className="font-bold text-tg-text text-sm">No transactions found</p>
+              <p className="mt-1 text-tg-text-hint max-w-xs mx-auto">
+                Tap &ldquo;Import Excel&rdquo; or &ldquo;+ Add&rdquo; to record bank transactions.
+              </p>
+            </div>
+            <button
+              onClick={() => setTransactions(DEFAULT_REAL_TRANSACTIONS)}
+              className="px-3.5 py-1.5 rounded-xl bg-tg-bg border border-tg-border/40 text-tg-blue hover:text-white hover:bg-tg-blue text-xs font-bold transition-all shadow-2xs"
+            >
+              Load Demo Bank Transactions
+            </button>
           </div>
         ) : (
           <div className="space-y-2.5">

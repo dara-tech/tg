@@ -59,7 +59,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           const cleaned = body
             .replace(/font-family:\s*['"][^'"]+['"]\s*;/g, "font-family: 'ActiveKhmerFont';")
             .replace(/unicode-range:\s*[^;]+;/g, '');
-          return `@font-face {${cleaned}\n  unicode-range: U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC;\n}`;
+          return `@font-face {${cleaned}\n  unicode-range: U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC;\n  ascent-override: 110%;\n  descent-override: 38%;\n  line-gap-override: 10%;\n}`;
         });
         const styleId = 'tg-khmer-font-style';
         let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;

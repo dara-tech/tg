@@ -928,8 +928,8 @@ export default function ConversationScreen() {
             dcId={chatMeta.dcId}
           />
           <div className="text-left min-w-0">
-            <p className="text-tg-text font-semibold text-[16px] leading-tight truncate">{chatMeta.title}</p>
-            <p className={`text-[12px] font-normal leading-tight mt-0.5 ${partnerAction || chatMeta.isOnline ? 'text-emerald-400' : 'text-tg-text-hint'}`}>
+            <p className="text-tg-text font-semibold text-[16px] leading-normal truncate py-0.5">{chatMeta.title}</p>
+            <p className={`text-[12px] font-normal leading-normal ${partnerAction || chatMeta.isOnline ? 'text-emerald-400' : 'text-tg-text-hint'}`}>
               {partnerAction
                 ? `• ${partnerAction}…`
                 : chatMeta.isSavedMessages

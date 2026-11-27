@@ -1330,7 +1330,7 @@ function DialogRow({
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2 mb-0.5">
           <div className="flex items-center gap-1 min-w-0">
-            <span className="text-tg-text font-semibold truncate text-[15px] leading-snug">{displayTitle}</span>
+            <span className="text-tg-text font-semibold truncate text-[15px] leading-normal py-0.5">{displayTitle}</span>
             {dialog.isMuted && (
               <VolumeX className="w-3.5 h-3.5 text-tg-text-hint shrink-0" />
             )}
@@ -1348,7 +1348,7 @@ function DialogRow({
         </div>
 
         <div className="flex items-start justify-between gap-2">
-          <p className="text-tg-text-secondary text-[13.5px] leading-snug line-clamp-2 flex-1 text-left">
+          <p className="text-tg-text-secondary text-[13.5px] leading-[1.5] pb-0.5 line-clamp-2 flex-1 text-left">
             <DialogMediaBadge media={dialog.lastMessageMedia} lastMessage={dialog.lastMessage} />
             {renderDialogLastMessage(dialog.lastMessage, dialog.unreadCount)}
           </p>

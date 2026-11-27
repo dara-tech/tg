@@ -110,7 +110,7 @@ function ContextMenu({
               : 'bg-tg-bg-secondary border border-tg-border text-tg-text rounded-bl-[4px]'
           )}
         >
-          <span className="break-words whitespace-pre-wrap line-clamp-4">{previewText}</span>
+          <span className="break-words whitespace-pre-wrap line-clamp-4 leading-normal pb-0.5">{previewText}</span>
           <span className={clsx('text-[10px] shrink-0 flex items-center gap-0.5 mb-0.5', isOut ? 'text-white/75' : 'text-tg-text-hint')}>
             <span>{time}</span>
             {isOut && <StatusTick status={status ?? 'sent'} />}
@@ -1268,7 +1268,7 @@ export function MessageBubble({
               {hasSenderName && senderMeta?.name && (
                 <p
                   className={clsx(
-                    'text-xs font-semibold truncate mb-0.5',
+                    'text-xs font-semibold truncate mb-0.5 py-0.5 leading-normal',
                     hasEdgeCaption && 'px-3 pt-2',
                     'text-tg-blue'
                   )}

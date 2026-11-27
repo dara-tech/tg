@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Mic, MicOff, PhoneOff, Smartphone, Volume2, Sparkles, X } from 'lucide-react';
+import { Mic, MicOff, PhoneOff, Smartphone, Volume2, Users, X } from 'lucide-react';
 import { useUIStore } from '@/store/ui.store';
 import { createAiCall, stopAiCall, getActiveAiCall } from '@/services/aiCall/aiCallService';
 import { AI_PERSONAS, getPersonaConfig } from '@/services/aiCall/personas';
@@ -27,7 +27,7 @@ export function ActiveCallOverlay() {
   const [aiVol, setAiVol] = useState<number>(0);
   const [showPicker, setShowPicker] = useState<boolean>(false);
 
-  const personaConfig = getPersonaConfig(aiPersona as AIPersona);
+  const personaConfig = getPersonaConfig(aiPersona);
 
   // Call duration timer
   useEffect(() => {
@@ -50,56 +50,68 @@ export function ActiveCallOverlay() {
     setErrorMessage(null);
     setTranscript('');
 
-    const service = createAiCall(aiPersona as AIPersona, aiApiKey);
+    let service: ReturnType<typeof createAiCall> | null = null;
 
-    const handleStateChange = (e: Event) => {
-      setAiState((e as CustomEvent<AIState>).detail);
-    };
+    try {
+      service = createAiCall((aiPersona || 'telegram').toLowerCase() as AIPersona, aiApiKey);
 
-    const handleTranscript = (e: Event) => {
-      const detail = (e as CustomEvent<Partial<AiTranscriptEvent> | string>).detail;
-      const text = typeof detail === 'string' ? detail : detail?.text ?? '';
-      if (text) setTranscript(text);
-    };
+      const handleStateChange = (e: Event) => {
+        setAiState((e as CustomEvent<AIState>).detail);
+      };
 
-    const handleVolume = (e: Event) => {
-      const detail = (e as CustomEvent<{ user?: number; ai?: number; userVolume?: number; aiVolume?: number }>).detail;
-      const uRaw = detail?.userVolume ?? detail?.user ?? 0;
-      const aRaw = detail?.aiVolume ?? detail?.ai ?? 0;
-      setUserVol(Math.min(1, (Number.isFinite(uRaw) ? uRaw : 0) / 100));
-      setAiVol(Math.min(1, (Number.isFinite(aRaw) ? aRaw : 0) / 100));
-    };
+      const handleTranscript = (e: Event) => {
+        const detail = (e as CustomEvent<Partial<AiTranscriptEvent> | string>).detail;
+        const text = typeof detail === 'string' ? detail : detail?.text ?? '';
+        if (text) setTranscript(text);
+      };
 
-    const handleError = (e: Event) => {
-      const detail = (e as CustomEvent<string | { message?: string }>).detail;
-      const msg =
-        typeof detail === 'string'
-          ? detail
-          : detail && typeof detail === 'object' && typeof detail.message === 'string'
-          ? detail.message
-          : 'Call connection failed';
+      const handleVolume = (e: Event) => {
+        const detail = (e as CustomEvent<{ user?: number; ai?: number; userVolume?: number; aiVolume?: number }>).detail;
+        const uRaw = detail?.userVolume ?? detail?.user ?? 0;
+        const aRaw = detail?.aiVolume ?? detail?.ai ?? 0;
+        setUserVol(Math.min(1, (Number.isFinite(uRaw) ? uRaw : 0) / 100));
+        setAiVol(Math.min(1, (Number.isFinite(aRaw) ? aRaw : 0) / 100));
+      };
+
+      const handleError = (e: Event) => {
+        const detail = (e as CustomEvent<string | { message?: string }>).detail;
+        const msg =
+          typeof detail === 'string'
+            ? detail
+            : detail && typeof detail === 'object' && typeof detail.message === 'string'
+            ? detail.message
+            : 'Call connection failed';
+        setErrorMessage(msg);
+        setAiState('error');
+      };
+
+      service.addEventListener('statechange', handleStateChange);
+      service.addEventListener('transcript', handleTranscript);
+      service.addEventListener('volume', handleVolume);
+      service.addEventListener('error', handleError);
+
+      Promise.resolve(service.startCall((aiPersona || 'telegram').toLowerCase() as AIPersona, aiApiKey)).catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : 'Unable to start audio stream';
+        console.warn('[ActiveCallOverlay] StartCall error:', msg);
+        setErrorMessage(msg);
+        setAiState('error');
+      });
+
+      return () => {
+        if (service) {
+          service.removeEventListener('statechange', handleStateChange);
+          service.removeEventListener('transcript', handleTranscript);
+          service.removeEventListener('volume', handleVolume);
+          service.removeEventListener('error', handleError);
+          service.endCall();
+        }
+      };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Audio initialization error';
+      console.error('[ActiveCallOverlay] Lifecycle exception:', err);
       setErrorMessage(msg);
       setAiState('error');
-    };
-
-    service.addEventListener('statechange', handleStateChange);
-    service.addEventListener('transcript', handleTranscript);
-    service.addEventListener('volume', handleVolume);
-    service.addEventListener('error', handleError);
-
-    Promise.resolve(service.startCall(aiPersona as AIPersona, aiApiKey)).catch((err: unknown) => {
-      const msg = err instanceof Error ? err.message : 'Unable to start AI call';
-      setErrorMessage(msg);
-      setAiState('error');
-    });
-
-    return () => {
-      service.removeEventListener('statechange', handleStateChange);
-      service.removeEventListener('transcript', handleTranscript);
-      service.removeEventListener('volume', handleVolume);
-      service.removeEventListener('error', handleError);
-      service.endCall();
-    };
+    }
   }, [activeCallId, isAiCall, aiPersona, aiApiKey]);
 
   if (!activeCallId) return null;
@@ -129,9 +141,11 @@ export function ActiveCallOverlay() {
   const fmt = (s: number) =>
     `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
-  const displayName = isAiCall ? personaConfig.name : activeCallName || `User ${activeCallId}`;
+  const displayName = isAiCall
+    ? personaConfig?.name || 'Telegram AI'
+    : activeCallName || `User ${activeCallId}`;
   const initials = isAiCall
-    ? personaConfig.gradient.initial
+    ? personaConfig?.gradient?.initial || 'AI'
     : displayName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || 'U';
 
   const currentVolume = aiState === 'speaking' ? aiVol : userVol;
@@ -139,10 +153,10 @@ export function ActiveCallOverlay() {
 
   return (
     <div className="fixed inset-0 z-[100] bg-tg-bg/95 text-tg-text backdrop-blur-3xl flex flex-col justify-between items-center px-6 py-10 safe-top safe-bottom select-none overflow-hidden transition-colors">
-      {/* Top subtle bar */}
+      {/* Top clean bar */}
       <div className="w-full max-w-sm flex items-center justify-between z-10 pt-2">
         <div className="flex items-center gap-1.5 text-xs text-tg-text-hint font-medium">
-          {isAiCall && <Sparkles className="w-3.5 h-3.5 text-tg-blue" />}
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <span>{fmt(duration)}</span>
         </div>
 
@@ -152,7 +166,7 @@ export function ActiveCallOverlay() {
             className="w-8 h-8 rounded-full bg-tg-surface border border-tg-border/40 flex items-center justify-center text-tg-text-secondary active:scale-95 transition-transform"
             aria-label="Switch Companion"
           >
-            <Sparkles className="w-4 h-4 text-tg-blue" />
+            <Users className="w-4 h-4 text-tg-text-secondary" />
           </button>
         )}
       </div>
@@ -185,7 +199,7 @@ export function ActiveCallOverlay() {
             onClick={isAiCall && aiState === 'speaking' ? handleInterrupt : undefined}
             className="relative w-32 h-32 rounded-full overflow-hidden border border-tg-border/30 shadow-xl flex items-center justify-center cursor-pointer transition-transform active:scale-95 bg-tg-surface"
           >
-            {isAiCall && personaConfig.avatar ? (
+            {isAiCall && personaConfig?.avatar ? (
               <img
                 src={personaConfig.avatar}
                 alt={displayName}
@@ -273,7 +287,7 @@ export function ActiveCallOverlay() {
                     {p.avatar ? (
                       <img src={p.avatar} alt={p.name} className="w-full h-full object-cover" />
                     ) : (
-                      p.gradient.initial
+                      p.gradient?.initial || 'AI'
                     )}
                   </div>
                   <span className="text-xs font-medium truncate">{p.name}</span>
@@ -319,7 +333,7 @@ export function ActiveCallOverlay() {
             }`}
             aria-label="Switch Companion"
           >
-            <Sparkles className="w-5 h-5 text-tg-blue" />
+            <Users className="w-5 h-5 text-tg-text" />
           </button>
         ) : (
           <button

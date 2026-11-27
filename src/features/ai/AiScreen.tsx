@@ -5,7 +5,6 @@ import {
   MessageSquare,
   Search,
   SlidersHorizontal,
-  Sparkles,
   Check,
   X,
   Bot,

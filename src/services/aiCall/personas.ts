@@ -146,9 +146,30 @@ You talk using modern internet slang, trendy vibes, humor, and witty observation
 
 export const DEFAULT_AI_PERSONA: AIPersona = 'telegram';
 
-export function getPersonaConfig(personaId?: AIPersona): PersonaConfig {
-  if (personaId && AI_PERSONAS[personaId]) {
-    return AI_PERSONAS[personaId];
+const FALLBACK_PERSONA: PersonaConfig = {
+  id: 'telegram',
+  name: 'Telegram AI',
+  tagline: 'Voice Companion',
+  description: 'Fast, intelligent voice companion with natural conversational audio.',
+  avatar: '/icons/ai-brain.png',
+  voice: 'Aoede',
+  category: 'general',
+  tags: ['AI', 'Smart', 'Multilingual'],
+  gradient: { from: '#0284c7', to: '#4f46e5', initial: 'AI' },
+  prompt: 'You are Telegram AI — a fast, helpful, natural voice companion built into Telegram Web. Speak clearly and concisely in the user language.',
+  greeting: 'សួស្តី! ខ្ញុំជា Telegram AI Voice Assistant។ តើខ្ញុំអាចជួយអ្វីអ្នកថ្ងៃនេះ?',
+};
+
+export function getPersonaConfig(personaId?: string | null): PersonaConfig {
+  if (personaId) {
+    const key = personaId.toLowerCase().trim() as AIPersona;
+    if (AI_PERSONAS[key]) {
+      return AI_PERSONAS[key];
+    }
+    const found = Object.values(AI_PERSONAS).find(
+      (p) => p.id.toLowerCase() === key || p.name.toLowerCase() === personaId.toLowerCase().trim()
+    );
+    if (found) return found;
   }
-  return AI_PERSONAS[DEFAULT_AI_PERSONA];
+  return AI_PERSONAS[DEFAULT_AI_PERSONA] || AI_PERSONAS.bopha || FALLBACK_PERSONA;
 }

@@ -27,7 +27,6 @@ import {
   Key,
   ExternalLink,
   AlertCircle,
-  Sparkles,
   Bot,
 } from 'lucide-react';
 import { AI_PERSONAS, getPersonaConfig } from '@/services/aiCall/personas';
@@ -1231,7 +1230,7 @@ export default function SettingsScreen() {
               }}
               className="w-full py-2.5 px-4 rounded-xl bg-tg-blue text-white text-sm font-semibold hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
             >
-              <Sparkles className="w-4 h-4" />
+              <Phone className="w-4 h-4" />
               <span>Call AI Companion</span>
             </button>
           </div>

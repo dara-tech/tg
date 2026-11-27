@@ -206,13 +206,16 @@ export const useUIStore = create<UIState>()(
       setAutoDownload: (k, v) => set({ [k]: v } as Partial<UIState>),
       setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
       setActiveCall: (activeCallId, activeCallName = '', isAi = false) => set({ activeCallId, activeCallName, isAiCall: isAi }),
-      startAiCall: (persona) => set((s) => ({
-        activeCallId: 999999,
-        activeCallName: persona ? persona.toUpperCase() : s.aiPersona.toUpperCase(),
-        isAiCall: true,
-        aiPersona: persona || s.aiPersona,
-      })),
-      setAiPersona: (aiPersona) => set({ aiPersona }),
+      startAiCall: (persona) => set((s) => {
+        const pClean = (persona || s.aiPersona || 'telegram').toLowerCase().trim();
+        return {
+          activeCallId: 999999,
+          activeCallName: pClean.toUpperCase(),
+          isAiCall: true,
+          aiPersona: pClean,
+        };
+      }),
+      setAiPersona: (aiPersona) => set({ aiPersona: (aiPersona || 'telegram').toLowerCase().trim() }),
       setAiApiKey: (aiApiKey) => set({ aiApiKey }),
     }),
     {

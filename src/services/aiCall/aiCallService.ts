@@ -1,5 +1,5 @@
 import type { AIState, AIPersona, TranscriptEntry } from './types';
-import { AI_PERSONAS, DEFAULT_AI_PERSONA } from './personas';
+import { AI_PERSONAS, DEFAULT_AI_PERSONA, getPersonaConfig } from './personas';
 import { downsampleBuffer, floatTo16BitPCM, arrayBufferToBase64, base64ToFloat32Array } from './audioUtils';
 
 export class AICallService extends EventTarget {
@@ -308,7 +308,7 @@ export class AICallService extends EventTarget {
       this.setState('connected');
       this.nextPlayTime = this.audioContext?.currentTime || 0;
 
-      const personaConfig = AI_PERSONAS[this.personaId] || AI_PERSONAS[DEFAULT_AI_PERSONA];
+      const personaConfig = getPersonaConfig(this.personaId);
 
       const setupPayload: any = {
         model: 'models/gemini-3.8-live',
@@ -517,7 +517,7 @@ export class AICallService extends EventTarget {
     }
     const text = this.currentAiTurnText.trim();
     if (text) {
-      const personaConfig = AI_PERSONAS[this.personaId] || AI_PERSONAS[DEFAULT_AI_PERSONA];
+      const personaConfig = getPersonaConfig(this.personaId);
       this.dispatchEvent(
         new CustomEvent('transcript', {
           detail: {

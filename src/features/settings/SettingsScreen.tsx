@@ -22,6 +22,11 @@ import {
   Trash2,
   Type,
   Upload,
+  Eye,
+  EyeOff,
+  Key,
+  ExternalLink,
+  AlertCircle,
 } from 'lucide-react';
 import { Avatar }      from '@/components/ui/Avatar';
 import { BottomSheet } from '@/components/ui/BottomSheet';
@@ -35,7 +40,7 @@ import { fetchRealProfile, isMTProtoConfigured, updateRealProfile } from '@/serv
 import { call } from '@/core/telegram/mtproto.client';
 import { logOut } from '@/services/auth.real';
 
-type PanelId = 'notifications' | 'privacy' | 'storage' | 'appearance' | 'wallpaper' | 'khmerFont' | 'language' | 'help' | null;
+type PanelId = 'notifications' | 'privacy' | 'storage' | 'appearance' | 'wallpaper' | 'khmerFont' | 'language' | 'github' | 'help' | null;
 
 const LANGUAGES = ['English', 'ភាសាខ្មែរ', '日本語', '한국어', '中文'];
 
@@ -69,6 +74,25 @@ export default function SettingsScreen() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [fontSearch, setFontSearch] = useState('');
   const safeKhmerFont: KhmerFontId = KHMER_FONTS[ui.khmerFont] ? ui.khmerFont : 'hanuman';
+
+  const [githubRepo, setGithubRepo] = useState('dara-tech/tg');
+  const [githubToken, setGithubToken] = useState('');
+  const [erpApiUrl, setErpApiUrl] = useState('');
+  const [showToken, setShowToken] = useState(false);
+  const [testingToken, setTestingToken] = useState(false);
+  const [tokenStatus, setTokenStatus] = useState<{ ok: boolean; message: string } | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('tg_calendar_sync_config_v2');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.githubRepo) setGithubRepo(parsed.githubRepo);
+        if (parsed.githubToken) setGithubToken(parsed.githubToken);
+        if (parsed.erpApiUrl) setErpApiUrl(parsed.erpApiUrl);
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     if (panel !== 'khmerFont') return;
@@ -207,6 +231,51 @@ export default function SettingsScreen() {
     }
     reset();
     router.replace('/auth');
+  };
+
+  const handleTestGithub = async () => {
+    setTestingToken(true);
+    setTokenStatus(null);
+    try {
+      const headers: Record<string, string> = { Accept: 'application/vnd.github.v3+json' };
+      if (githubToken.trim()) {
+        headers.Authorization = `token ${githubToken.trim()}`;
+      }
+      const url = githubToken.trim()
+        ? 'https://api.github.com/user'
+        : `https://api.github.com/repos/${githubRepo.trim() || 'dara-tech/tg'}`;
+      const res = await fetch(url, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        const login = data.login ? `Logged in as @${data.login}` : `Connected to ${data.full_name || githubRepo}`;
+        setTokenStatus({ ok: true, message: `Success: ${login}` });
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setTokenStatus({ ok: false, message: `GitHub error: ${err.message || res.statusText}` });
+      }
+    } catch (e: any) {
+      setTokenStatus({ ok: false, message: `Connection failed: ${e.message || 'Network error'}` });
+    } finally {
+      setTestingToken(false);
+    }
+  };
+
+  const handleSaveGithubSettings = () => {
+    try {
+      const raw = localStorage.getItem('tg_calendar_sync_config_v2');
+      const existing = raw ? JSON.parse(raw) : {};
+      const updated = {
+        ...existing,
+        githubRepo: githubRepo.trim() || 'dara-tech/tg',
+        githubToken: githubToken.trim(),
+        erpApiUrl: erpApiUrl.trim(),
+      };
+      localStorage.setItem('tg_calendar_sync_config_v2', JSON.stringify(updated));
+      toast('GitHub & ERP configuration saved', 'success');
+      setPanel(null);
+    } catch {
+      toast('Failed to save settings', 'error');
+    }
   };
 
   const safeTheme = BG_THEMES[ui.theme] ? ui.theme : 'black';
@@ -477,6 +546,7 @@ export default function SettingsScreen() {
               { id: 'storage'       as const, bg: 'bg-cyan-500',    icon: <Database className="w-4 h-4 text-white" />,   label: 'Data & Storage',         desc: ui.autoDownloadPhotos ? 'Auto' : 'Manual' },
               { id: 'wallpaper'     as const, bg: 'bg-pink-500',    icon: <ImageIcon className="w-4 h-4 text-white" />,  label: 'Chat Wallpaper',         desc: ui.chatWallpaper === 'custom' ? 'Custom Image' : (CHAT_WALLPAPERS[ui.chatWallpaper]?.name ?? 'Theme Default') },
               { id: 'khmerFont'     as const, bg: 'bg-violet-500',  icon: <Type className="w-4 h-4 text-white" />,       label: 'Khmer Font',             desc: KHMER_FONTS[safeKhmerFont].name },
+              { id: 'github'        as const, bg: 'bg-purple-600',  icon: <Key className="w-4 h-4 text-white" />,        label: 'GitHub & ERP Integration', desc: githubToken ? 'Connected' : (githubRepo.split('/')[1] || githubRepo || 'Configure') },
               { id: 'language'      as const, bg: 'bg-indigo-500',  icon: <Globe className="w-4 h-4 text-white" />,      label: 'Language',               desc: ui.language },
               { id: 'help'          as const, bg: 'bg-slate-500',   icon: <HelpCircle className="w-4 h-4 text-white" />, label: 'Help & FAQ',             desc: '' },
             ].map((item, idx, arr) => (
@@ -938,6 +1008,119 @@ export default function SettingsScreen() {
               {ui.language === lang && <span className="text-xs font-bold">Active</span>}
             </button>
           ))}
+        </div>
+      </BottomSheet>
+
+      {/* GitHub & ERP Integration Panel */}
+      <BottomSheet
+        open={panel === 'github'}
+        onClose={() => setPanel(null)}
+        title="GitHub & ERP Authentication"
+        maxWidth="sm:max-w-md"
+      >
+        <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-purple-500/10 border border-purple-500/20">
+            <Key className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
+            <div className="text-xs text-tg-text-secondary leading-relaxed">
+              <span className="font-semibold text-tg-text">Personal Access Token (PAT)</span> enables private repo milestone and issue synchronization with Calendar, plus ERP calendar integration.
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-tg-text uppercase tracking-wider">GitHub Personal Access Token</label>
+              <a
+                href="https://github.com/settings/tokens/new?scopes=repo&description=Telegram+Web+Calendar+Sync"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] text-tg-blue hover:underline flex items-center gap-1"
+              >
+                <span>Generate Token</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+            <div className="relative">
+              <input
+                type={showToken ? 'text' : 'password'}
+                value={githubToken}
+                onChange={(e) => {
+                  setGithubToken(e.target.value);
+                  setTokenStatus(null);
+                }}
+                placeholder="ghp_xxxx or github_pat_xxxx (Optional)"
+                className="w-full bg-tg-bg border border-tg-border rounded-xl px-3.5 py-2.5 text-sm text-tg-text pr-10 focus:outline-none focus:border-tg-blue font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => setShowToken(!showToken)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-tg-text-hint hover:text-tg-text"
+              >
+                {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <p className="text-[11px] text-tg-text-hint">
+              Optional for public repos. Required for private repositories and higher API rate limits.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-tg-text uppercase tracking-wider">GitHub Target Repository</label>
+            <input
+              type="text"
+              value={githubRepo}
+              onChange={(e) => {
+                setGithubRepo(e.target.value);
+                setTokenStatus(null);
+              }}
+              placeholder="owner/repo (e.g. dara-tech/tg)"
+              className="w-full bg-tg-bg border border-tg-border rounded-xl px-3.5 py-2.5 text-sm text-tg-text focus:outline-none focus:border-tg-blue font-mono"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-tg-text uppercase tracking-wider">ERP System API Endpoint (Optional)</label>
+            <input
+              type="url"
+              value={erpApiUrl}
+              onChange={(e) => setErpApiUrl(e.target.value)}
+              placeholder="https://erp.yourdomain.com/api/v1/calendar"
+              className="w-full bg-tg-bg border border-tg-border rounded-xl px-3.5 py-2.5 text-sm text-tg-text focus:outline-none focus:border-tg-blue"
+            />
+            <p className="text-[11px] text-tg-text-hint">
+              Enterprise endpoint to retrieve ERP project deadlines and schedules.
+            </p>
+          </div>
+
+          {tokenStatus && (
+            <div
+              className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
+                tokenStatus.ok
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                  : 'bg-red-500/10 border-red-500/30 text-red-400'
+              }`}
+            >
+              {tokenStatus.ok ? <Check className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+              <span>{tokenStatus.message}</span>
+            </div>
+          )}
+
+          <div className="flex gap-2.5 pt-2">
+            <button
+              type="button"
+              onClick={handleTestGithub}
+              disabled={testingToken}
+              className="flex-1 py-2.5 px-3 rounded-xl border border-tg-border bg-tg-surface text-tg-text text-sm font-medium hover:bg-tg-surface/80 active:scale-[0.99] transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+            >
+              {testingToken ? 'Testing...' : 'Test Connection'}
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveGithubSettings}
+              className="flex-1 py-2.5 px-3 rounded-xl bg-tg-blue text-white text-sm font-semibold hover:bg-tg-blue/90 active:scale-[0.99] transition-all"
+            >
+              Save Configuration
+            </button>
+          </div>
         </div>
       </BottomSheet>
 

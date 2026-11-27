@@ -16,9 +16,9 @@
   font-display: swap;
   src: url('https://fonts.gstatic.com/s/battambang/v26/uk-lEGe7raEw-HjkzZabNtmL9yhQ86RJ5IxcMg.woff2') format('woff2');
   unicode-range: U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC;
-  ascent-override: 110%;
-  descent-override: 38%;
-  line-gap-override: 10%;
+  ascent-override: 125%;
+  descent-override: 50%;
+  line-gap-override: 15%;
 }
 
 @font-face {
@@ -28,9 +28,9 @@
   font-display: swap;
   src: url('https://fonts.gstatic.com/s/battambang/v26/uk-mEGe7raEw-HjkzZabPnmp4g5y_o5z7Q.woff2') format('woff2');
   unicode-range: U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC;
-  ascent-override: 110%;
-  descent-override: 38%;
-  line-gap-override: 10%;
+  ascent-override: 125%;
+  descent-override: 50%;
+  line-gap-override: 15%;
 }
 
 @font-face {
@@ -40,9 +40,9 @@
   font-display: swap;
   src: url('https://fonts.gstatic.com/s/battambang/v26/uk-lEGe7raEw-HjkzZabNsmM9yhQ86RJ5IxcMg.woff2') format('woff2');
   unicode-range: U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC;
-  ascent-override: 110%;
-  descent-override: 38%;
-  line-gap-override: 10%;
+  ascent-override: 125%;
+  descent-override: 50%;
+  line-gap-override: 15%;
 }
 
 @font-face {
@@ -52,9 +52,9 @@
   font-display: swap;
   src: url('https://fonts.gstatic.com/s/battambang/v26/uk-lEGe7raEw-HjkzZabNvGO9yhQ86RJ5IxcMg.woff2') format('woff2');
   unicode-range: U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC;
-  ascent-override: 110%;
-  descent-override: 38%;
-  line-gap-override: 10%;
+  ascent-override: 125%;
+  descent-override: 50%;
+  line-gap-override: 15%;
 }
 
 /* Prevent clipping of Khmer stacked diacritics (សក់) and subscript consonants/vowels (ជើង) */
@@ -63,7 +63,8 @@
 .line-clamp-3,
 .line-clamp-4,
 [class*='line-clamp-'] {
-  padding-bottom: 3px;
+  padding-bottom: 4px;
+  line-height: 1.62 !important;
 }
 
 /* =========================================

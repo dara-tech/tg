@@ -1348,7 +1348,7 @@ function DialogRow({
         </div>
 
         <div className="flex items-start justify-between gap-2">
-          <p className="text-tg-text-secondary text-[13.5px] leading-[1.5] pb-0.5 line-clamp-2 flex-1 text-left">
+          <p className="text-tg-text-secondary text-[13.5px] leading-[1.65] pb-1 line-clamp-2 flex-1 text-left">
             <DialogMediaBadge media={dialog.lastMessageMedia} lastMessage={dialog.lastMessage} />
             {renderDialogLastMessage(dialog.lastMessage, dialog.unreadCount)}
           </p>

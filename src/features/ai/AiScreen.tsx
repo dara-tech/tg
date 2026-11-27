@@ -62,7 +62,7 @@ export default function AiScreen() {
       <div className="px-4 pt-3 pb-3 safe-top border-b border-tg-border/20 sticky top-0 bg-tg-bg/90 backdrop-blur-xl z-20">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-11 h-11 rounded-2xl overflow-hidden shrink-0 border border-tg-border/20 flex items-center justify-center bg-tg-surface p-1 shadow-sm">
+            <div className="w-11 h-11 rounded-full overflow-hidden shrink-0 border border-tg-border/20 flex items-center justify-center bg-tg-surface p-1 shadow-sm">
               <img src="/icons/ai-brain.png" alt="AI" className="w-full h-full object-contain" />
             </div>
             <div>
@@ -132,7 +132,7 @@ export default function AiScreen() {
         {activeCategory === 'all' && searchQuery === '' && activePersonaConfig && (
           <div className="p-4 rounded-2xl bg-gradient-to-r from-tg-blue/15 to-purple-500/10 border border-tg-blue/25 flex items-center justify-between gap-3 shadow-sm">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="relative w-12 h-12 rounded-2xl overflow-hidden shrink-0 border border-tg-blue/30 shadow-sm bg-tg-surface">
+              <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 border border-tg-blue/30 shadow-sm bg-tg-surface">
                 {activePersonaConfig.avatar ? (
                   <img
                     src={activePersonaConfig.avatar}
@@ -144,7 +144,7 @@ export default function AiScreen() {
                     {activePersonaConfig.gradient.initial}
                   </div>
                 )}
-                <span className="absolute bottom-1 right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-tg-bg" />
+                <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-tg-bg" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
@@ -185,7 +185,7 @@ export default function AiScreen() {
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     {/* Avatar */}
-                    <div className="relative w-11 h-11 rounded-2xl overflow-hidden shrink-0 border border-tg-border/30 bg-tg-surface shadow-xs">
+                    <div className="relative w-11 h-11 rounded-full overflow-hidden shrink-0 border border-tg-border/30 bg-tg-surface shadow-xs">
                       {character.avatar ? (
                         <img
                           src={character.avatar}
@@ -200,7 +200,7 @@ export default function AiScreen() {
                           {character.gradient.initial}
                         </div>
                       )}
-                      <span className="absolute bottom-0.5 right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-tg-bg" />
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-1.5 ring-tg-bg" />
                     </div>
 
                     {/* Metadata */}
@@ -242,13 +242,6 @@ export default function AiScreen() {
                     </button>
                   </div>
                 </div>
-
-                {/* Subtle Clean Greeting */}
-                {character.greeting && (
-                  <p className="text-[11px] text-tg-text-secondary/80 line-clamp-1 pt-2 mt-2 border-t border-tg-border/15 font-normal">
-                    "{character.greeting}"
-                  </p>
-                )}
               </div>
             );
           })}
@@ -257,7 +250,7 @@ export default function AiScreen() {
         {/* ── Empty State ── */}
         {characterList.length === 0 && (
           <div className="text-center py-16 space-y-2">
-            <div className="w-12 h-12 rounded-2xl bg-tg-surface mx-auto flex items-center justify-center text-tg-text-hint">
+            <div className="w-12 h-12 rounded-full bg-tg-surface mx-auto flex items-center justify-center text-tg-text-hint">
               <Bot className="w-6 h-6" />
             </div>
             <p className="text-tg-text text-sm font-bold">No companions found</p>

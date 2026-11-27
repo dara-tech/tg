@@ -136,6 +136,13 @@ export interface NormalizedMTProtoEvent {
 export function onMTProtoUpdate(cb: (event: NormalizedMTProtoEvent) => void): () => void {
   const mt = getMTProto();
 
+  // Prevent EventEmitter memory leak warnings when navigating rapidly
+  try {
+    if (typeof (mt.updates as any)?.setMaxListeners === 'function') {
+      (mt.updates as any).setMaxListeners(100);
+    }
+  } catch {}
+
   const onUpdates = (...args: unknown[]) => {
     const ev = (args[0] ?? {}) as NormalizedMTProtoEvent;
     cb(ev);
@@ -182,10 +189,13 @@ export function onMTProtoUpdate(cb: (event: NormalizedMTProtoEvent) => void): ()
   mt.updates.on('updateShortChatMessage', onShortChatMessage);
 
   return () => {
-    mt.updates.off?.('updates', onUpdates);
-    mt.updates.off?.('updatesCombined', onUpdates);
-    mt.updates.off?.('updateShort', onUpdates);
-    mt.updates.off?.('updateShortMessage', onShortMessage);
-    mt.updates.off?.('updateShortChatMessage', onShortChatMessage);
+    const remove = ((mt.updates as any)?.off || (mt.updates as any)?.removeListener)?.bind(mt.updates);
+    if (remove) {
+      remove('updates', onUpdates);
+      remove('updatesCombined', onUpdates);
+      remove('updateShort', onUpdates);
+      remove('updateShortMessage', onShortMessage);
+      remove('updateShortChatMessage', onShortChatMessage);
+    }
   };
 }

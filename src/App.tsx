@@ -12,11 +12,16 @@ import SettingsScreen from './features/settings/SettingsScreen';
 import ConversationScreen from './features/conversations/ConversationScreen';
 import ProfileScreen from './features/profile/ProfileScreen';
 import QrScannerScreen from './features/qr-scanner/QrScannerScreen';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import SearchScreen from './features/search/SearchScreen';
 
 function ChatRoute() {
   const { id } = useParams<{ id: string }>();
-  return <ConversationScreen key={id} />;
+  return (
+    <ErrorBoundary fallbackTitle="Chat temporarily unavailable">
+      <ConversationScreen key={id} />
+    </ErrorBoundary>
+  );
 }
 
 function ProfileRoute() {

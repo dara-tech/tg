@@ -156,6 +156,7 @@ function ContextMenu({
 }
 
 function RichText({ text, entities, isOut }: { text: string; entities?: TextEntity[]; isOut: boolean }) {
+  if (!text || typeof text !== 'string') return null;
   if (!entities?.length) {
     return <p className={clsx('text-sm leading-relaxed break-words [overflow-wrap:anywhere] whitespace-pre-wrap', isOut ? 'text-white' : 'text-tg-text')}>{text}</p>;
   }
@@ -336,6 +337,7 @@ function VoicePlayer({
     audio.addEventListener('play', onPlay);
 
     return () => {
+      audio.pause();
       audio.removeEventListener('timeupdate', onTimeUpdate);
       audio.removeEventListener('loadedmetadata', onLoadedMetadata);
       audio.removeEventListener('ended', onEnded);

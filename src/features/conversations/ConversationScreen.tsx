@@ -46,16 +46,27 @@ import { format, isToday, isYesterday } from 'date-fns';
 
 type Msg = RealMessageItem;
 
-function dateSeparator(date: number) {
-  const d = new Date(date * 1000);
-  if (isToday(d))     return 'Today';
-  if (isYesterday(d)) return 'Yesterday';
-  return format(d, 'MMMM d, yyyy');
+function dateSeparator(date?: number): string {
+  if (!date || isNaN(date) || typeof date !== 'number' || date <= 0) {
+    return 'Today';
+  }
+  try {
+    const d = new Date(date * 1000);
+    if (isNaN(d.getTime())) return 'Today';
+    if (isToday(d)) return 'Today';
+    if (isYesterday(d)) return 'Yesterday';
+    return format(d, 'MMMM d, yyyy');
+  } catch {
+    return 'Today';
+  }
 }
 
 function mergeAlbumMessages(msgs: Msg[]): Msg[] {
+  if (!Array.isArray(msgs) || msgs.length === 0) return [];
   const result: Msg[] = [];
-  for (const m of msgs) {
+  for (const raw of msgs) {
+    if (!raw || typeof raw !== 'object' || typeof raw.id !== 'number') continue;
+    const m = { ...raw };
     const prev = result.at(-1);
     if (
       m.groupedId &&
@@ -66,35 +77,41 @@ function mergeAlbumMessages(msgs: Msg[]): Msg[] {
       (m.media.kind === 'photo' || m.media.kind === 'video') &&
       (prev.albumMedia?.length || (prev.media && (prev.media.kind === 'photo' || prev.media.kind === 'video')))
     ) {
-      const existingItems = prev.albumMedia ?? (prev.media ? [{ id: prev.id, media: prev.media }] : []);
-      prev.albumMedia = [...existingItems, { id: m.id, media: m.media }];
+      const existingItems = prev.albumMedia ? [...prev.albumMedia] : (prev.media ? [{ id: prev.id, media: prev.media }] : []);
+      if (!existingItems.some((item) => item.id === m.id)) {
+        prev.albumMedia = [...existingItems, { id: m.id, media: m.media }];
+      }
       if (!prev.text && m.text) prev.text = m.text;
       if (!prev.entities && m.entities) prev.entities = m.entities;
       if (!prev.reactions && m.reactions) prev.reactions = m.reactions;
       prev.status = m.status;
     } else {
-      result.push({ ...m });
+      result.push(m);
     }
   }
   return result;
 }
 
 function groupByDateAndSender(msgs: Msg[]) {
+  if (!Array.isArray(msgs) || msgs.length === 0) return [];
   const merged = mergeAlbumMessages(msgs);
   const dateGroups: { label: string; runs: { out: boolean; senderId?: number; messages: Msg[] }[] }[] = [];
   let currentLabel = '';
   for (const m of merged) {
+    if (!m || typeof m !== 'object') continue;
     const label = dateSeparator(m.date);
     if (label !== currentLabel) {
       currentLabel = label;
       dateGroups.push({ label, runs: [] });
     }
-    const runs = dateGroups.at(-1)!.runs;
+    const currentGroup = dateGroups.at(-1);
+    if (!currentGroup) continue;
+    const runs = currentGroup.runs;
     const lastRun = runs.at(-1);
     if (lastRun && lastRun.out === m.out && (m.out || lastRun.senderId === m.sender?.peerId)) {
       lastRun.messages.push(m);
     } else {
-      runs.push({ out: m.out, senderId: m.sender?.peerId, messages: [m] });
+      runs.push({ out: Boolean(m.out), senderId: m.sender?.peerId, messages: [m] });
     }
   }
   return dateGroups;
@@ -255,10 +272,14 @@ export default function ConversationScreen() {
   const accessHashRef = useRef(accessHash);
   accessHashRef.current = accessHash;
   const initialScrolledRef = useRef(false);
+  const loadingOlderRef = useRef(false);
+  const hasMoreOlderRef = useRef(true);
 
   // Load / refresh permissions for group and channel chats
   useEffect(() => {
     if (!id || !isMTProtoConfigured()) return;
+    let cancelled = false;
+
     // Seed immediately from dialog meta if available (avoids flicker)
     const metaPerms = 'permissions' in chatMeta ? chatMeta.permissions : undefined;
     if (metaPerms) {
@@ -267,7 +288,7 @@ export default function ConversationScreen() {
     // Then fetch fresh from API (groups / channels only)
     if (id.startsWith('c_') || id.startsWith('g_')) {
       fetchChatPermissions(id, accessHashRef.current).then((p) => {
-        if (p) setChatPermissions(p);
+        if (!cancelled && p) setChatPermissions(p);
       }).catch(() => {});
     } else {
       // DMs are always fully open
@@ -277,6 +298,9 @@ export default function ConversationScreen() {
         canPinMessages: false, canChangeInfo: false, canInviteUsers: false,
       });
     }
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -289,7 +313,13 @@ export default function ConversationScreen() {
 
   useEffect(() => {
     if (!id) return;
-    getDraft(id).then(setInitialDraft).catch(() => {});
+    let cancelled = false;
+    getDraft(id).then((d) => {
+      if (!cancelled) setInitialDraft(d);
+    }).catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   useEffect(() => {
@@ -371,7 +401,7 @@ export default function ConversationScreen() {
   }, [loading, messages.length]);
 
   const loadOlderMessages = useCallback(async () => {
-    if (!isMTProtoConfigured() || !id || loadingOlder || !hasMoreOlder || messagesRef.current.length === 0) return;
+    if (!isMTProtoConfigured() || !id || loadingOlderRef.current || !hasMoreOlderRef.current || messagesRef.current.length === 0) return;
     const el = scrollRef.current;
     if (!el) return;
 
@@ -380,10 +410,14 @@ export default function ConversationScreen() {
     const oldestId = messagesRef.current[0].id;
     const hash = accessHashRef.current && accessHashRef.current !== '0' ? accessHashRef.current : '0';
 
+    loadingOlderRef.current = true;
     setLoadingOlder(true);
     try {
       const older = await fetchRealHistory(id, hash, 35, 0, oldestId);
-      if (older.length < 35) setHasMoreOlder(false);
+      if (older.length < 35) {
+        hasMoreOlderRef.current = false;
+        setHasMoreOlder(false);
+      }
       if (older.length > 0) {
         setMessages((prev) => {
           const existing = new Set(prev.map((m) => m.id));
@@ -400,12 +434,13 @@ export default function ConversationScreen() {
           }
         });
       }
+    } catch {
+      // ignore network errors during older message load
     } finally {
+      loadingOlderRef.current = false;
       setLoadingOlder(false);
     }
-  // messages is read inside a setState updater so it doesn't need to be a dep
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, loadingOlder, hasMoreOlder]);
+  }, [id]);
 
   // If initial batch doesn't fill the screen, load older messages automatically
   useEffect(() => {
@@ -525,6 +560,10 @@ export default function ConversationScreen() {
     }
     return () => {
       unsub?.();
+      if (typingTimerRef.current) {
+        clearTimeout(typingTimerRef.current);
+        typingTimerRef.current = null;
+      }
     };
   }, [id, accessHash, chatMeta.title]);
 
@@ -1002,18 +1041,18 @@ export default function ConversationScreen() {
         {!loading && groups.length === 0 && (
           <p className="text-tg-text-hint text-sm text-center mt-12">No messages yet</p>
         )}
-        {groups.map(group => (
-          <div key={group.label}>
+        {groups.map((group, gIdx) => (
+          <div key={`group-${gIdx}-${group.label}`}>
             <div className="flex items-center justify-center my-3">
               <span data-date-divider="true" className="bg-tg-bg-secondary/90 border border-tg-border/35 shadow-sm text-tg-text-hint text-xs px-3 py-1 rounded-full">
                 {group.label}
               </span>
             </div>
             {group.runs.map((run, rIdx) => (
-              <BubbleGroup key={rIdx} align={run.out ? 'end' : 'start'}>
+              <BubbleGroup key={`run-${rIdx}`} align={run.out ? 'end' : 'start'}>
                 {run.messages.map((msg, mIdx) => (
                   <MessageBubble
-                    key={msg.id}
+                    key={`msg-${msg.id}-${mIdx}`}
                     message={msg}
                     replyPreviewText={msg.replyTo ? messages.find((x) => x.id === msg.replyTo)?.text : undefined}
                     showAvatar={mIdx === run.messages.length - 1}

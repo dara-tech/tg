@@ -5,8 +5,9 @@ import ChatListScreen from '@/features/chat-list/ChatListScreen';
 import ContactsScreen from '@/features/contacts/ContactsScreen';
 import CalendarScreen from '@/features/calendar/CalendarScreen';
 import SettingsScreen from '@/features/settings/SettingsScreen';
+import AiScreen from '@/features/ai/AiScreen';
 
-const TAB_PATHS = ['/dialogs', '/contacts', '/calendar', '/settings'] as const;
+const TAB_PATHS = ['/dialogs', '/contacts', '/ai', '/calendar', '/settings'] as const;
 type TabPath = (typeof TAB_PATHS)[number];
 
 function matchTab(pathname: string): TabPath | null {
@@ -22,6 +23,7 @@ export function KeepAliveTabs({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState<Record<TabPath, boolean>>({
     '/dialogs': true,
     '/contacts': activeTab === '/contacts',
+    '/ai': activeTab === '/ai',
     '/calendar': activeTab === '/calendar',
     '/settings': activeTab === '/settings',
   });
@@ -42,6 +44,11 @@ export function KeepAliveTabs({ children }: { children: React.ReactNode }) {
       {mounted['/contacts'] && (
         <div className={activeTab === '/contacts' ? 'flex-1 min-h-0 flex flex-col h-full' : 'hidden'}>
           <ContactsScreen />
+        </div>
+      )}
+      {mounted['/ai'] && (
+        <div className={activeTab === '/ai' ? 'flex-1 min-h-0 flex flex-col h-full' : 'hidden'}>
+          <AiScreen />
         </div>
       )}
       {mounted['/calendar'] && (

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { ArrowDownLeft, ArrowUpRight, Phone, Plus, Sparkles } from 'lucide-react';
 import { Avatar }      from '@/components/ui/Avatar';
 import { DialogSkeletonList } from '@/components/ui/Skeleton';
@@ -18,6 +19,7 @@ function formatCallTime(ts: number) {
 }
 
 export default function CallsScreen() {
+  const router = useRouter();
   const { setActiveCall, startAiCall, aiPersona } = useUIStore();
   const currentPersona = getPersonaConfig(aiPersona as AIPersona);
   const { calls, contacts, setCalls, setContacts } = useDialogsStore();
@@ -87,12 +89,20 @@ export default function CallsScreen() {
               <p className="text-[11px] text-tg-text-hint truncate mt-0.5">{currentPersona.tagline}</p>
             </div>
           </div>
-          <button
-            onClick={() => startAiCall()}
-            className="px-3 py-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-600 text-white text-xs font-semibold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1 shrink-0 shadow-md shadow-sky-500/20"
-          >
-            <span>Call AI</span>
-          </button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={() => startAiCall()}
+              className="px-3 py-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-600 text-white text-xs font-semibold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1 shadow-md shadow-sky-500/20"
+            >
+              <span>Call</span>
+            </button>
+            <button
+              onClick={() => router.push('/ai')}
+              className="px-2.5 py-1.5 rounded-full bg-tg-surface hover:bg-tg-border/50 text-tg-text text-xs font-medium active:scale-95 transition-all border border-tg-border/30"
+            >
+              <span>All AI</span>
+            </button>
+          </div>
         </div>
 
         {loading && calls.length === 0 && <DialogSkeletonList count={5} />}

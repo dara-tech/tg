@@ -22,6 +22,9 @@ export interface PersonaConfig {
   greeting: string;
   gradient: { from: string; to: string; initial: string };
   isKhmer?: boolean;
+  category?: 'khmer' | 'tech' | 'anime' | 'comedy' | 'advisor' | 'general';
+  tags?: string[];
+  description?: string;
 }
 
 export interface TranscriptEntry {

@@ -704,9 +704,36 @@ export default function ConversationScreen() {
       try {
         const pId = (chatMeta as any).aiPersonaId || id.replace('ai_', '');
         const persona = getPersonaConfig(pId as AIPersona) || customPersonas.find((c) => c.id === pId);
-        const systemPrompt =
+        let systemPrompt =
           persona?.systemPrompt ||
           `You are ${chatMeta.title}, a helpful, friendly, natural conversational Telegram AI companion. Respond in the user's language (natively supporting Khmer and English), with a lively, expressive, friendly tone. Keep answers conversational, authentic, and clear.`;
+
+        // If chatting with Finance Guru or financial advisor persona, inject user's live ERP transactions ledger
+        if (pId === 'financemaster' || pId.toLowerCase().includes('finance')) {
+          try {
+            const rawTx = typeof window !== 'undefined' ? localStorage.getItem('tg_bank_transactions_v1') : null;
+            if (rawTx) {
+              const txs = JSON.parse(rawTx);
+              if (Array.isArray(txs) && txs.length > 0) {
+                let netUSD = 0;
+                let netKHR = 0;
+                txs.forEach((t: any) => {
+                  if (t.currency === 'USD') netUSD += t.type === 'credit' ? t.amount : -t.amount;
+                  else netKHR += t.type === 'credit' ? t.amount : -t.amount;
+                });
+                const summary = txs
+                  .slice(0, 10)
+                  .map(
+                    (t: any) =>
+                      `• ${t.date}: [${t.bank}] ${t.type === 'credit' ? '+' : '-'}${t.currency === 'USD' ? '$' : ''}${Number(t.amount).toLocaleString()}${t.currency === 'KHR' ? ' KHR' : ''} — ${t.description}${t.counterparty ? ` (${t.counterparty})` : ''}`
+                  )
+                  .join('\n');
+
+                systemPrompt += `\n\n[USER'S LIVE ERP BANK TRANSACTIONS LEDGER]\nTotal Net Balance: $${netUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD | ៛${netKHR.toLocaleString()} KHR\nRecent ERP Transactions:\n${summary}\n\nYou have full visibility of the user's ERP and bank transactions above. When the user asks for financial summaries, budget reviews, profit/loss breakdown, or cashflow insights, cite these real figures accurately.`;
+              }
+            }
+          } catch {}
+        }
 
         // Build history with all current messages
         const history: ChatMessage[] = messagesRef.current

@@ -690,8 +690,17 @@ export default function CalendarScreen() {
           </button>
         </div>
 
-        {/* Action Buttons: Refresh Sync + Add (+) */}
+        {/* Action Buttons: ERP Bank + Refresh Sync + Add (+) */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setBankModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 text-xs font-bold hover:bg-emerald-500/20 active:scale-95 transition-all shadow-xs"
+            title="ERP Bank & Transactions Ledger"
+          >
+            <Landmark className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">ERP Bank</span>
+          </button>
+
           <button
             disabled={isSyncing}
             onClick={() => handleSyncGithubAndErp()}
@@ -1285,6 +1294,13 @@ export default function CalendarScreen() {
           </button>
         </form>
       </BottomSheet>
+
+      {/* ERP Bank Transactions Modal */}
+      <BankTransactionsModal
+        open={bankModalOpen}
+        onClose={() => setBankModalOpen(false)}
+        onSyncToCalendar={handleSyncBankToCalendar}
+      />
     </div>
   );
 }

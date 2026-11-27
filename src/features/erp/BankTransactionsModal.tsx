@@ -16,6 +16,11 @@ import {
   DollarSign,
   Receipt,
   ExternalLink,
+  FileInput,
+  ClipboardPaste,
+  Sparkles,
+  Check,
+  AlertCircle,
 } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { toast } from '@/components/ui/Toast';
@@ -85,6 +90,298 @@ const SAMPLE_TRANSACTIONS: BankTransaction[] = [
   },
 ];
 
+export const SAMPLE_ERP_DATA = `Date,Type,Amount,Currency,Bank,Description,Counterparty,Reference
+2026-11-27,credit,2500.00,USD,ABA,Web App Milestone Delivery Settlement,Acme Corp,ERP-INV-2026-089
+2026-11-27,credit,4250000,KHR,Bakong,KHQR Merchant POS Daily Settlement,Bakong Pay,BKG-SETTLE-8812
+2026-11-26,debit,120.00,USD,ABA,Cloudflare Workers AI & CDN Compute,Cloudflare Inc,INV-CF-89210
+2026-11-25,debit,850.00,USD,ABA,Office Space Lease & High-speed Fiber Internet,Rithy Plaza,OFFICE-NOV-26
+2026-11-24,debit,1500.00,USD,ABA,Senior Dev & Design Contract Payout,Dev Team,PAYROLL-2026-11B
+2026-11-23,debit,360000,KHR,Wing,Office Refreshments & Team Lunch,Phnom Penh Mart,WING-TX-9012`;
+
+export function parseErpTransactions(rawText: string): BankTransaction[] {
+  const text = rawText.trim();
+  if (!text) return [];
+
+  // 1. JSON Array (Odoo, ERP REST API, Webhook Export)
+  if (text.startsWith('[') || text.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(text);
+      const list = Array.isArray(parsed) ? parsed : parsed.transactions || parsed.items || parsed.data || [];
+      if (Array.isArray(list) && list.length > 0) {
+        return list
+          .map((item: any, i: number) => {
+            const rawAmt = Number(item.amount) || 0;
+            const isDebit =
+              item.type === 'debit' ||
+              rawAmt < 0 ||
+              String(item.type).toLowerCase() === 'expense';
+            const detectedBank = ([
+              'ABA',
+              'Bakong',
+              'ACLEDA',
+              'Wing',
+              'Canadia',
+            ].includes(item.bank)
+              ? item.bank
+              : 'Other') as BankTransaction['bank'];
+
+            return {
+              id: `erp-import-${Date.now()}-${i}`,
+              date: item.date
+                ? String(item.date).slice(0, 10)
+                : format(new Date(), 'yyyy-MM-dd'),
+              time: item.time || '12:00',
+              amount: Math.abs(rawAmt),
+              currency: (item.currency === 'KHR' ||
+              String(item.amount).includes('៛')
+                ? 'KHR'
+                : 'USD') as 'USD' | 'KHR',
+              type: (isDebit ? 'debit' : 'credit') as 'credit' | 'debit',
+              bank: detectedBank,
+              description:
+                item.description || item.memo || item.name || 'ERP Transaction',
+              counterparty:
+                item.counterparty || item.partner || item.vendor || item.customer || '',
+              reference:
+                item.reference || item.ref || item.invoice_no || `ERP-${i + 1}`,
+              category:
+                item.category || (isDebit ? 'expense' : 'income'),
+              source: 'erp' as const,
+            };
+          })
+          .filter((t) => t.amount > 0);
+      }
+    } catch {}
+  }
+
+  // 2. Delimited text (CSV, TSV, Semicolon, Pipe)
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+  if (lines.length === 0) return [];
+
+  // Detect delimiter
+  const firstLine = lines[0];
+  let delimiter = ',';
+  if (firstLine.includes('\t')) delimiter = '\t';
+  else if (firstLine.includes(';') && !firstLine.includes(',')) delimiter = ';';
+  else if (firstLine.includes('|')) delimiter = '|';
+
+  const parseLine = (line: string): string[] => {
+    if (delimiter === ',') {
+      const regex = /(?:,|\n|^)("(?:(?:"")*[^"]*)*"|[^",\n]*|(?:\n|$))/g;
+      const matches: string[] = [];
+      let match;
+      while ((match = regex.exec(line)) !== null) {
+        let val = match[1];
+        if (val === undefined) break;
+        if (val.startsWith('"') && val.endsWith('"')) {
+          val = val.slice(1, -1).replace(/""/g, '"');
+        }
+        matches.push(val.trim());
+        if (regex.lastIndex === match.index) regex.lastIndex++;
+      }
+      return matches.filter(
+        (_, idx) => idx < matches.length - 1 || line.endsWith(',')
+      );
+    }
+    return line.split(delimiter).map((c) => c.trim().replace(/^["']|["']$/g, ''));
+  };
+
+  const headerCols = parseLine(firstLine).map((h) => h.toLowerCase());
+  const hasHeader = headerCols.some(
+    (h) =>
+      h.includes('date') ||
+      h.includes('amount') ||
+      h.includes('credit') ||
+      h.includes('desc') ||
+      h.includes('type')
+  );
+
+  let dateIdx = -1;
+  let typeIdx = -1;
+  let amountIdx = -1;
+  let currIdx = -1;
+  let bankIdx = -1;
+  let descIdx = -1;
+  let counterpartyIdx = -1;
+  let refIdx = -1;
+  let creditIdx = -1;
+  let debitIdx = -1;
+
+  let startRow = 0;
+  if (hasHeader) {
+    startRow = 1;
+    dateIdx = headerCols.findIndex((h) => h.includes('date') || h.includes('time'));
+    typeIdx = headerCols.findIndex(
+      (h) => h === 'type' || h.includes('direction') || h.includes('status')
+    );
+    amountIdx = headerCols.findIndex(
+      (h) => h === 'amount' || h.includes('value') || h.includes('total')
+    );
+    currIdx = headerCols.findIndex((h) => h.includes('curr') || h.includes('ccy'));
+    bankIdx = headerCols.findIndex(
+      (h) => h.includes('bank') || h.includes('channel') || h.includes('account')
+    );
+    descIdx = headerCols.findIndex(
+      (h) =>
+        h.includes('desc') ||
+        h.includes('memo') ||
+        h.includes('detail') ||
+        h.includes('narr') ||
+        h.includes('particular')
+    );
+    counterpartyIdx = headerCols.findIndex(
+      (h) =>
+        h.includes('counter') ||
+        h.includes('party') ||
+        h.includes('partner') ||
+        h.includes('vendor') ||
+        h.includes('client') ||
+        h.includes('customer')
+    );
+    refIdx = headerCols.findIndex(
+      (h) => h.includes('ref') || h.includes('id') || h.includes('trx') || h.includes('inv')
+    );
+    creditIdx = headerCols.findIndex(
+      (h) => h.includes('credit') || h.includes('inflow') || h.includes('deposit')
+    );
+    debitIdx = headerCols.findIndex(
+      (h) => h.includes('debit') || h.includes('outflow') || h.includes('withdraw')
+    );
+  }
+
+  const results: BankTransaction[] = [];
+
+  for (let i = startRow; i < lines.length; i++) {
+    const rawCols = parseLine(lines[i]);
+    if (rawCols.length === 0 || (rawCols.length === 1 && !rawCols[0])) continue;
+
+    // Normalize date
+    let rawDate = dateIdx >= 0 ? rawCols[dateIdx] : '';
+    if (!rawDate) {
+      const foundDate = rawCols.find((c) =>
+        /\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b|\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/.test(c)
+      );
+      rawDate = foundDate || format(new Date(), 'yyyy-MM-dd');
+    }
+    if (rawDate.includes('/')) {
+      const parts = rawDate.split('/');
+      if (parts.length === 3) {
+        if (parts[2].length === 4) {
+          rawDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        } else if (parts[0].length === 4) {
+          rawDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+        }
+      }
+    }
+
+    // Determine amount and type
+    let amt = 0;
+    let isCredit = true;
+
+    if (creditIdx >= 0 && parseFloat(rawCols[creditIdx]?.replace(/[$,\s]/g, '')) > 0) {
+      amt = parseFloat(rawCols[creditIdx].replace(/[$,\s]/g, ''));
+      isCredit = true;
+    } else if (debitIdx >= 0 && parseFloat(rawCols[debitIdx]?.replace(/[$,\s]/g, '')) > 0) {
+      amt = parseFloat(rawCols[debitIdx].replace(/[$,\s]/g, ''));
+      isCredit = false;
+    } else if (amountIdx >= 0) {
+      const valStr = rawCols[amountIdx] || '0';
+      const cleanVal = valStr.replace(/[$,៛\s]/g, '');
+      const parsedNum = parseFloat(cleanVal);
+      amt = Math.abs(parsedNum);
+      isCredit = parsedNum >= 0 && !valStr.includes('-');
+    } else {
+      const numCol = rawCols.find((c) => /^[+-]?\$?[\d,]+(\.\d+)?$/.test(c.trim()));
+      if (numCol) {
+        const parsedNum = parseFloat(numCol.replace(/[$,\s]/g, ''));
+        amt = Math.abs(parsedNum);
+        isCredit = parsedNum >= 0 && !numCol.includes('-');
+      }
+    }
+
+    if (typeIdx >= 0 && rawCols[typeIdx]) {
+      const t = rawCols[typeIdx].toLowerCase();
+      if (
+        t.includes('deb') ||
+        t.includes('out') ||
+        t.includes('exp') ||
+        t.includes('with') ||
+        t.includes('-')
+      ) {
+        isCredit = false;
+      } else if (
+        t.includes('cred') ||
+        t.includes('in') ||
+        t.includes('dep') ||
+        t.includes('+')
+      ) {
+        isCredit = true;
+      }
+    }
+
+    if (isNaN(amt) || amt <= 0) continue;
+
+    // Detect currency
+    const lineJoined = rawCols.join(' ');
+    const isKhr =
+      (currIdx >= 0 && rawCols[currIdx]?.toUpperCase().includes('KHR')) ||
+      lineJoined.includes('KHR') ||
+      lineJoined.includes('៛') ||
+      (amt > 10000 && !lineJoined.includes('$') && !lineJoined.includes('USD'));
+
+    // Detect Bank
+    let detectedBank: BankTransaction['bank'] = 'ABA';
+    if (bankIdx >= 0 && rawCols[bankIdx]) {
+      const b = rawCols[bankIdx].toUpperCase();
+      if (b.includes('BAKONG') || b.includes('KHQR')) detectedBank = 'Bakong';
+      else if (b.includes('ABA')) detectedBank = 'ABA';
+      else if (b.includes('ACLEDA')) detectedBank = 'ACLEDA';
+      else if (b.includes('WING')) detectedBank = 'Wing';
+      else if (b.includes('CANADIA')) detectedBank = 'Canadia';
+      else detectedBank = 'Other';
+    } else {
+      if (lineJoined.includes('Bakong') || lineJoined.includes('KHQR'))
+        detectedBank = 'Bakong';
+      else if (lineJoined.includes('ABA')) detectedBank = 'ABA';
+      else if (lineJoined.includes('ACLEDA')) detectedBank = 'ACLEDA';
+      else if (lineJoined.includes('Wing')) detectedBank = 'Wing';
+      else if (lineJoined.includes('Canadia')) detectedBank = 'Canadia';
+      else detectedBank = isKhr ? 'Bakong' : 'ABA';
+    }
+
+    const desc =
+      descIdx >= 0 && rawCols[descIdx]
+        ? rawCols[descIdx]
+        : rawCols[1] || 'ERP Transaction Record';
+    const counterparty =
+      counterpartyIdx >= 0 ? rawCols[counterpartyIdx] : undefined;
+    const ref =
+      refIdx >= 0 && rawCols[refIdx]
+        ? rawCols[refIdx]
+        : `ERP-${Date.now().toString().slice(-6)}-${i}`;
+
+    results.push({
+      id: `erp-import-${Date.now()}-${i}`,
+      date: rawDate.slice(0, 10),
+      time: '12:00',
+      amount: amt,
+      currency: isKhr ? 'KHR' : 'USD',
+      type: isCredit ? 'credit' : 'debit',
+      bank: detectedBank,
+      description: desc,
+      counterparty,
+      reference: ref,
+      category: isCredit ? 'income' : 'expense',
+      source: 'erp',
+    });
+  }
+
+  return results;
+}
+
 const BANK_BADGES: Record<BankTransaction['bank'], { color: string; label: string }> = {
   ABA:     { color: 'bg-[#004B6E] text-white border-[#00608F]', label: 'ABA Bank' },
   Bakong:  { color: 'bg-[#E1251B] text-white border-[#F04438]', label: 'Bakong KHQR' },
@@ -119,6 +416,12 @@ export function BankTransactionsModal({
   const [isFetchingErp, setIsFetchingErp] = useState(false);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
 
+  // ERP Import States
+  const [importSheetOpen, setImportSheetOpen] = useState(false);
+  const [importTab, setImportTab] = useState<'paste' | 'file'>('paste');
+  const [pastedText, setPastedText] = useState('');
+  const [importSyncToCalendar, setImportSyncToCalendar] = useState(true);
+
   // Manual Transaction Form
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState<'USD' | 'KHR'>('USD');
@@ -131,6 +434,30 @@ export function BankTransactionsModal({
   const [addToCalendarCheck, setAddToCalendarCheck] = useState(true);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Live parsed preview
+  const previewItems = useMemo(() => {
+    return parseErpTransactions(pastedText);
+  }, [pastedText]);
+
+  const previewTotals = useMemo(() => {
+    let inflowUSD = 0;
+    let outflowUSD = 0;
+    let inflowKHR = 0;
+    let outflowKHR = 0;
+
+    previewItems.forEach((item) => {
+      if (item.currency === 'USD') {
+        if (item.type === 'credit') inflowUSD += item.amount;
+        else outflowUSD += item.amount;
+      } else {
+        if (item.type === 'credit') inflowKHR += item.amount;
+        else outflowKHR += item.amount;
+      }
+    });
+
+    return { inflowUSD, outflowUSD, inflowKHR, outflowKHR };
+  }, [previewItems]);
 
   useEffect(() => {
     try {
@@ -234,7 +561,7 @@ export function BankTransactionsModal({
     }
   };
 
-  // CSV Bank Statement Import Parser
+  // ERP File Upload (CSV, TSV, JSON, TXT)
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -243,95 +570,38 @@ export function BankTransactionsModal({
     reader.onload = (event) => {
       try {
         const text = event.target?.result as string;
-        if (!text) return;
-
-        // Simple and robust CSV line parser
-        const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-        if (lines.length < 2) {
-          toast('CSV file is empty or missing rows', 'error');
+        if (!text) {
+          toast('Uploaded file is empty', 'error');
           return;
         }
 
-        const headers = lines[0].toLowerCase().split(',').map((h) => h.trim().replace(/^["']|["']$/g, ''));
-        const dateIdx = headers.findIndex((h) => h.includes('date'));
-        const descIdx = headers.findIndex((h) => h.includes('desc') || h.includes('memo') || h.includes('detail') || h.includes('narr'));
-        const amountIdx = headers.findIndex((h) => h.includes('amount') || h.includes('value'));
-        const creditIdx = headers.findIndex((h) => h.includes('credit') || h.includes('inflow') || h.includes('deposit'));
-        const debitIdx = headers.findIndex((h) => h.includes('debit') || h.includes('outflow') || h.includes('withdrawal'));
-        const refIdx = headers.findIndex((h) => h.includes('ref') || h.includes('id') || h.includes('trx'));
-
-        const newItems: BankTransaction[] = [];
-
-        for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(',').map((c) => c.trim().replace(/^["']|["']$/g, ''));
-          if (cols.length < 2) continue;
-
-          let rawDate = dateIdx >= 0 ? cols[dateIdx] : format(new Date(), 'yyyy-MM-dd');
-          // normalize dates like DD/MM/YYYY to YYYY-MM-DD
-          if (rawDate.includes('/')) {
-            const parts = rawDate.split('/');
-            if (parts.length === 3) {
-              rawDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-            }
-          }
-
-          const desc = descIdx >= 0 ? cols[descIdx] : 'Bank Statement Record';
-          const ref = refIdx >= 0 ? cols[refIdx] : `CSV-${Date.now()}-${i}`;
-
-          let amt = 0;
-          let isCredit = true;
-
-          if (creditIdx >= 0 && parseFloat(cols[creditIdx]) > 0) {
-            amt = parseFloat(cols[creditIdx]);
-            isCredit = true;
-          } else if (debitIdx >= 0 && parseFloat(cols[debitIdx]) > 0) {
-            amt = parseFloat(cols[debitIdx]);
-            isCredit = false;
-          } else if (amountIdx >= 0) {
-            const rawAmt = parseFloat(cols[amountIdx].replace(/[$,]/g, ''));
-            amt = Math.abs(rawAmt);
-            isCredit = rawAmt >= 0;
-          }
-
-          if (isNaN(amt) || amt <= 0) continue;
-
-          // Detect bank and currency
-          const isKhr = desc.includes('KHR') || cols.some((c) => c.includes('KHR') || c.includes('៛'));
-          const bankName: BankTransaction['bank'] = desc.includes('Bakong')
-            ? 'Bakong'
-            : desc.includes('ABA')
-            ? 'ABA'
-            : desc.includes('ACLEDA')
-            ? 'ACLEDA'
-            : 'Other';
-
-          newItems.push({
-            id: `csv-${Date.now()}-${i}`,
-            date: rawDate.slice(0, 10),
-            time: '12:00',
-            amount: amt,
-            currency: isKhr ? 'KHR' : 'USD',
-            type: isCredit ? 'credit' : 'debit',
-            bank: bankName,
-            description: desc,
-            reference: ref,
-            category: isCredit ? 'income' : 'expense',
-            source: 'csv',
-          });
-        }
-
-        if (newItems.length > 0) {
-          setTransactions((prev) => [...newItems, ...prev]);
-          toast(`Successfully imported ${newItems.length} transactions from bank file!`, 'success');
-        } else {
-          toast('Could not find valid transaction rows in CSV', 'error');
-        }
+        setPastedText(text);
+        setImportTab('paste');
+        setImportSheetOpen(true);
+        toast(`Loaded ${file.name}. Review transaction preview below.`, 'info');
       } catch (err: any) {
-        toast(`CSV parse failed: ${err.message}`, 'error');
+        toast(`File read failed: ${err.message}`, 'error');
       }
     };
     reader.readAsText(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleConfirmImport = () => {
+    if (previewItems.length === 0) {
+      toast('No valid transactions parsed to import', 'error');
+      return;
+    }
+
+    setTransactions((prev) => [...previewItems, ...prev]);
+
+    if (importSyncToCalendar && onSyncToCalendar) {
+      previewItems.forEach((tx) => onSyncToCalendar(tx));
+    }
+
+    toast(`Successfully imported ${previewItems.length} ERP transactions!`, 'success');
+    setPastedText('');
+    setImportSheetOpen(false);
   };
 
   // Submit Manual Transaction
@@ -481,13 +751,13 @@ export function BankTransactionsModal({
           />
 
           <button
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => setImportSheetOpen(true)}
             className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl bg-tg-bg-secondary border border-tg-border/30 hover:bg-tg-surface active:scale-95 transition-all text-center"
           >
             <div className="w-8 h-8 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center">
-              <FileSpreadsheet className="w-4 h-4" />
+              <Upload className="w-4 h-4" />
             </div>
-            <span className="text-[11px] font-bold text-tg-text">Import Bank CSV</span>
+            <span className="text-[11px] font-bold text-tg-text">Import ERP</span>
           </button>
 
           <button
@@ -759,6 +1029,217 @@ export function BankTransactionsModal({
             Save Bank Transaction
           </button>
         </form>
+      </BottomSheet>
+
+      {/* ERP Transactions Import BottomSheet */}
+      <BottomSheet
+        open={importSheetOpen}
+        onClose={() => setImportSheetOpen(false)}
+        title="Import ERP Transactions"
+        maxWidth="sm:max-w-xl"
+      >
+        <div className="p-4 space-y-3.5 max-h-[82vh] overflow-y-auto">
+          {/* Format Explanation & Sample Loader */}
+          <div className="flex items-center justify-between gap-2 p-2.5 rounded-2xl bg-tg-bg-secondary border border-tg-border/25 text-xs">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+              <span className="text-tg-text-secondary text-[11px]">
+                Supports CSV, TSV (Excel/Sheets), Odoo/JSON, or bank statement text
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setPastedText(SAMPLE_ERP_DATA);
+                setImportTab('paste');
+                toast('Sample ERP data loaded! Review preview below.', 'info');
+              }}
+              className="px-2.5 py-1 rounded-xl bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border border-amber-500/30 text-[11px] font-bold shrink-0 active:scale-95 transition-all"
+            >
+              Load Sample Data
+            </button>
+          </div>
+
+          {/* Import Method Tabs: Paste vs File */}
+          <div className="grid grid-cols-2 gap-2 p-1 bg-tg-bg-secondary rounded-2xl border border-tg-border/30">
+            <button
+              type="button"
+              onClick={() => setImportTab('paste')}
+              className={clsx(
+                'py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all',
+                importTab === 'paste'
+                  ? 'bg-tg-blue text-white shadow-sm'
+                  : 'text-tg-text-secondary hover:text-tg-text'
+              )}
+            >
+              <ClipboardPaste className="w-3.5 h-3.5" />
+              <span>Paste Text / JSON</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setImportTab('file')}
+              className={clsx(
+                'py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all',
+                importTab === 'file'
+                  ? 'bg-tg-blue text-white shadow-sm'
+                  : 'text-tg-text-secondary hover:text-tg-text'
+              )}
+            >
+              <FileInput className="w-3.5 h-3.5" />
+              <span>Upload File</span>
+            </button>
+          </div>
+
+          {/* Tab 1: Paste Textarea */}
+          {importTab === 'paste' && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <label className="font-bold text-tg-text-hint uppercase tracking-wider text-[10px]">
+                  Raw Statement / CSV / TSV / JSON
+                </label>
+                {pastedText && (
+                  <button
+                    type="button"
+                    onClick={() => setPastedText('')}
+                    className="text-rose-400 hover:underline text-[11px] font-medium"
+                  >
+                    Clear text
+                  </button>
+                )}
+              </div>
+              <textarea
+                rows={6}
+                value={pastedText}
+                onChange={(e) => setPastedText(e.target.value)}
+                placeholder={`Paste spreadsheet rows or ERP export here:\nDate,Type,Amount,Currency,Bank,Description\n2026-11-27,credit,2500,USD,ABA,Client Milestone 1`}
+                className="w-full bg-tg-bg border border-tg-border rounded-xl p-3 text-xs font-mono text-tg-text focus:outline-none focus:border-tg-blue leading-relaxed"
+              />
+            </div>
+          )}
+
+          {/* Tab 2: File Dropzone */}
+          {importTab === 'file' && (
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-tg-border/50 hover:border-tg-blue rounded-2xl p-6 text-center cursor-pointer bg-tg-bg-secondary/40 active:scale-99 transition-all space-y-2"
+            >
+              <div className="w-10 h-10 rounded-full bg-tg-blue/15 text-tg-blue mx-auto flex items-center justify-center">
+                <FileSpreadsheet className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-tg-text">Choose CSV, TSV, or JSON file</p>
+                <p className="text-[11px] text-tg-text-hint mt-0.5">Click to browse your device files</p>
+              </div>
+            </div>
+          )}
+
+          {/* Live Parsing Preview & Summary */}
+          {previewItems.length > 0 ? (
+            <div className="space-y-2 pt-1">
+              {/* Summary Stats */}
+              <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span className="text-xs font-bold text-emerald-400">
+                    {previewItems.length} transactions ready to import
+                  </span>
+                </div>
+                <div className="text-right text-[11px] font-bold">
+                  {previewTotals.inflowUSD > 0 && (
+                    <span className="text-emerald-400 block font-mono">
+                      +${previewTotals.inflowUSD.toLocaleString()}
+                    </span>
+                  )}
+                  {previewTotals.outflowUSD > 0 && (
+                    <span className="text-rose-400 block font-mono">
+                      -${previewTotals.outflowUSD.toLocaleString()}
+                    </span>
+                  )}
+                  {previewTotals.inflowKHR > 0 && (
+                    <span className="text-emerald-400 block font-mono">
+                      +៛{previewTotals.inflowKHR.toLocaleString()}
+                    </span>
+                  )}
+                  {previewTotals.outflowKHR > 0 && (
+                    <span className="text-rose-400 block font-mono">
+                      -៛{previewTotals.outflowKHR.toLocaleString()}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Preview Cards */}
+              <div className="max-h-44 overflow-y-auto space-y-1.5 pr-1">
+                {previewItems.map((item, idx) => {
+                  const badge = BANK_BADGES[item.bank] || BANK_BADGES.Other;
+                  const isCredit = item.type === 'credit';
+                  const symbol = item.currency === 'USD' ? '$' : '៛';
+                  return (
+                    <div
+                      key={item.id || idx}
+                      className="p-2.5 rounded-xl bg-tg-bg border border-tg-border/25 flex items-center justify-between gap-2 text-xs"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={clsx(
+                              'px-1.5 py-0.5 rounded text-[9px] font-black uppercase border',
+                              badge.color
+                            )}
+                          >
+                            {item.bank}
+                          </span>
+                          <span className="text-[11px] text-tg-text-hint font-medium">
+                            {item.date}
+                          </span>
+                        </div>
+                        <p className="text-xs font-bold text-tg-text truncate mt-0.5">
+                          {item.description}
+                        </p>
+                      </div>
+                      <span
+                        className={clsx(
+                          'font-mono font-bold text-xs shrink-0',
+                          isCredit ? 'text-emerald-400' : 'text-rose-400'
+                        )}
+                      >
+                        {isCredit ? '+' : '-'}{symbol}{item.amount.toLocaleString()}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Sync to Calendar Checkbox */}
+              <label className="flex items-center gap-2 cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  checked={importSyncToCalendar}
+                  onChange={(e) => setImportSyncToCalendar(e.target.checked)}
+                  className="w-4 h-4 rounded text-tg-blue"
+                />
+                <span className="text-xs font-semibold text-tg-text">
+                  Automatically sync imported transactions to Calendar
+                </span>
+              </label>
+
+              {/* Confirm Import Button */}
+              <button
+                type="button"
+                onClick={handleConfirmImport}
+                className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm active:scale-98 transition-transform shadow-md flex items-center justify-center gap-2 mt-2"
+              >
+                <Check className="w-4 h-4" />
+                <span>Confirm & Import ({previewItems.length} Transactions)</span>
+              </button>
+            </div>
+          ) : pastedText.trim().length > 0 ? (
+            <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/25 flex items-center gap-2 text-xs text-rose-400">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>Could not parse transaction rows. Ensure data has date and amount values.</span>
+            </div>
+          ) : null}
+        </div>
       </BottomSheet>
     </BottomSheet>
   );

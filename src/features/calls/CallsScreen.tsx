@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowDownLeft, ArrowUpRight, Phone, Plus, Sparkles } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Phone, Plus, Bot } from 'lucide-react';
 import { Avatar }      from '@/components/ui/Avatar';
 import { DialogSkeletonList } from '@/components/ui/Skeleton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
@@ -83,7 +83,7 @@ export default function CallsScreen() {
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-bold text-tg-text truncate">{currentPersona.name}</span>
                 <span className="px-1.5 py-0.2 rounded-full bg-sky-500/20 text-sky-400 text-[10px] font-semibold flex items-center gap-0.5">
-                  <Sparkles className="w-2.5 h-2.5" /> AI Live
+                  <Bot className="w-2.5 h-2.5" /> AI Live
                 </span>
               </div>
               <p className="text-[11px] text-tg-text-hint truncate mt-0.5">{currentPersona.tagline}</p>

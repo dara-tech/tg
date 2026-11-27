@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, PhoneOff, Smartphone, Volume2, Sparkles, MessageSquare, AlertCircle } from 'lucide-react';
+import { Mic, MicOff, PhoneOff, Smartphone, Volume2, Bot, MessageSquare, AlertCircle } from 'lucide-react';
 import { useUIStore } from '@/store/ui.store';
 import { createAiCall, stopAiCall, getActiveAiCall } from '@/services/aiCall/aiCallService';
 import { AI_PERSONAS, getPersonaConfig } from '@/services/aiCall/personas';
@@ -155,8 +155,8 @@ export function ActiveCallOverlay() {
         <div className="flex items-center gap-2">
           {isAiCall && (
             <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-xs font-semibold tracking-wide text-sky-300">
-              <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-              AI Voice Call
+              <Bot className="w-3.5 h-3.5 text-sky-400" />
+              AI Character Call
             </span>
           )}
         </div>

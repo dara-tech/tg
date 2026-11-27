@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Mic, MicOff, PhoneOff, Smartphone, Volume2, Users, X } from 'lucide-react';
 import { useUIStore } from '@/store/ui.store';
 import { createAiCall, stopAiCall, getActiveAiCall } from '@/services/aiCall/aiCallService';
@@ -34,15 +34,22 @@ export function ActiveCallOverlay() {
   const ring3Ref = useRef<HTMLDivElement>(null);
   const targetVolRef = useRef(0);
   const currentVolRef = useRef(0);
+  // Stable refs so the single RAF loop always reads current values
+  const isAiCallRef = useRef(isAiCall);
+  const aiStateRef = useRef(aiState);
 
   const personaConfig = getPersonaConfig(aiPersona);
+
+  // Keep refs in sync — no RAF restart needed
+  useEffect(() => { isAiCallRef.current = isAiCall; }, [isAiCall]);
+  useEffect(() => { aiStateRef.current = aiState; }, [aiState]);
 
   // Sync target volume with smooth lerp target
   useEffect(() => {
     targetVolRef.current = aiState === 'speaking' ? aiVol : aiState === 'listening' ? userVol : 0;
   }, [aiVol, userVol, aiState]);
 
-  // Buttery-smooth 60fps RAF loop with zero layout reflows
+  // Single long-lived 60fps RAF loop — empty deps, reads from refs
   useEffect(() => {
     let animId: number;
     let t = 0;
@@ -55,7 +62,8 @@ export function ActiveCallOverlay() {
 
       const isTalking = v > 0.02;
       const breath = Math.sin(t) * 0.012;
-      const active = isAiCall && (aiState === 'speaking' || aiState === 'listening' || aiState === 'connected');
+      const curState = aiStateRef.current;
+      const active = isAiCallRef.current && (curState === 'speaking' || curState === 'listening' || curState === 'connected');
 
       if (ring1Ref.current) {
         const s1 = 1 + v * 0.35 + (isTalking ? 0.03 : breath);
@@ -83,7 +91,7 @@ export function ActiveCallOverlay() {
 
     animId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animId);
-  }, [isAiCall, aiState]);
+  }, []); // ← empty deps: one loop for the component's lifetime
 
   // Call duration timer
   useEffect(() => {

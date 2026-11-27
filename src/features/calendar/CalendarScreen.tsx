@@ -18,8 +18,10 @@ import {
   Layers,
   LayoutGrid,
   ListOrdered,
+  Landmark,
 } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { BankTransactionsModal, type BankTransaction } from '@/features/erp/BankTransactionsModal';
 import { Avatar } from '@/components/ui/Avatar';
 import { toast } from '@/components/ui/Toast';
 import clsx from 'clsx';
@@ -179,7 +181,7 @@ const CARD_THEMES = [
 export default function CalendarScreen() {
   const [activeView, setActiveView] = useState<'today' | 'calendar'>('today');
   const [calendarMode, setCalendarMode] = useState<'timeline' | 'grid'>('timeline');
-  const [taskFilter, setTaskFilter] = useState<'all' | 'github' | 'reminders'>('all');
+  const [taskFilter, setTaskFilter] = useState<'all' | 'github' | 'erp' | 'reminders'>('all');
 
   const [currentMonth, setCurrentMonth] = useState<Date>(() => new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
@@ -212,6 +214,7 @@ export default function CalendarScreen() {
 
   const [isSyncing, setIsSyncing] = useState(false);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
+  const [bankModalOpen, setBankModalOpen] = useState(false);
 
   // New Event Form State
   const [newTitle, setNewTitle] = useState('');
@@ -284,6 +287,7 @@ export default function CalendarScreen() {
     return events
       .filter((e) => {
         if (taskFilter === 'github') return e.category === 'github';
+        if (taskFilter === 'erp') return e.category === 'erp';
         if (taskFilter === 'reminders') return e.category === 'reminder' || e.category === 'urgent';
         return e.date === todayKey;
       })
@@ -608,6 +612,23 @@ export default function CalendarScreen() {
     setEvents((prev) =>
       prev.map((e) => (e.id === id ? { ...e, completed: !e.completed } : e))
     );
+  };
+
+  const handleSyncBankToCalendar = (tx: BankTransaction) => {
+    const symbol = tx.currency === 'USD' ? '$' : '៛';
+    const amountStr = `${tx.type === 'credit' ? '+' : '-'}${symbol}${tx.amount.toLocaleString()}`;
+    const newEvt: CalendarEvent = {
+      id: `bank-tx-${tx.id}`,
+      title: `[${tx.bank} ${tx.type === 'credit' ? 'Income' : 'Expense'}] ${amountStr} · ${tx.description}`,
+      date: tx.date,
+      time: tx.time || '12:00',
+      category: 'erp',
+      source: 'erp',
+      completed: true,
+      sourceMeta: { type: 'erp' },
+    };
+    setEvents((prev) => [newEvt, ...prev]);
+    toast(`Synced ${tx.bank} transaction to Calendar`, 'success');
   };
 
   // Dual clock strings

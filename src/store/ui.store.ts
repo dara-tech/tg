@@ -143,6 +143,9 @@ interface UIState {
   sidebarOpen: boolean;
   activeCallId: number | null;
   activeCallName: string;
+  isAiCall: boolean;
+  aiPersona: string;
+  aiApiKey: string;
   setTheme: (t: BgThemeId) => void;
   setAccent: (a: AccentId) => void;
   setNavStyle: (s: NavStyleId) => void;
@@ -157,7 +160,10 @@ interface UIState {
   setLastSeenPrivacy: (p: 'everybody' | 'contacts' | 'nobody') => void;
   setAutoDownload: (k: 'autoDownloadPhotos' | 'autoDownloadVideos', v: boolean) => void;
   setSidebarOpen: (v: boolean) => void;
-  setActiveCall: (id: number | null, name?: string) => void;
+  setActiveCall: (id: number | null, name?: string, isAi?: boolean) => void;
+  startAiCall: (persona?: string) => void;
+  setAiPersona: (persona: string) => void;
+  setAiApiKey: (key: string) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -182,6 +188,9 @@ export const useUIStore = create<UIState>()(
       sidebarOpen: false,
       activeCallId: null,
       activeCallName: '',
+      isAiCall: false,
+      aiPersona: 'telegram',
+      aiApiKey: '',
       setTheme: (theme) => set({ theme }),
       setAccent: (accent) => set({ accent }),
       setNavStyle: (navStyle) => set({ navStyle }),
@@ -196,7 +205,15 @@ export const useUIStore = create<UIState>()(
       setLastSeenPrivacy: (lastSeenPrivacy) => set({ lastSeenPrivacy }),
       setAutoDownload: (k, v) => set({ [k]: v } as Partial<UIState>),
       setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
-      setActiveCall: (activeCallId, activeCallName = '') => set({ activeCallId, activeCallName }),
+      setActiveCall: (activeCallId, activeCallName = '', isAi = false) => set({ activeCallId, activeCallName, isAiCall: isAi }),
+      startAiCall: (persona) => set((s) => ({
+        activeCallId: 999999,
+        activeCallName: persona ? persona.toUpperCase() : s.aiPersona.toUpperCase(),
+        isAiCall: true,
+        aiPersona: persona || s.aiPersona,
+      })),
+      setAiPersona: (aiPersona) => set({ aiPersona }),
+      setAiApiKey: (aiApiKey) => set({ aiApiKey }),
     }),
     {
       name: 'tg-ui',
@@ -217,6 +234,8 @@ export const useUIStore = create<UIState>()(
         lastSeenPrivacy: s.lastSeenPrivacy,
         autoDownloadPhotos: s.autoDownloadPhotos,
         autoDownloadVideos: s.autoDownloadVideos,
+        aiPersona: s.aiPersona,
+        aiApiKey: s.aiApiKey,
       }),
     }
   )

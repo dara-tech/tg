@@ -27,7 +27,10 @@ import {
   Key,
   ExternalLink,
   AlertCircle,
+  Sparkles,
 } from 'lucide-react';
+import { AI_PERSONAS, getPersonaConfig } from '@/services/aiCall/personas';
+import type { AIPersona } from '@/services/aiCall/types';
 import { Avatar }      from '@/components/ui/Avatar';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button }      from '@/components/ui/Button';
@@ -40,7 +43,7 @@ import { fetchRealProfile, isMTProtoConfigured, updateRealProfile } from '@/serv
 import { call } from '@/core/telegram/mtproto.client';
 import { logOut } from '@/services/auth.real';
 
-type PanelId = 'notifications' | 'privacy' | 'storage' | 'appearance' | 'wallpaper' | 'khmerFont' | 'language' | 'github' | 'help' | null;
+type PanelId = 'notifications' | 'privacy' | 'storage' | 'appearance' | 'wallpaper' | 'khmerFont' | 'language' | 'github' | 'aiCall' | 'help' | null;
 
 const LANGUAGES = ['English', 'ភាសាខ្មែរ', '日本語', '한국어', '中文'];
 
@@ -554,6 +557,7 @@ export default function SettingsScreen() {
               { id: 'storage'       as const, bg: 'bg-cyan-500',    icon: <Database className="w-4 h-4 text-white" />,   label: 'Data & Storage',         desc: ui.autoDownloadPhotos ? 'Auto' : 'Manual' },
               { id: 'wallpaper'     as const, bg: 'bg-pink-500',    icon: <ImageIcon className="w-4 h-4 text-white" />,  label: 'Chat Wallpaper',         desc: ui.chatWallpaper === 'custom' ? 'Custom Image' : (CHAT_WALLPAPERS[ui.chatWallpaper]?.name ?? 'Theme Default') },
               { id: 'khmerFont'     as const, bg: 'bg-violet-500',  icon: <Type className="w-4 h-4 text-white" />,       label: 'Khmer Font',             desc: KHMER_FONTS[safeKhmerFont].name },
+              { id: 'aiCall'        as const, bg: 'bg-gradient-to-tr from-sky-500 to-indigo-600', icon: <Sparkles className="w-4 h-4 text-white" />, label: 'AI Voice Calling', desc: AI_PERSONAS[ui.aiPersona as AIPersona]?.name || 'Telegram AI' },
               { id: 'github'        as const, bg: 'bg-purple-600',  icon: <Key className="w-4 h-4 text-white" />,        label: 'GitHub & ERP Integration', desc: githubToken ? 'Connected' : (githubUsername ? `@${githubUsername.replace(/^@/, '')}` : 'Configure') },
               { id: 'language'      as const, bg: 'bg-indigo-500',  icon: <Globe className="w-4 h-4 text-white" />,      label: 'Language',               desc: ui.language },
               { id: 'help'          as const, bg: 'bg-slate-500',   icon: <HelpCircle className="w-4 h-4 text-white" />, label: 'Help & FAQ',             desc: '' },
@@ -1133,6 +1137,119 @@ export default function SettingsScreen() {
               className="flex-1 py-2.5 px-3 rounded-xl bg-tg-blue text-white text-sm font-semibold hover:bg-tg-blue/90 active:scale-[0.99] transition-all"
             >
               Save Configuration
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
+
+      {/* AI Voice Calling Panel */}
+      <BottomSheet
+        open={panel === 'aiCall'}
+        onClose={() => setPanel(null)}
+        title="AI Voice Calling & Companions"
+        maxWidth="sm:max-w-md"
+      >
+        <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-sky-500/10 border border-sky-500/20">
+            <Sparkles className="w-5 h-5 text-sky-400 shrink-0 mt-0.5" />
+            <div className="text-xs text-tg-text-secondary leading-relaxed">
+              <span className="font-semibold text-tg-text block mb-0.5">Real-time Gemini Multimodal Live Audio</span>
+              Experience ultra low-latency bidirectional voice calls directly with conversational AI companions in Khmer and English.
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-tg-text uppercase tracking-wider">Choose AI Companion</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {Object.values(AI_PERSONAS).map((p) => {
+                const isSelected = ui.aiPersona === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      ui.setAiPersona(p.id);
+                      toast(`Switched companion to ${p.name}`, 'info');
+                    }}
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl text-left border transition-all ${
+                      isSelected
+                        ? 'bg-sky-500/15 border-sky-400/50 shadow-sm'
+                        : 'bg-tg-bg border-tg-border hover:bg-tg-surface'
+                    }`}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-full overflow-hidden shrink-0 flex items-center justify-center text-xs font-bold shadow-sm"
+                      style={{
+                        background: `linear-gradient(135deg, ${p.gradient.from}, ${p.gradient.to})`,
+                      }}
+                    >
+                      {p.avatar ? (
+                        <img src={p.avatar} alt={p.name} className="w-full h-full object-cover" />
+                      ) : (
+                        p.gradient.initial
+                      )}
+                    </div>
+                    <div className="truncate min-w-0 flex-1">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-semibold text-tg-text truncate">{p.name}</p>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-sky-400 shrink-0" />}
+                      </div>
+                      <p className="text-[10px] text-tg-text-hint truncate">{p.tagline}</p>
+                      <span className="inline-block px-1.5 py-0.2 text-[9px] rounded bg-tg-surface border border-tg-border/30 text-tg-text-secondary mt-0.5">
+                        Voice: {p.voice}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-1.5 pt-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-tg-text uppercase tracking-wider">Custom Gemini API Key</label>
+              <a
+                href="https://aistudio.google.com/app/apikey"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] text-tg-blue hover:underline flex items-center gap-1"
+              >
+                <span>Get API Key</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+            <div className="relative">
+              <input
+                type={showToken ? 'text' : 'password'}
+                value={ui.aiApiKey || ''}
+                onChange={(e) => ui.setAiApiKey(e.target.value)}
+                placeholder="Leave blank to use default .env.local key"
+                className="w-full bg-tg-bg border border-tg-border rounded-xl px-3.5 py-2.5 text-sm text-tg-text pr-10 focus:outline-none focus:border-tg-blue font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => setShowToken(!showToken)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-tg-text-hint hover:text-tg-text"
+              >
+                {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <p className="text-[11px] text-tg-text-hint">
+              Optional. If not set, Telegram Web uses the pre-configured Gemini Multimodal Live API key.
+            </p>
+          </div>
+
+          <div className="flex gap-2.5 pt-3">
+            <button
+              type="button"
+              onClick={() => {
+                setPanel(null);
+                ui.startAiCall();
+              }}
+              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 text-white text-sm font-semibold hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Test AI Voice Call Now</span>
             </button>
           </div>
         </div>

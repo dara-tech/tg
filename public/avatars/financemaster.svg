@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="កំពូលអ្នកហិរញ្ញវត្ថុ & ស្ដារអាជីវកម្ម - Finance & Business Master">
+  <defs>
+    <!-- Background Finance Emerald & Deep Navy Gradient -->
+    <linearGradient id="finance-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#064e3b"/>
+      <stop offset="35%" stop-color="#062925"/>
+      <stop offset="70%" stop-color="#021c1a"/>
+      <stop offset="100%" stop-color="#020d0c"/>
+    </linearGradient>
+
+    <!-- Golden Wealth Aura Radial Gradient -->
+    <radialGradient id="wealth-aura" cx="50%" cy="25%" r="75%" fx="50%" fy="15%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.35"/>
+      <stop offset="40%" stop-color="#fbbf24" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Gold Metallic Gradient -->
+    <linearGradient id="gold-fin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="30%" stop-color="#f59e0b"/>
+      <stop offset="70%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#92400e"/>
+    </linearGradient>
+
+    <!-- Emerald Glow Gradient -->
+    <linearGradient id="emerald-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="50%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+
+    <!-- Skin Tone Gradient -->
+    <linearGradient id="skin-cfo" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fed7aa"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+
+    <!-- Executive Suit Gradient -->
+    <linearGradient id="suit-cfo" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f2922"/>
+      <stop offset="50%" stop-color="#061f1a"/>
+      <stop offset="100%" stop-color="#020d0b"/>
+    </linearGradient>
+
+    <!-- Glass Overlay for Badge -->
+    <linearGradient id="glass-badge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05"/>
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="fin-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="256" height="256" fill="url(#finance-bg)"/>
+  <rect width="256" height="256" fill="url(#wealth-aura)"/>
+
+  <!-- Candlestick / Bullish Growth Charts in Background -->
+  <g opacity="0.25">
+    <!-- Grid Lines -->
+    <line x1="20" y1="60" x2="236" y2="60" stroke="#10b981" stroke-width="0.8" stroke-dasharray="4 4"/>
+    <line x1="20" y1="100" x2="236" y2="100" stroke="#10b981" stroke-width="0.8" stroke-dasharray="4 4"/>
+    <line x1="20" y1="140" x2="236" y2="140" stroke="#10b981" stroke-width="0.8" stroke-dasharray="4 4"/>
+
+    <!-- Left Candlesticks -->
+    <line x1="36" y1="90" x2="36" y2="150" stroke="#34d399" stroke-width="1.5"/>
+    <rect x="32" y="105" width="8" height="30" rx="1.5" fill="#10b981"/>
+
+    <line x1="56" y1="70" x2="56" y2="135" stroke="#34d399" stroke-width="1.5"/>
+    <rect x="52" y="80" width="8" height="40" rx="1.5" fill="#34d399"/>
+
+    <!-- Right Rising Chart Trend Line -->
+    <path d="M165 130 L188 110 L205 118 L230 75" fill="none" stroke="url(#gold-fin)" stroke-width="2.5" stroke-linecap="round" filter="url(#fin-glow)"/>
+    <polygon points="230,75 220,77 225,87" fill="#fbbf24"/>
+    <circle cx="230" cy="75" r="3.5" fill="#fef08a" filter="url(#fin-glow)"/>
+  </g>
+
+  <!-- Floating Coins / Sparkles -->
+  <g opacity="0.85">
+    <!-- Top Right Gold Coin -->
+    <circle cx="215" cy="45" r="14" fill="url(#gold-fin)" filter="url(#fin-glow)"/>
+    <circle cx="215" cy="45" r="11" fill="none" stroke="#fef08a" stroke-width="1"/>
+    <text x="215" y="50" fill="#78350f" font-family="system-ui, sans-serif" font-size="12" font-weight="900" text-anchor="middle">$</text>
+
+    <!-- Top Left Small Coin -->
+    <circle cx="42" cy="48" r="9" fill="url(#gold-fin)" opacity="0.7"/>
+    <circle cx="42" cy="48" r="7" fill="none" stroke="#fef08a" stroke-width="0.8"/>
+    <text x="42" y="52" fill="#78350f" font-family="system-ui, sans-serif" font-size="8" font-weight="900" text-anchor="middle">$</text>
+  </g>
+
+  <!-- Character - Shoulders / Executive Suit -->
+  <path d="M36 256 C42 188 78 165 128 165 C178 165 214 188 220 256 Z" fill="url(#suit-cfo)"/>
+
+  <!-- Emerald Trim / Lapels -->
+  <path d="M84 172 L128 228 L172 172 L150 166 L128 202 L106 166 Z" fill="url(#emerald-grad)"/>
+
+  <!-- Gold Lapel Pin (Growth Chart / Diamond) -->
+  <polygon points="98,183 103,189 98,195 93,189" fill="url(#gold-fin)" filter="url(#fin-glow)"/>
+
+  <!-- Crisp White Shirt & Gold Silk Tie -->
+  <polygon points="120,172 128,186 136,172 128,168" fill="#ffffff"/>
+  <!-- Gold Tie -->
+  <path d="M125 178 L131 178 L133 185 L128 215 L123 185 Z" fill="url(#gold-fin)"/>
+  <polygon points="125,178 131,178 128,184" fill="#78350f"/>
+
+  <!-- Neck -->
+  <rect x="117" y="142" width="22" height="26" rx="4" fill="url(#skin-cfo)"/>
+
+  <!-- Head Base -->
+  <ellipse cx="128" cy="108" rx="36" ry="42" fill="url(#skin-cfo)"/>
+
+  <!-- Modern Executive Haircut (Sharp Businessman Pompadour) -->
+  <path d="M90 102 C85 68 106 44 132 44 C158 44 173 64 167 98 C160 84 150 74 136 72 C118 69 107 82 90 102 Z" fill="#0f172a"/>
+  <path d="M102 70 Q128 50 156 66 Q138 56 118 63 Z" fill="url(#gold-fin)" opacity="0.4"/>
+
+  <!-- Smart Gold-Rimmed Financial Analyst Glasses -->
+  <g>
+    <!-- Left Frame -->
+    <rect x="99" y="98" width="23" height="17" rx="5" fill="#0f172a" stroke="url(#gold-fin)" stroke-width="2"/>
+    <rect x="101" y="100" width="19" height="13" rx="3" fill="#10b981" opacity="0.25"/>
+    <line x1="103" y1="102" x2="114" y2="102" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.75"/>
+
+    <!-- Right Frame -->
+    <rect x="134" y="98" width="23" height="17" rx="5" fill="#0f172a" stroke="url(#gold-fin)" stroke-width="2"/>
+    <rect x="136" y="100" width="19" height="13" rx="3" fill="#10b981" opacity="0.25"/>
+    <line x1="138" y1="102" x2="149" y2="102" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.75"/>
+
+    <!-- Bridge -->
+    <path d="M122 104 Q128 101 134 104" fill="none" stroke="url(#gold-fin)" stroke-width="2"/>
+  </g>
+
+  <!-- Eyes behind glasses (Sharp, strategic & confident) -->
+  <circle cx="111" cy="106" r="3" fill="#022c22"/>
+  <circle cx="112" cy="105" r="1" fill="#ffffff"/>
+  <circle cx="145" cy="106" r="3" fill="#022c22"/>
+  <circle cx="146" cy="105" r="1" fill="#ffffff"/>
+
+  <!-- Strategic Eyebrows -->
+  <path d="M100 91 Q112 86 122 90" fill="none" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M134 90 Q144 86 156 91" fill="none" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Nose -->
+  <path d="M128 112 L125 124 L131 124" fill="none" stroke="#ea580c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Confident, Assuring Smirk / Smile -->
+  <path d="M120 134 Q128 141 138 135" fill="none" stroke="#991b1b" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Left Side: Financial Analytics Tablet with Green Up-Trend -->
+  <g transform="translate(28, 172) rotate(-8)">
+    <rect width="48" height="38" rx="5" fill="#021c1a" stroke="url(#gold-fin)" stroke-width="1.3"/>
+    <!-- Tablet screen -->
+    <rect x="3" y="3" width="42" height="32" rx="3" fill="#062e26"/>
+    <!-- Rising Graph Line -->
+    <path d="M6 26 L16 20 L24 23 L34 12 L40 8" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" filter="url(#fin-glow)"/>
+    <circle cx="40" cy="8" r="2" fill="#fef08a"/>
+    <!-- Profit percentage text -->
+    <text x="7" y="31" fill="#34d399" font-family="system-ui, sans-serif" font-size="6" font-weight="900">+185% ROI</text>
+  </g>
+
+  <!-- Right Side: Wealth / Cash Turnaround Icon Shield -->
+  <g transform="translate(182, 170) rotate(8)">
+    <!-- Golden Shield -->
+    <path d="M20 6 L36 12 C36 28 20 38 20 38 C20 38 4 28 4 12 Z" fill="url(#gold-fin)" stroke="#fef08a" stroke-width="1.2" filter="url(#fin-glow)"/>
+    <text x="20" y="24" fill="#78350f" font-family="system-ui, sans-serif" font-size="12" font-weight="900" text-anchor="middle">▲</text>
+  </g>
+
+  <!-- Persona Badge / Title Label -->
+  <g transform="translate(12, 202)">
+    <rect width="90" height="42" rx="10" fill="url(#glass-badge)" stroke="url(#gold-fin)" stroke-width="1.4" filter="url(#fin-glow)"/>
+    <text x="45" y="18" fill="#fef08a" font-family="system-ui, sans-serif" font-size="10.5" font-weight="900" text-anchor="middle">💰 ហិរញ្ញវត្ថុ</text>
+    <text x="45" y="32" fill="#ffffff" font-family="system-ui, sans-serif" font-size="8.5" font-weight="700" text-anchor="middle" letter-spacing="0.5">FINANCE MASTER</text>
+  </g>
+</svg>

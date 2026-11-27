@@ -1,0 +1,191 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="កំពូលអ្នកវិភាគកុននិយម - Supreme Film Critic">
+  <defs>
+    <!-- Background Cinema Theater Gradient -->
+    <linearGradient id="cinema-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1c0b2b"/>
+      <stop offset="35%" stop-color="#2a0845"/>
+      <stop offset="70%" stop-color="#14061f"/>
+      <stop offset="100%" stop-color="#09020e"/>
+    </linearGradient>
+
+    <!-- Golden Spotlight Gradient -->
+    <radialGradient id="spotlight" cx="50%" cy="20%" r="80%" fx="50%" fy="10%">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.35"/>
+      <stop offset="45%" stop-color="#d97706" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Gold Premium Metallic Gradient -->
+    <linearGradient id="gold-cine" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="30%" stop-color="#f59e0b"/>
+      <stop offset="70%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#92400e"/>
+    </linearGradient>
+
+    <!-- Neon Crimson / Velvet Theater Gradient -->
+    <linearGradient id="velvet-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e11d48"/>
+      <stop offset="50%" stop-color="#9f1239"/>
+      <stop offset="100%" stop-color="#4c0519"/>
+    </linearGradient>
+
+    <!-- Skin Tone Gradient -->
+    <linearGradient id="skin-critic" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fed7aa"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+
+    <!-- Jacket / Suit Gradient -->
+    <linearGradient id="suit-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#312e81"/>
+      <stop offset="50%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <!-- Popcorn Tub Stripes -->
+    <pattern id="popcorn-stripes" width="12" height="12" patternUnits="userSpaceOnUse">
+      <rect width="6" height="12" fill="#ef4444"/>
+      <rect x="6" width="6" height="12" fill="#ffffff"/>
+    </pattern>
+
+    <!-- Glass Overlay for Badge -->
+    <linearGradient id="glass-badge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.04"/>
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="cine-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="256" height="256" fill="url(#cinema-bg)"/>
+  <rect width="256" height="256" fill="url(#spotlight)"/>
+
+  <!-- Film Reel Strips in Background (Left & Right) -->
+  <g opacity="0.3" stroke="#f59e0b" stroke-width="1.5">
+    <!-- Left Film Strip -->
+    <path d="M-10 20 Q35 70 20 150 Q10 210 -15 250" fill="none" stroke-width="20" stroke="#18181b"/>
+    <path d="M-10 20 Q35 70 20 150 Q10 210 -15 250" fill="none" stroke-width="2" stroke="#f59e0b"/>
+    <!-- Sprocket holes -->
+    <circle cx="12" cy="50" r="2.5" fill="#fef08a"/>
+    <circle cx="22" cy="85" r="2.5" fill="#fef08a"/>
+    <circle cx="21" cy="120" r="2.5" fill="#fef08a"/>
+    <circle cx="15" cy="155" r="2.5" fill="#fef08a"/>
+    
+    <!-- Right Film Strip -->
+    <path d="M266 30 Q220 80 235 160 Q245 210 270 245" fill="none" stroke-width="20" stroke="#18181b"/>
+    <path d="M266 30 Q220 80 235 160 Q245 210 270 245" fill="none" stroke-width="2" stroke="#f59e0b"/>
+    <!-- Sprocket holes -->
+    <circle cx="240" cy="60" r="2.5" fill="#fef08a"/>
+    <circle cx="230" cy="95" r="2.5" fill="#fef08a"/>
+    <circle cx="232" cy="130" r="2.5" fill="#fef08a"/>
+    <circle cx="242" cy="165" r="2.5" fill="#fef08a"/>
+  </g>
+
+  <!-- Cinema Star Rating / Sparkles in background -->
+  <g opacity="0.8">
+    <path d="M128 12 L131 22 L142 22 L133 28 L136 38 L128 32 L120 38 L123 28 L114 22 L125 22 Z" fill="url(#gold-cine)" filter="url(#cine-glow)"/>
+    <path d="M80 26 L82 32 L89 32 L83 36 L85 42 L80 38 L75 42 L77 36 L71 32 L78 32 Z" fill="url(#gold-cine)" transform="scale(0.85) translate(20,0)"/>
+    <path d="M176 26 L178 32 L185 32 L179 36 L181 42 L176 38 L171 42 L173 36 L167 32 L174 32 Z" fill="url(#gold-cine)" transform="scale(0.85) translate(28,0)"/>
+  </g>
+
+  <!-- Critic Character - Shoulders / Stylish Suit -->
+  <path d="M36 256 C42 188 78 165 128 165 C178 165 214 188 220 256 Z" fill="url(#suit-grad)"/>
+
+  <!-- Velvet Lapels / Collar -->
+  <path d="M84 172 L128 225 L172 172 L150 166 L128 200 L106 166 Z" fill="url(#velvet-grad)"/>
+  <!-- Gold Lapel Pin (Film Reel) -->
+  <circle cx="98" cy="188" r="4.5" fill="url(#gold-cine)" filter="url(#cine-glow)"/>
+  <circle cx="98" cy="188" r="2" fill="#18181b"/>
+
+  <!-- Shirt & Bowtie -->
+  <polygon points="120,172 128,185 136,172 128,168" fill="#ffffff"/>
+  <!-- Bowtie -->
+  <path d="M118 178 L128 183 L138 178 L138 188 L128 183 L118 188 Z" fill="url(#gold-cine)"/>
+  <circle cx="128" cy="183" r="2" fill="#78350f"/>
+
+  <!-- Neck -->
+  <rect x="117" y="142" width="22" height="26" rx="4" fill="url(#skin-critic)"/>
+
+  <!-- Head Base -->
+  <ellipse cx="128" cy="108" rx="36" ry="42" fill="url(#skin-critic)"/>
+
+  <!-- Stylish Cinephile Haircut (Modern Pompadour / Director flow) -->
+  <path d="M90 102 C86 70 104 46 130 46 C155 46 172 65 166 98 C160 85 152 75 138 72 C120 68 108 82 90 102 Z" fill="#1e1b4b"/>
+  <path d="M102 70 Q128 50 156 68 Q140 58 118 64 Z" fill="url(#gold-cine)" opacity="0.6"/>
+
+  <!-- Sleek Critic Glasses / Smart Frames -->
+  <g>
+    <!-- Left Frame -->
+    <rect x="100" y="98" width="22" height="17" rx="5" fill="#1e1b4b" stroke="url(#gold-cine)" stroke-width="2"/>
+    <rect x="102" y="100" width="18" height="13" rx="3" fill="#0284c7" opacity="0.25"/>
+    <line x1="104" y1="102" x2="114" y2="102" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+
+    <!-- Right Frame -->
+    <rect x="134" y="98" width="22" height="17" rx="5" fill="#1e1b4b" stroke="url(#gold-cine)" stroke-width="2"/>
+    <rect x="136" y="100" width="18" height="13" rx="3" fill="#0284c7" opacity="0.25"/>
+    <line x1="138" y1="102" x2="148" y2="102" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+
+    <!-- Bridge -->
+    <path d="M122 104 Q128 101 134 104" fill="none" stroke="url(#gold-cine)" stroke-width="2"/>
+  </g>
+
+  <!-- Eyes behind glasses (Attentive / Analyzing) -->
+  <circle cx="111" cy="106" r="3" fill="#0f172a"/>
+  <circle cx="112" cy="105" r="1" fill="#ffffff"/>
+  <circle cx="145" cy="106" r="3" fill="#0f172a"/>
+  <circle cx="146" cy="105" r="1" fill="#ffffff"/>
+
+  <!-- Expressive Eyebrows -->
+  <path d="M101 92 Q112 87 122 91" fill="none" stroke="#1e1b4b" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M134 91 Q144 87 155 92" fill="none" stroke="#1e1b4b" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Nose -->
+  <path d="M128 112 L125 124 L131 124" fill="none" stroke="#ea580c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Confident Critic Smirk / Smile -->
+  <path d="M120 134 Q128 140 138 135" fill="none" stroke="#991b1b" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Clapperboard (Left Hand / Foreground) -->
+  <g transform="translate(32, 178) rotate(-12)">
+    <rect width="44" height="34" rx="4" fill="#18181b" stroke="url(#gold-cine)" stroke-width="1.2"/>
+    <!-- Top Clap Bar with zebra stripes -->
+    <rect width="44" height="10" rx="2" fill="#18181b"/>
+    <polygon points="4,0 10,0 6,10 0,10" fill="#ffffff"/>
+    <polygon points="15,0 21,0 17,10 11,10" fill="#ffffff"/>
+    <polygon points="26,0 32,0 28,10 22,10" fill="#ffffff"/>
+    <polygon points="37,0 43,0 39,10 33,10" fill="#ffffff"/>
+    <!-- Clapperboard text lines -->
+    <line x1="6" y1="18" x2="38" y2="18" stroke="url(#gold-cine)" stroke-width="1.2"/>
+    <line x1="6" y1="24" x2="26" y2="24" stroke="#ffffff" stroke-width="1" opacity="0.8"/>
+    <text x="6" y="30" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="6" font-weight="900">SCENE 10/10</text>
+  </g>
+
+  <!-- Cinema Popcorn Bucket (Right Hand / Foreground) -->
+  <g transform="translate(186, 172) rotate(10)">
+    <!-- Popcorn Tub -->
+    <polygon points="8,16 36,16 32,48 12,48" fill="#e11d48" stroke="url(#gold-cine)" stroke-width="1.2"/>
+    <polygon points="12,16 18,16 16,48 12,48" fill="#ffffff"/>
+    <polygon points="26,16 32,16 28,48 24,48" fill="#ffffff"/>
+    <!-- Fluffy Popcorn Tops -->
+    <ellipse cx="14" cy="14" rx="5" ry="4" fill="#fef08a"/>
+    <ellipse cx="22" cy="12" rx="6" ry="5" fill="#fef9c3"/>
+    <ellipse cx="30" cy="14" rx="5" ry="4" fill="#fef08a"/>
+    <ellipse cx="18" cy="8" rx="4" ry="4" fill="#fde047"/>
+    <ellipse cx="26" cy="9" rx="4" ry="3.5" fill="#fef08a"/>
+    <!-- Butter drizzle -->
+    <path d="M16 10 Q22 14 28 9" fill="none" stroke="#d97706" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Critic Badge / Title Label -->
+  <g transform="translate(14, 202)">
+    <rect width="84" height="42" rx="10" fill="url(#glass-badge)" stroke="url(#gold-cine)" stroke-width="1.4" filter="url(#cine-glow)"/>
+    <text x="42" y="18" fill="#fde047" font-family="system-ui, sans-serif" font-size="10.5" font-weight="900" text-anchor="middle">🎬 កុននិយម</text>
+    <text x="42" y="32" fill="#ffffff" font-family="system-ui, sans-serif" font-size="8.5" font-weight="700" text-anchor="middle" letter-spacing="0.6">CINE CRITIC</text>
+  </g>
+</svg>

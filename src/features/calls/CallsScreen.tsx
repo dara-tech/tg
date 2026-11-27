@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { ArrowDownLeft, ArrowUpRight, Phone, Plus } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Phone, Plus, Sparkles } from 'lucide-react';
 import { Avatar }      from '@/components/ui/Avatar';
 import { DialogSkeletonList } from '@/components/ui/Skeleton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
@@ -9,6 +9,8 @@ import { useDialogsStore } from '@/store/dialogs.store';
 import { toast }       from '@/components/ui/Toast';
 import { fetchRealCallHistory, fetchRealContacts, isMTProtoConfigured } from '@/services/telegram.real';
 import { format, isToday } from 'date-fns';
+import { getPersonaConfig } from '@/services/aiCall/personas';
+import type { AIPersona } from '@/services/aiCall/types';
 
 function formatCallTime(ts: number) {
   const d = new Date(ts * 1000);
@@ -16,7 +18,8 @@ function formatCallTime(ts: number) {
 }
 
 export default function CallsScreen() {
-  const { setActiveCall } = useUIStore();
+  const { setActiveCall, startAiCall, aiPersona } = useUIStore();
+  const currentPersona = getPersonaConfig(aiPersona as AIPersona);
   const { calls, contacts, setCalls, setContacts } = useDialogsStore();
   const [loading, setLoading] = useState(() => calls.length === 0);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -59,6 +62,39 @@ export default function CallsScreen() {
       </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-hide pb-4">
+        {/* AI Voice Call Hero Banner */}
+        <div className="p-3 mx-4 my-2.5 rounded-2xl bg-gradient-to-r from-sky-500/15 via-indigo-500/15 to-purple-500/15 border border-sky-500/20 shadow-sm flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div
+              className="w-11 h-11 rounded-full overflow-hidden shrink-0 flex items-center justify-center text-sm font-bold shadow-md"
+              style={{
+                background: `linear-gradient(135deg, ${currentPersona.gradient.from}, ${currentPersona.gradient.to})`,
+              }}
+            >
+              {currentPersona.avatar ? (
+                <img src={currentPersona.avatar} alt={currentPersona.name} className="w-full h-full object-cover" />
+              ) : (
+                currentPersona.gradient.initial
+              )}
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-tg-text truncate">{currentPersona.name}</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-sky-500/20 text-sky-400 text-[10px] font-semibold flex items-center gap-0.5">
+                  <Sparkles className="w-2.5 h-2.5" /> AI Live
+                </span>
+              </div>
+              <p className="text-[11px] text-tg-text-hint truncate mt-0.5">{currentPersona.tagline}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => startAiCall()}
+            className="px-3 py-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-600 text-white text-xs font-semibold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1 shrink-0 shadow-md shadow-sky-500/20"
+          >
+            <span>Call AI</span>
+          </button>
+        </div>
+
         {loading && calls.length === 0 && <DialogSkeletonList count={5} />}
         {!loading && calls.length === 0 && (
           <p className="text-tg-text-hint text-sm text-center mt-16">No recent calls</p>

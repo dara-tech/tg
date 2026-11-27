@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="អ្នកទាយពីសុបិន្ត - Dream Interpreter">
+  <defs>
+    <!-- Background Cosmic Dream Gradient -->
+    <linearGradient id="dream-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2e0854"/>
+      <stop offset="40%" stop-color="#4c1d95"/>
+      <stop offset="80%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#0f0c29"/>
+    </linearGradient>
+
+    <!-- Crystal Ball Glow Gradient -->
+    <radialGradient id="orb-glow" cx="50%" cy="50%" r="50%" fx="35%" fy="35%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="25%" stop-color="#c084fc"/>
+      <stop offset="60%" stop-color="#7e22ce"/>
+      <stop offset="90%" stop-color="#3b0764"/>
+      <stop offset="100%" stop-color="#1e1b4b"/>
+    </radialGradient>
+
+    <!-- Mystical Gold Gradient -->
+    <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+
+    <!-- Skin Tone Gradient -->
+    <linearGradient id="skin-dream" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fde68a"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+
+    <!-- Hood/Robe Gradient -->
+    <linearGradient id="robe-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6b21a8"/>
+      <stop offset="50%" stop-color="#3b0764"/>
+      <stop offset="100%" stop-color="#180d2b"/>
+    </linearGradient>
+
+    <!-- Glass Overlay -->
+    <linearGradient id="glass-badge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05"/>
+    </linearGradient>
+
+    <!-- Filter for Dream Glow -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="256" height="256" fill="url(#dream-bg)"/>
+
+  <!-- Mystical Stars & Constellations in Background -->
+  <g opacity="0.6">
+    <circle cx="35" cy="40" r="1.5" fill="#fef08a"/>
+    <circle cx="70" cy="25" r="1" fill="#ffffff"/>
+    <circle cx="190" cy="35" r="1.5" fill="#fef08a"/>
+    <circle cx="225" cy="65" r="1" fill="#ffffff"/>
+    <circle cx="25" cy="110" r="1" fill="#ffffff"/>
+    <circle cx="230" cy="130" r="1.5" fill="#c084fc"/>
+    <circle cx="50" cy="160" r="1" fill="#ffffff"/>
+    
+    <!-- 4-point Sparkle Stars -->
+    <path d="M45 70 Q45 80 35 80 Q45 80 45 90 Q45 80 55 80 Q45 80 45 70" fill="#fde047" opacity="0.8"/>
+    <path d="M210 95 Q210 102 203 102 Q210 102 210 109 Q210 102 217 102 Q210 102 210 95" fill="#e9d5ff" opacity="0.75"/>
+    <path d="M175 45 Q175 50 170 50 Q175 50 175 55 Q175 50 180 50 Q175 50 175 45" fill="#fde047" opacity="0.9"/>
+  </g>
+
+  <!-- Glowing Crescent Moon in Sky -->
+  <path d="M128 15 A35 35 0 0 0 160 50 A38 38 0 0 1 128 15 Z" fill="url(#gold-grad)" opacity="0.85" filter="url(#glow)"/>
+
+  <!-- Mystical Robe / Shoulders -->
+  <path d="M30 256 C35 185 75 160 128 160 C181 160 221 185 226 256 Z" fill="url(#robe-grad)"/>
+
+  <!-- Robe Gold Trim / Scarf -->
+  <path d="M96 168 Q128 200 160 168 Q145 220 128 230 Q111 220 96 168 Z" fill="none" stroke="url(#gold-grad)" stroke-width="3" opacity="0.85"/>
+  <circle cx="128" cy="195" r="4" fill="url(#gold-grad)"/>
+
+  <!-- Mystical Hood Backing -->
+  <ellipse cx="128" cy="105" rx="58" ry="64" fill="#25083f"/>
+
+  <!-- Face / Head Base -->
+  <ellipse cx="128" cy="108" rx="38" ry="44" fill="url(#skin-dream)"/>
+
+  <!-- Mystical Veil / Hood Drape -->
+  <path d="M82 100 C82 45 174 45 174 100 C174 135 165 158 158 150 C150 110 142 80 128 80 C114 80 106 110 98 150 C91 158 82 135 82 100 Z" fill="url(#robe-grad)"/>
+  <path d="M82 100 C82 45 174 45 174 100" fill="none" stroke="url(#gold-grad)" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Third Eye / Forehead Mystical Moon Bindu -->
+  <path d="M128 85 A5 5 0 0 0 133 90 A6 6 0 0 1 128 85 Z" fill="#fde047"/>
+  <circle cx="128" cy="94" r="2" fill="#c084fc" filter="url(#glow)"/>
+
+  <!-- Serene Closed / Oracle Eyes (Dreaming state) -->
+  <path d="M110 112 Q117 118 124 112" fill="none" stroke="#4c1d95" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M132 112 Q139 118 146 112" fill="none" stroke="#4c1d95" stroke-width="2.5" stroke-linecap="round"/>
+  
+  <!-- Subtle Eyelashes -->
+  <line x1="117" y1="115" x2="117" y2="118" stroke="#4c1d95" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="139" y1="115" x2="139" y2="118" stroke="#4c1d95" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- Eyebrows -->
+  <path d="M107 104 Q116 100 123 103" fill="none" stroke="#581c87" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M133 103 Q140 100 149 104" fill="none" stroke="#581c87" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Serene Lips / Gentle Smile -->
+  <path d="M123 132 Q128 136 133 132" fill="none" stroke="#9333ea" stroke-width="2.2" stroke-linecap="round"/>
+
+  <!-- Glowing Crystal Orb in Hands / Front -->
+  <g transform="translate(128, 205)">
+    <!-- Base Glow -->
+    <circle cx="0" cy="0" r="34" fill="url(#orb-glow)" filter="url(#glow)"/>
+    <circle cx="0" cy="0" r="32" fill="url(#orb-glow)"/>
+    
+    <!-- Orb Internal Swirl / Galaxy -->
+    <path d="M-18 -8 Q0 -22 18 -6 Q8 16 -12 12 Q-22 4 -18 -8 Z" fill="#e9d5ff" opacity="0.35"/>
+    <circle cx="-10" cy="-12" r="6" fill="#ffffff" opacity="0.6"/>
+    <circle cx="8" cy="8" r="2.5" fill="#fef08a" opacity="0.8"/>
+    
+    <!-- Stand / Hands holding orb -->
+    <path d="M-36 22 Q-28 8 -24 0 Q-18 12 -28 26 Z" fill="url(#skin-dream)"/>
+    <path d="M36 22 Q28 8 24 0 Q18 12 28 26 Z" fill="url(#skin-dream)"/>
+    <path d="M-22 28 Q0 36 22 28 L16 38 Q0 42 -16 38 Z" fill="url(#gold-grad)"/>
+  </g>
+
+  <!-- Mystical Dream Badge / Label -->
+  <g transform="translate(14, 195)">
+    <rect width="78" height="42" rx="10" fill="url(#glass-badge)" stroke="url(#gold-grad)" stroke-width="1.2"/>
+    <text x="39" y="19" fill="#fef08a" font-family="system-ui, sans-serif" font-size="11" font-weight="800" text-anchor="middle">🔮 សុបិន្ត</text>
+    <text x="39" y="33" fill="#e9d5ff" font-family="system-ui, sans-serif" font-size="9" font-weight="600" text-anchor="middle" letter-spacing="0.5">ORACLE</text>
+  </g>
+</svg>

@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="បុប្ផា (Bopha) - Sweet Melodious Voice">
+  <defs>
+    <linearGradient id="bopha-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f472b6"/>
+      <stop offset="50%" stop-color="#ec4899"/>
+      <stop offset="100%" stop-color="#be185d"/>
+    </linearGradient>
+    <linearGradient id="skin-bopha" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff1f2"/>
+      <stop offset="100%" stop-color="#fecdd3"/>
+    </linearGradient>
+    <linearGradient id="hair-bopha" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4a044e"/>
+      <stop offset="100%" stop-color="#1f1027"/>
+    </linearGradient>
+    <linearGradient id="dress-bopha" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fb7185"/>
+      <stop offset="100%" stop-color="#e11d48"/>
+    </linearGradient>
+    <linearGradient id="flower-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#fbcfe8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="256" height="256" fill="url(#bopha-bg)"/>
+
+  <!-- Sparkling / Floating Hearts & Petals Glow Background -->
+  <g opacity="0.25" fill="#ffffff">
+    <circle cx="40" cy="50" r="4"/>
+    <circle cx="210" cy="60" r="3"/>
+    <circle cx="50" cy="180" r="2.5"/>
+    <circle cx="220" cy="190" r="4"/>
+    <path d="M70 80 Q75 70 80 80 Q75 90 70 80 Z"/>
+    <path d="M190 120 Q195 110 200 120 Q195 130 190 120 Z"/>
+  </g>
+
+  <!-- Long Beautiful Hair (Back) -->
+  <ellipse cx="128" cy="140" rx="76" ry="90" fill="url(#hair-bopha)"/>
+
+  <!-- Body / Traditional Elegant Top -->
+  <path d="M46 256 C50 195 78 182 128 182 C178 182 206 195 210 256 Z" fill="url(#dress-bopha)"/>
+  <!-- Gold Sbai Sash Accent -->
+  <path d="M88 185 Q115 220 122 256 L102 256 Q95 220 75 190 Z" fill="#fde047" opacity="0.85"/>
+
+  <!-- Neck -->
+  <rect x="114" y="142" width="28" height="44" rx="5" fill="url(#skin-bopha)"/>
+
+  <!-- Head Base -->
+  <ellipse cx="128" cy="114" rx="48" ry="54" fill="url(#skin-bopha)"/>
+
+  <!-- Silky Bangs & Side Locks Hair -->
+  <path d="M76 100 C76 46 180 46 180 100 C180 148 174 165 168 152 C162 88 145 74 128 74 C111 74 94 88 88 152 C82 165 76 148 76 100 Z" fill="url(#hair-bopha)"/>
+
+  <!-- Jasmine / Lotus Flower Hair Accessory -->
+  <g transform="translate(162, 75)">
+    <circle cx="0" cy="0" r="10" fill="#fde047"/>
+    <ellipse cx="-12" cy="0" rx="9" ry="5" fill="url(#flower-grad)"/>
+    <ellipse cx="12" cy="0" rx="9" ry="5" fill="url(#flower-grad)"/>
+    <ellipse cx="0" cy="-12" rx="5" ry="9" fill="url(#flower-grad)"/>
+    <ellipse cx="0" cy="12" rx="5" ry="9" fill="url(#flower-grad)"/>
+    <circle cx="0" cy="0" r="4" fill="#fbbf24"/>
+  </g>
+
+  <!-- Big Melodious / Sweet Expressive Eyes -->
+  <ellipse cx="108" cy="116" rx="7" ry="8.5" fill="#2e1065"/>
+  <ellipse cx="148" cy="116" rx="7" ry="8.5" fill="#2e1065"/>
+  <!-- Eye Highlights -->
+  <circle cx="110.5" cy="113" r="3" fill="#ffffff"/>
+  <circle cx="106" cy="118.5" r="1.5" fill="#ffffff"/>
+  <circle cx="150.5" cy="113" r="3" fill="#ffffff"/>
+  <circle cx="146" cy="118.5" r="1.5" fill="#ffffff"/>
+  <!-- Long Sweet Eyelashes -->
+  <path d="M99 110 Q108 105 117 109" fill="none" stroke="#2e1065" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M139 109 Q148 105 157 110" fill="none" stroke="#2e1065" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Soft Gentle Eyebrows -->
+  <path d="M100 101 Q108 97 116 101" fill="none" stroke="#581c87" stroke-width="2" stroke-linecap="round"/>
+  <path d="M140 101 Q148 97 156 101" fill="none" stroke="#581c87" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Blushing Rosy Cheeks -->
+  <ellipse cx="94" cy="126" rx="10" ry="5.5" fill="#f43f5e" opacity="0.4"/>
+  <ellipse cx="162" cy="126" rx="10" ry="5.5" fill="#f43f5e" opacity="0.4"/>
+
+  <!-- Dainty Nose & Sweet Smile -->
+  <circle cx="128" cy="123" r="1.5" fill="#e11d48" opacity="0.5"/>
+  <path d="M120 138 Q128 147 136 138" fill="none" stroke="#be123c" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Sweet Voice Indicator Music Notes -->
+  <g transform="translate(48, 115)" opacity="0.9">
+    <path d="M0 10 Q6 0 12 6 L12 24 A4 3 0 1 1 8 20 L8 10 Z" fill="#ffffff"/>
+  </g>
+  <g transform="translate(196, 125)" opacity="0.9">
+    <circle cx="6" cy="16" r="3.5" fill="#fdf2f8"/>
+    <path d="M9.5 16 L9.5 4 Q14 2 17 6" fill="none" stroke="#fdf2f8" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>

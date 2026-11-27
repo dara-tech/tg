@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#050b14"/>
+      <stop offset="50%" stop-color="#0b1e36"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    
+    <linearGradient id="hairGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <linearGradient id="skinGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f8d7b8"/>
+      <stop offset="100%" stop-color="#e2b892"/>
+    </linearGradient>
+
+    <linearGradient id="jacketGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+
+    <linearGradient id="cyanNeon" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00f2fe"/>
+      <stop offset="100%" stop-color="#4facfe"/>
+    </linearGradient>
+
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="400" height="400" rx="60" fill="url(#bgGrad)" />
+
+  <!-- Cyber Grid Matrix & Code Patterns -->
+  <g stroke="#0284c7" stroke-opacity="0.15" stroke-width="1.5">
+    <path d="M 0,80 L 400,80 M 0,160 L 400,160 M 0,240 L 400,240 M 0,320 L 400,320" />
+    <path d="M 80,0 L 80,400 M 160,0 L 160,400 M 240,0 L 240,400 M 320,0 L 320,400" />
+  </g>
+
+  <!-- Glowing Binary/Tech Code Background Elements -->
+  <text x="30" y="60" fill="#38bdf8" opacity="0.35" font-family="monospace" font-size="14">&lt;DHIS2_CORE /&gt;</text>
+  <text x="270" y="60" fill="#00f2fe" opacity="0.35" font-family="monospace" font-size="14">async () =&gt; {}</text>
+  <text x="25" y="360" fill="#38bdf8" opacity="0.35" font-family="monospace" font-size="13">git commit -m "feat: sync"</text>
+  <text x="275" y="360" fill="#00f2fe" opacity="0.35" font-family="monospace" font-size="13">[MongoDB :: 2026]</text>
+
+  <!-- Glowing Circuit Lines -->
+  <path d="M 40,180 L 90,180 L 120,220" stroke="#00f2fe" stroke-width="2" fill="none" opacity="0.6" filter="url(#neonGlow)"/>
+  <circle cx="120" cy="220" r="4" fill="#00f2fe" filter="url(#neonGlow)"/>
+  <path d="M 360,180 L 310,180 L 280,220" stroke="#38bdf8" stroke-width="2" fill="none" opacity="0.6" filter="url(#neonGlow)"/>
+  <circle cx="280" cy="220" r="4" fill="#38bdf8" filter="url(#neonGlow)"/>
+
+  <!-- Character Silhouette / Body -->
+  <!-- Hoodie / Tech Jacket -->
+  <path d="M 70,400 C 75,300 130,260 200,260 C 270,260 325,300 330,400 Z" fill="url(#jacketGrad)" stroke="#38bdf8" stroke-width="2" stroke-opacity="0.4"/>
+  
+  <!-- Cyber Jacket Collar & Inner Tee -->
+  <path d="M 160,270 L 200,320 L 240,270 L 220,380 L 180,380 Z" fill="#03192e" stroke="#00f2fe" stroke-width="2" stroke-opacity="0.8" filter="url(#neonGlow)"/>
+  <path d="M 175,325 L 200,355 L 225,325" stroke="#38bdf8" stroke-width="2" fill="none"/>
+
+  <!-- Neck -->
+  <rect x="180" y="210" width="40" height="60" rx="10" fill="url(#skinGrad)" />
+
+  <!-- Head / Face -->
+  <path d="M 140,140 C 140,85 260,85 260,140 C 260,195 240,230 200,230 C 160,230 140,195 140,140 Z" fill="url(#skinGrad)" />
+
+  <!-- Ears -->
+  <circle cx="138" cy="148" r="14" fill="#e2b892"/>
+  <circle cx="262" cy="148" r="14" fill="#e2b892"/>
+
+  <!-- Developer Pro Tech Headset -->
+  <path d="M 125,145 C 120,60 280,60 275,145" stroke="#0ea5e9" stroke-width="8" fill="none" stroke-linecap="round" filter="url(#neonGlow)"/>
+  <rect x="122" y="130" width="18" height="36" rx="8" fill="#0284c7" stroke="#38bdf8" stroke-width="2"/>
+  <rect x="260" y="130" width="18" height="36" rx="8" fill="#0284c7" stroke="#38bdf8" stroke-width="2"/>
+  <!-- Mic Boom -->
+  <path d="M 130,155 Q 140,190 170,195" stroke="#38bdf8" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <circle cx="170" cy="195" r="4" fill="#00f2fe" filter="url(#neonGlow)"/>
+
+  <!-- Modern Styled Hair -->
+  <path d="M 135,120 C 140,65 210,60 265,95 C 255,80 230,68 195,70 C 160,72 140,90 135,120 Z" fill="url(#hairGrad)" />
+  <path d="M 145,100 C 170,85 240,90 255,115 C 240,105 210,100 180,108 C 160,113 150,110 145,100 Z" fill="#334155" />
+
+  <!-- Smart Developer Cyber Glasses -->
+  <rect x="150" y="132" width="42" height="28" rx="8" fill="#082f49" fill-opacity="0.8" stroke="#00f2fe" stroke-width="2.5" filter="url(#neonGlow)"/>
+  <rect x="208" y="132" width="42" height="28" rx="8" fill="#082f49" fill-opacity="0.8" stroke="#00f2fe" stroke-width="2.5" filter="url(#neonGlow)"/>
+  <line x1="192" y1="144" x2="208" y2="144" stroke="#00f2fe" stroke-width="2.5"/>
+
+  <!-- Glowing Eyes / HUD reflection in glasses -->
+  <circle cx="171" cy="146" r="4" fill="#ffffff"/>
+  <circle cx="229" cy="146" r="4" fill="#ffffff"/>
+  <line x1="156" y1="138" x2="168" y2="138" stroke="#38bdf8" stroke-width="1.5" opacity="0.8"/>
+  <line x1="214" y1="138" x2="226" y2="138" stroke="#38bdf8" stroke-width="1.5" opacity="0.8"/>
+
+  <!-- Confident Smile -->
+  <path d="M 186,188 Q 200,198 214,188" stroke="#b45309" stroke-width="3" fill="none" stroke-linecap="round" />
+
+  <!-- DHIS2 Core Dev Neon Badge -->
+  <g transform="translate(110, 310)" filter="url(#neonGlow)">
+    <rect width="180" height="32" rx="10" fill="#042f2e" stroke="#00f2fe" stroke-width="2" />
+    <text x="90" y="21" fill="#00f2fe" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="12" text-anchor="middle" letter-spacing="1">⚡ DHIS2 CORE DEV</text>
+  </g>
+</svg>

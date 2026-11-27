@@ -1,7 +1,7 @@
 'use client';
 import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowDown, Bell, BellOff, Copy, Forward, Pin, Share2, Trash2, User, X } from 'lucide-react';
+import { ArrowDown, Bell, BellOff, Copy, Forward, Pin, Share2, Sparkles, Trash2, User, X } from 'lucide-react';
 import { Avatar }        from '@/components/ui/Avatar';
 import { BubbleGroup }   from '@/components/ui/bubble';
 import { BottomSheet }   from '@/components/ui/BottomSheet';
@@ -159,7 +159,7 @@ export default function ConversationScreen() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const myUserId = useAuthStore((s) => s.userId);
   const { dialogs, updateUnread, updateLastMessage } = useDialogsStore();
-  const { setActiveCall, chatWallpaper, chatWallpaperImage, chatWallpaperDim, chatWallpaperBlur } = useUIStore();
+  const { setActiveCall, startAiCall, chatWallpaper, chatWallpaperImage, chatWallpaperDim, chatWallpaperBlur } = useUIStore();
 
   const chatMeta = useMemo(() => {
     const found = dialogs.find((d) => d.id === id);
@@ -956,6 +956,14 @@ export default function ConversationScreen() {
             </svg>
           </button>
           <button
+            onClick={() => startAiCall()}
+            className="w-[34px] h-[34px] rounded-full bg-gradient-to-tr from-sky-500/20 to-purple-500/20 border border-sky-400/30 flex items-center justify-center text-sky-400 active:opacity-60 transition-all hover:scale-105"
+            aria-label="AI Voice Call"
+            title="Start AI Voice Call"
+          >
+            <Sparkles className="w-4 h-4 text-sky-400" />
+          </button>
+          <button
             onClick={() => setActiveCall(chatMeta.peerId, chatMeta.title)}
             className="w-[34px] h-[34px] rounded-full bg-tg-surface/70 border border-tg-border/20 flex items-center justify-center text-tg-text-secondary active:opacity-60 transition-opacity"
             aria-label="Voice Call"
@@ -1281,6 +1289,12 @@ export default function ConversationScreen() {
 
       <BottomSheet open={menuOpen} onClose={() => setMenuOpen(false)} title={chatMeta.title}>
         <div className="px-4 pb-6 space-y-1">
+          <button
+            onClick={() => { setMenuOpen(false); startAiCall(); }}
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sky-400 active:bg-tg-surface text-left font-medium"
+          >
+            <Sparkles className="w-4 h-4 text-sky-400" /><span>Start AI Voice Call</span>
+          </button>
           <button
             onClick={() => { setMenuOpen(false); router.push(`/profile/${chatMeta.peerId}`); }}
             className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-tg-text active:bg-tg-surface text-left"

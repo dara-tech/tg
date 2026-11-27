@@ -28,21 +28,13 @@ import { format } from 'date-fns';
 import * as XLSX from 'xlsx';
 import {
   parseErpTransactions,
+  BANK_META,
   type BankTransaction,
 } from './BankTransactionsModal';
 
 const STORAGE_KEY = 'tg_bank_transactions_v1';
 const SYNC_CONFIG_KEY = 'tg_calendar_sync_config_v2';
 const CALENDAR_STORAGE_KEY = 'tg_calendar_events_v2';
-
-const BANK_BADGES: Record<BankTransaction['bank'], { color: string; label: string }> = {
-  ABA:     { color: 'bg-[#004B6E] text-white border-[#00608F]', label: 'ABA Bank' },
-  Bakong:  { color: 'bg-[#E1251B] text-white border-[#F04438]', label: 'Bakong KHQR' },
-  ACLEDA:  { color: 'bg-[#002D62] text-white border-[#0F4C81]', label: 'ACLEDA' },
-  Wing:    { color: 'bg-[#91C73E] text-[#1A3300] border-[#A8E04C]', label: 'Wing Bank' },
-  Canadia: { color: 'bg-[#C8102E] text-white border-[#E02444]', label: 'Canadia' },
-  Other:   { color: 'bg-purple-600 text-white border-purple-500', label: 'Bank Transfer' },
-};
 
 export default function ErpScreen() {
   const router = useRouter();
@@ -245,7 +237,7 @@ export default function ErpScreen() {
     }
   };
 
-  // ERP File Upload (Excel .xlsx / .xls, CSV, TSV, JSON, TXT)
+  // ERP File Upload - Excel only (.xlsx / .xls)
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -253,58 +245,43 @@ export default function ErpScreen() {
     const fileName = file.name.toLowerCase();
     const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
 
-    if (isExcel) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const buffer = event.target?.result as ArrayBuffer;
-          if (!buffer) {
-            toast('Excel file is empty', 'error');
-            return;
-          }
-          const data = new Uint8Array(buffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheetName = workbook.SheetNames[0];
-          if (!firstSheetName) {
-            toast('No worksheets found in Excel file', 'error');
-            return;
-          }
-          const worksheet = workbook.Sheets[firstSheetName];
-          const csvText = XLSX.utils.sheet_to_csv(worksheet);
-          if (!csvText || !csvText.trim()) {
-            toast('Excel worksheet contains no data rows', 'error');
-            return;
-          }
-
-          setPastedText(csvText);
-          setImportTab('paste');
-          setImportSheetOpen(true);
-          toast(`Loaded Excel: ${file.name} (${firstSheetName})`, 'success');
-        } catch (err: any) {
-          toast(`Excel read error: ${err.message}`, 'error');
-        }
-      };
-      reader.readAsArrayBuffer(file);
-    } else {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const text = event.target?.result as string;
-          if (!text) {
-            toast('Uploaded file is empty', 'error');
-            return;
-          }
-
-          setPastedText(text);
-          setImportTab('paste');
-          setImportSheetOpen(true);
-          toast(`Loaded ${file.name}. Review transaction preview below.`, 'info');
-        } catch (err: any) {
-          toast(`File read failed: ${err.message}`, 'error');
-        }
-      };
-      reader.readAsText(file);
+    if (!isExcel) {
+      toast('Please upload an Excel spreadsheet (.xlsx or .xls)', 'error');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const buffer = event.target?.result as ArrayBuffer;
+        if (!buffer) {
+          toast('Excel file is empty', 'error');
+          return;
+        }
+        const data = new Uint8Array(buffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        if (!firstSheetName) {
+          toast('No worksheets found in Excel file', 'error');
+          return;
+        }
+        const worksheet = workbook.Sheets[firstSheetName];
+        const csvText = XLSX.utils.sheet_to_csv(worksheet);
+        if (!csvText || !csvText.trim()) {
+          toast('Excel worksheet contains no data rows', 'error');
+          return;
+        }
+
+        setPastedText(csvText);
+        setImportTab('paste');
+        setImportSheetOpen(true);
+        toast(`Loaded Excel: ${file.name} (${firstSheetName})`, 'success');
+      } catch (err: any) {
+        toast(`Excel read error: ${err.message}`, 'error');
+      }
+    };
+    reader.readAsArrayBuffer(file);
 
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -372,10 +349,11 @@ export default function ErpScreen() {
   const handleCopyReceipt = (tx: BankTransaction) => {
     const symbol = tx.currency === 'USD' ? '$' : '៛';
     const formattedAmount = `${tx.type === 'credit' ? '+' : '-'}${symbol}${tx.amount.toLocaleString()}`;
+    const bankLabel = BANK_META[tx.bank]?.label || tx.bank;
     const text =
       `🧾 *BANK TRANSACTION RECEIPT*\n` +
       `━━━━━━━━━━━━━━━━━━━━━\n` +
-      `🏦 *Bank:* ${BANK_BADGES[tx.bank]?.label || tx.bank}\n` +
+      `🏦 *Bank:* ${bankLabel}\n` +
       `💰 *Amount:* ${formattedAmount} ${tx.currency}\n` +
       `📅 *Date:* ${tx.date} ${tx.time}\n` +
       `📝 *Memo:* ${tx.description}\n` +
@@ -401,36 +379,26 @@ export default function ErpScreen() {
           <button
             onClick={() => router.push('/calendar')}
             className="flex items-center gap-0.5 text-tg-blue font-normal text-[17px] active:opacity-60 transition-opacity -ml-1 py-1 z-10"
-
           >
             <ChevronLeft className="w-6 h-6 -mr-0.5 stroke-[2.5]" />
           </button>
 
-          {/* Center: Title & Subtitle cleanly centered */}
+          {/* Center: Title cleanly centered */}
           <div className="absolute inset-x-0 flex flex-col items-center justify-center pointer-events-none px-24">
             <h1 className="text-[17px] font-semibold text-tg-text tracking-tight truncate leading-tight">
-            Transaction
+              Transaction
             </h1>
           </div>
 
-          {/* Right: Actions matching circular buttons */}
+          {/* Right: Manual Input '+' button */}
           <div className="flex items-center gap-1.5 z-10">
             <button
-              onClick={() => setImportSheetOpen(true)}
-              className="w-9 h-9 rounded-full bg-tg-bg-secondary border border-tg-border/30 flex items-center justify-center text-tg-text active:scale-95 transition-all shadow-sm hover:border-tg-border/60"
-              title="Import ERP / Bank Records"
-              aria-label="Import ERP"
-            >
-              <Upload className="w-4 h-4" />
-            </button>
-
-            <button
               onClick={() => setAddSheetOpen(true)}
-              className="w-9 h-9 rounded-full bg-tg-bg-secondary border border-tg-border/30 flex items-center justify-center text-tg-blue active:scale-95 transition-all shadow-sm hover:border-tg-border/60"
+              className="w-9 h-9 rounded-full bg-tg-bg-secondary border border-tg-border/30 flex items-center justify-center text-tg-blue active:scale-95 transition-all shadow-sm hover:border-tg-border/60 hover:bg-tg-surface"
               title="Add Transaction"
               aria-label="Add Transaction"
             >
-              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <Plus className="w-5 h-5 stroke-[2.5]" />
             </button>
           </div>
         </div>
@@ -461,7 +429,7 @@ export default function ErpScreen() {
                     : 'text-white/60 hover:text-white'
                 )}
               >
-                USD ($)
+                USD
               </button>
               <button
                 onClick={() => setSelectedCurrency('KHR')}
@@ -518,48 +486,42 @@ export default function ErpScreen() {
           </div>
         </div>
 
-        {/* Quick Actions: Import ERP | Sync ERP | Manual Input */}
-        <div className="grid grid-cols-3 gap-2">
-          {/* File Upload Input */}
+        {/* Quick Action: Import Excel Statement (Clean single action replacing 3-button bar) */}
+        <div>
+          {/* File Upload Input - Excel only */}
           <input
             ref={fileInputRef}
             type="file"
-            accept=".xlsx,.xls,.csv,.txt,.json,.tsv"
+            accept=".xlsx, .xls"
             onChange={handleFileUpload}
             className="hidden"
           />
 
           <button
             onClick={() => setImportSheetOpen(true)}
-            className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl bg-tg-bg-secondary border border-tg-border/30 hover:bg-tg-surface active:scale-95 transition-all text-center"
+            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-tg-bg-secondary border border-tg-border/30 hover:border-emerald-500/50 hover:bg-tg-surface active:scale-[0.99] transition-all shadow-sm group"
           >
-            <div className="w-8 h-8 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center">
-              <Upload className="w-4 h-4" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <FileSpreadsheet className="w-5 h-5" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-bold text-tg-text flex items-center gap-2">
+                  <span>Import Excel Statement</span>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                    .XLSX ONLY
+                  </span>
+                </p>
+                <p className="text-[11px] text-tg-text-hint font-medium">
+                  Upload bank spreadsheet (.xlsx, .xls) to auto-sync transactions
+                </p>
+              </div>
             </div>
-            <span className="text-[11px] font-bold text-tg-text">Import ERP</span>
-          </button>
 
-          <button
-            disabled={isFetchingErp}
-            onClick={handleFetchFromErp}
-            className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl bg-tg-bg-secondary border border-tg-border/30 hover:bg-tg-surface active:scale-95 transition-all text-center disabled:opacity-50"
-          >
-            <div className="w-8 h-8 rounded-full bg-indigo-500/15 text-indigo-400 flex items-center justify-center">
-              <RefreshCw className={clsx('w-4 h-4', isFetchingErp && 'animate-spin')} />
+            <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500 text-white text-xs font-bold shadow-sm group-hover:bg-emerald-600 active:scale-95 transition-all shrink-0">
+              <Upload className="w-3.5 h-3.5" />
+              <span>Import</span>
             </div>
-            <span className="text-[11px] font-bold text-tg-text">
-              {isFetchingErp ? 'Syncing...' : 'Sync ERP API'}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setAddSheetOpen(true)}
-            className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl bg-tg-blue text-white shadow-md active:scale-95 transition-all text-center"
-          >
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-              <Plus className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-[11px] font-bold">Manual Input</span>
           </button>
         </div>
 
@@ -624,13 +586,13 @@ export default function ErpScreen() {
             <Receipt className="w-10 h-10 mx-auto mb-2.5 opacity-40" />
             <p className="font-bold text-tg-text text-sm">No transactions found</p>
             <p className="mt-1 text-tg-text-hint max-w-xs mx-auto">
-              Tap &ldquo;Import ERP&rdquo; to paste bank records or &ldquo;Manual Input&rdquo; to add your first transaction.
+              Tap &ldquo;Import Excel Statement&rdquo; to parse spreadsheets or &ldquo;+&rdquo; button above to log a transaction manually.
             </p>
           </div>
         ) : (
           <div className="space-y-2.5">
             {filteredList.map((tx) => {
-              const badge = BANK_BADGES[tx.bank] || BANK_BADGES.Other;
+              const meta = BANK_META[tx.bank] || BANK_META.Other;
               const isCredit = tx.type === 'credit';
               const symbol = tx.currency === 'USD' ? '$' : '៛';
               const amountStr = `${isCredit ? '+' : '-'}${symbol}${tx.amount.toLocaleString(
@@ -641,67 +603,79 @@ export default function ErpScreen() {
               return (
                 <div
                   key={tx.id}
-                  className="bg-tg-bg-secondary rounded-2xl border border-tg-border/25 p-3.5 shadow-sm space-y-2 hover:border-tg-border/60 transition-all"
+                  className="bg-tg-bg-secondary rounded-2xl border border-tg-border/25 hover:border-tg-border/50 p-3.5 shadow-xs transition-all flex items-start gap-3.5 group"
                 >
-                  {/* Top line: Bank + Amount */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={clsx(
-                          'px-2 py-0.5 rounded-md text-[10px] font-black uppercase border',
-                          badge.color
-                        )}
-                      >
-                        {badge.label}
-                      </span>
-                      <span className="text-xs text-tg-text-hint font-medium">
-                        {tx.date} · {tx.time}
-                      </span>
-                    </div>
-
-                    <span
-                      className={clsx(
-                        'text-[16px] font-black tracking-tight font-mono',
-                        isCredit ? 'text-emerald-400' : 'text-rose-400'
-                      )}
-                    >
-                      {amountStr}
-                    </span>
+                  {/* Real Bank Logo */}
+                  <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shrink-0 p-1.5 shadow-xs border border-black/5 overflow-hidden mt-0.5">
+                    {meta.logo ? (
+                      <img
+                        src={meta.logo}
+                        alt={meta.label}
+                        className="w-full h-full object-contain"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-xl bg-indigo-600 flex items-center justify-center text-white">
+                        <Landmark className="w-5 h-5" />
+                      </div>
+                    )}
                   </div>
 
-                  {/* Description & Reference */}
-                  <div className="flex items-start justify-between gap-3 pt-0.5">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[14px] font-bold text-tg-text leading-snug break-words">
+                  {/* Transaction Details */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <h3 className="text-sm font-bold text-tg-text leading-snug break-words">
                         {tx.description}
-                      </p>
-                      {tx.counterparty && (
-                        <p className="text-xs text-tg-text-secondary mt-0.5">
-                          {isCredit ? 'From:' : 'To:'}{' '}
-                          <span className="font-semibold">{tx.counterparty}</span>
-                        </p>
-                      )}
+                      </h3>
+                      <span
+                        className={clsx(
+                          'text-[15px] font-black tracking-tight font-mono shrink-0',
+                          isCredit ? 'text-emerald-400' : 'text-rose-400'
+                        )}
+                      >
+                        {amountStr}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                      <span className="text-[11px] font-bold text-tg-text-secondary">
+                        {meta.label}
+                      </span>
+                      <span className="text-[10px] text-tg-text-hint">•</span>
+                      <span className="text-[11px] text-tg-text-hint">
+                        {tx.date}{tx.time ? ` · ${tx.time}` : ''}
+                      </span>
                       {tx.reference && (
-                        <p className="text-[10px] text-tg-text-hint font-mono mt-0.5">
-                          Ref: {tx.reference}
-                        </p>
+                        <>
+                          <span className="text-[10px] text-tg-text-hint">•</span>
+                          <span className="text-[10px] text-tg-text-hint font-mono">
+                            Ref: {tx.reference}
+                          </span>
+                        </>
                       )}
                     </div>
 
-                    {/* Actions: Copy Receipt & Delete */}
-                    <div className="flex items-center gap-1 shrink-0">
+                    {tx.counterparty && (
+                      <p className="text-[11px] text-tg-text-secondary mt-0.5">
+                        {isCredit ? 'From:' : 'To:'}{' '}
+                        <span className="font-semibold text-tg-text">{tx.counterparty}</span>
+                      </p>
+                    )}
+
+                    {/* Bottom Actions */}
+                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-tg-border/15">
                       <button
                         onClick={() => handleCopyReceipt(tx)}
-                        className="px-2.5 py-1 rounded-xl bg-tg-surface text-tg-blue hover:bg-tg-blue/10 text-xs font-bold border border-tg-border/30 flex items-center gap-1 active:scale-95 transition-all"
+                        className="px-2.5 py-1 rounded-lg bg-tg-surface hover:bg-tg-blue/15 text-tg-blue text-[11px] font-semibold border border-tg-border/30 flex items-center gap-1 active:scale-95 transition-all"
                         title="Copy receipt to share in Telegram chat"
                       >
                         <Copy className="w-3 h-3" />
-                        <span>Receipt</span>
+                        <span>Copy Receipt</span>
                       </button>
 
                       <button
                         onClick={() => handleDelete(tx.id)}
-                        className="w-7 h-7 rounded-xl flex items-center justify-center text-tg-text-hint hover:text-rose-500 hover:bg-rose-500/10 active:scale-95 transition-all"
+                        className="w-6 h-6 rounded-lg flex items-center justify-center text-tg-text-hint hover:text-rose-500 hover:bg-rose-500/10 active:scale-95 transition-all ml-auto"
                         title="Delete"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -785,27 +759,37 @@ export default function ErpScreen() {
             </div>
           </div>
 
-          {/* Bank Selection */}
+          {/* Bank Selection with Official Bank Logos */}
           <div className="space-y-1">
             <label className="text-xs font-bold uppercase tracking-wider text-tg-text-hint">
               Bank Channel
             </label>
             <div className="grid grid-cols-3 gap-2">
-              {(['ABA', 'Bakong', 'ACLEDA', 'Wing', 'Canadia', 'Other'] as const).map((b) => (
-                <button
-                  key={b}
-                  type="button"
-                  onClick={() => setBank(b)}
-                  className={clsx(
-                    'py-2 px-1 text-center rounded-xl text-xs font-extrabold border transition-all',
-                    bank === b
-                      ? 'bg-tg-blue text-white border-tg-blue shadow-sm'
-                      : 'bg-tg-bg-secondary text-tg-text border-tg-border/30'
-                  )}
-                >
-                  {b}
-                </button>
-              ))}
+              {(['ABA', 'Bakong', 'ACLEDA', 'Wing', 'Canadia', 'Other'] as const).map((b) => {
+                const m = BANK_META[b];
+                return (
+                  <button
+                    key={b}
+                    type="button"
+                    onClick={() => setBank(b)}
+                    className={clsx(
+                      'p-2.5 rounded-2xl border flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 text-center',
+                      bank === b
+                        ? 'bg-tg-blue/15 border-tg-blue text-white shadow-xs'
+                        : 'bg-tg-bg-secondary text-tg-text border-tg-border/30 hover:border-tg-border/60'
+                    )}
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-white p-1 flex items-center justify-center shrink-0 shadow-2xs">
+                      {m.logo ? (
+                        <img src={m.logo} alt={m.label} className="w-full h-full object-contain" />
+                      ) : (
+                        <Landmark className="w-4 h-4 text-indigo-600" />
+                      )}
+                    </div>
+                    <span className="text-[11px] font-bold leading-tight">{m.label.split(' ')[0]}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -864,33 +848,20 @@ export default function ErpScreen() {
       <BottomSheet
         open={importSheetOpen}
         onClose={() => setImportSheetOpen(false)}
-        title="Import ERP Transactions"
+        title="Import Excel Statement"
         maxWidth="sm:max-w-xl"
       >
         <div className="p-4 space-y-3.5 max-h-[82vh] overflow-y-auto">
           {/* Format Explanation */}
-          <div className="flex items-center gap-2 p-2.5 rounded-2xl bg-tg-bg-secondary border border-tg-border/25 text-xs">
+          <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-tg-bg-secondary border border-tg-border/25 text-xs">
             <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span className="text-tg-text-secondary text-[11px]">
-              Supports Excel (.xlsx, .xls), CSV, TSV (Sheets), Odoo/JSON, or raw bank statement text
+            <span className="text-tg-text-secondary text-[11px] leading-relaxed">
+              Accepts Excel spreadsheets (.xlsx, .xls) from ABA, Bakong KHQR, ACLEDA, Wing, and Canadia Bank.
             </span>
           </div>
 
           {/* Import Method Tabs: Paste vs File */}
           <div className="grid grid-cols-2 gap-2 p-1 bg-tg-bg-secondary rounded-2xl border border-tg-border/30">
-            <button
-              type="button"
-              onClick={() => setImportTab('paste')}
-              className={clsx(
-                'py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all',
-                importTab === 'paste'
-                  ? 'bg-tg-blue text-white shadow-sm'
-                  : 'text-tg-text-secondary hover:text-tg-text'
-              )}
-            >
-              <ClipboardPaste className="w-3.5 h-3.5" />
-              <span>Paste Text / JSON</span>
-            </button>
             <button
               type="button"
               onClick={() => setImportTab('file')}
@@ -902,16 +873,45 @@ export default function ErpScreen() {
               )}
             >
               <FileInput className="w-3.5 h-3.5" />
-              <span>Upload File</span>
+              <span>Upload Excel File</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setImportTab('paste')}
+              className={clsx(
+                'py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all',
+                importTab === 'paste'
+                  ? 'bg-tg-blue text-white shadow-sm'
+                  : 'text-tg-text-secondary hover:text-tg-text'
+              )}
+            >
+              <ClipboardPaste className="w-3.5 h-3.5" />
+              <span>Paste Excel Data</span>
             </button>
           </div>
 
-          {/* Tab 1: Paste Textarea */}
+          {/* Tab 1: File Dropzone */}
+          {importTab === 'file' && (
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-emerald-500/40 hover:border-emerald-500 rounded-2xl p-7 text-center cursor-pointer bg-emerald-500/5 active:scale-99 transition-all space-y-2 group"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 text-emerald-400 mx-auto flex items-center justify-center group-hover:scale-105 transition-transform">
+                <FileSpreadsheet className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-tg-text">Choose Excel Spreadsheet (.xlsx, .xls)</p>
+                <p className="text-[11px] text-tg-text-hint mt-0.5">Click to browse your device files (Excel only)</p>
+              </div>
+            </div>
+          )}
+
+          {/* Tab 2: Paste Textarea */}
           {importTab === 'paste' && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs">
                 <label className="font-bold text-tg-text-hint uppercase tracking-wider text-[10px]">
-                  Raw Statement / CSV / TSV / JSON
+                  Copied Rows from Excel / CSV
                 </label>
                 {pastedText && (
                   <button
@@ -927,25 +927,9 @@ export default function ErpScreen() {
                 rows={6}
                 value={pastedText}
                 onChange={(e) => setPastedText(e.target.value)}
-                placeholder={`Paste spreadsheet rows or ERP export here:\nDate,Type,Amount,Currency,Bank,Description\n2026-11-27,credit,2500,USD,ABA,Client Milestone 1`}
+                placeholder={`Paste copied rows from your Excel sheet:\nDate,Type,Amount,Currency,Bank,Description\n2026-11-27,credit,2500,USD,ABA,Client Milestone 1`}
                 className="w-full bg-tg-bg border border-tg-border rounded-xl p-3 text-xs font-mono text-tg-text focus:outline-none focus:border-tg-blue leading-relaxed"
               />
-            </div>
-          )}
-
-          {/* Tab 2: File Dropzone */}
-          {importTab === 'file' && (
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-tg-border/50 hover:border-tg-blue rounded-2xl p-6 text-center cursor-pointer bg-tg-bg-secondary/40 active:scale-99 transition-all space-y-2"
-            >
-              <div className="w-10 h-10 rounded-full bg-tg-blue/15 text-tg-blue mx-auto flex items-center justify-center">
-                <FileSpreadsheet className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-tg-text">Choose Excel (.xlsx, .xls), CSV, or JSON</p>
-                <p className="text-[11px] text-tg-text-hint mt-0.5">Click to browse your device files</p>
-              </div>
             </div>
           )}
 
@@ -985,33 +969,32 @@ export default function ErpScreen() {
               </div>
 
               {/* Preview Cards */}
-              <div className="max-h-44 overflow-y-auto space-y-1.5 pr-1">
+              <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
                 {previewItems.map((item, idx) => {
-                  const badge = BANK_BADGES[item.bank] || BANK_BADGES.Other;
+                  const m = BANK_META[item.bank] || BANK_META.Other;
                   const isCredit = item.type === 'credit';
                   const symbol = item.currency === 'USD' ? '$' : '៛';
                   return (
                     <div
                       key={item.id || idx}
-                      className="p-2.5 rounded-xl bg-tg-bg border border-tg-border/25 flex items-center justify-between gap-2 text-xs"
+                      className="p-2.5 rounded-xl bg-tg-bg border border-tg-border/25 flex items-center justify-between gap-3 text-xs"
                     >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className={clsx(
-                              'px-1.5 py-0.5 rounded text-[9px] font-black uppercase border',
-                              badge.color
-                            )}
-                          >
-                            {item.bank}
-                          </span>
-                          <span className="text-[11px] text-tg-text-hint font-medium">
-                            {item.date}
-                          </span>
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <div className="w-8 h-8 rounded-lg bg-white p-1 flex items-center justify-center shrink-0 shadow-2xs border border-black/5">
+                          {m.logo ? (
+                            <img src={m.logo} alt={m.label} className="w-full h-full object-contain" />
+                          ) : (
+                            <Landmark className="w-4 h-4 text-indigo-600" />
+                          )}
                         </div>
-                        <p className="text-xs font-bold text-tg-text truncate mt-0.5">
-                          {item.description}
-                        </p>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-tg-text truncate">
+                            {item.description}
+                          </p>
+                          <p className="text-[10px] text-tg-text-hint font-medium">
+                            {m.label} · {item.date}
+                          </p>
+                        </div>
                       </div>
                       <span
                         className={clsx(

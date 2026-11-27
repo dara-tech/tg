@@ -330,14 +330,55 @@ export function parseErpTransactions(rawText: string): BankTransaction[] {
   return results;
 }
 
-const BANK_BADGES: Record<BankTransaction['bank'], { color: string; label: string }> = {
-  ABA:     { color: 'bg-[#004B6E] text-white border-[#00608F]', label: 'ABA Bank' },
-  Bakong:  { color: 'bg-[#E1251B] text-white border-[#F04438]', label: 'Bakong KHQR' },
-  ACLEDA:  { color: 'bg-[#002D62] text-white border-[#0F4C81]', label: 'ACLEDA' },
-  Wing:    { color: 'bg-[#91C73E] text-[#1A3300] border-[#A8E04C]', label: 'Wing Bank' },
-  Canadia: { color: 'bg-[#C8102E] text-white border-[#E02444]', label: 'Canadia' },
-  Other:   { color: 'bg-purple-600 text-white border-purple-500', label: 'Bank Transfer' },
+export const BANK_META: Record<
+  BankTransaction['bank'],
+  { label: string; logo: string; bg: string; color: string; border: string }
+> = {
+  ABA: {
+    label: 'ABA Bank',
+    logo: '/icons/banks/aba.png',
+    bg: 'bg-[#004B6E]',
+    color: 'text-white',
+    border: 'border-[#00608F]',
+  },
+  Bakong: {
+    label: 'Bakong KHQR',
+    logo: '/icons/banks/khqr.svg',
+    bg: 'bg-[#E1251B]',
+    color: 'text-white',
+    border: 'border-[#F04438]',
+  },
+  ACLEDA: {
+    label: 'ACLEDA Bank',
+    logo: '/icons/banks/acleda.png',
+    bg: 'bg-[#0B2B61]',
+    color: 'text-white',
+    border: 'border-[#154289]',
+  },
+  Wing: {
+    label: 'Wing Bank',
+    logo: '/icons/banks/wing.svg',
+    bg: 'bg-[#8EC33D]',
+    color: 'text-[#1A3300]',
+    border: 'border-[#A3DB4A]',
+  },
+  Canadia: {
+    label: 'Canadia Bank',
+    logo: '/icons/banks/canadia.png',
+    bg: 'bg-[#C8102E]',
+    color: 'text-white',
+    border: 'border-[#E02444]',
+  },
+  Other: {
+    label: 'Bank Transfer',
+    logo: '',
+    bg: 'bg-indigo-600',
+    color: 'text-white',
+    border: 'border-indigo-500',
+  },
 };
+
+export const BANK_BADGES = BANK_META;
 
 export interface BankTransactionsModalProps {
   open: boolean;
@@ -514,7 +555,7 @@ export function BankTransactionsModal({
     }
   };
 
-  // ERP File Upload (Excel .xlsx / .xls, CSV, TSV, JSON, TXT)
+  // ERP File Upload - Excel only (.xlsx / .xls)
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -522,58 +563,43 @@ export function BankTransactionsModal({
     const fileName = file.name.toLowerCase();
     const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
 
-    if (isExcel) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const buffer = event.target?.result as ArrayBuffer;
-          if (!buffer) {
-            toast('Excel file is empty', 'error');
-            return;
-          }
-          const data = new Uint8Array(buffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheetName = workbook.SheetNames[0];
-          if (!firstSheetName) {
-            toast('No worksheets found in Excel file', 'error');
-            return;
-          }
-          const worksheet = workbook.Sheets[firstSheetName];
-          const csvText = XLSX.utils.sheet_to_csv(worksheet);
-          if (!csvText || !csvText.trim()) {
-            toast('Excel worksheet contains no data rows', 'error');
-            return;
-          }
-
-          setPastedText(csvText);
-          setImportTab('paste');
-          setImportSheetOpen(true);
-          toast(`Loaded Excel: ${file.name} (${firstSheetName})`, 'success');
-        } catch (err: any) {
-          toast(`Excel read error: ${err.message}`, 'error');
-        }
-      };
-      reader.readAsArrayBuffer(file);
-    } else {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const text = event.target?.result as string;
-          if (!text) {
-            toast('Uploaded file is empty', 'error');
-            return;
-          }
-
-          setPastedText(text);
-          setImportTab('paste');
-          setImportSheetOpen(true);
-          toast(`Loaded ${file.name}. Review transaction preview below.`, 'info');
-        } catch (err: any) {
-          toast(`File read failed: ${err.message}`, 'error');
-        }
-      };
-      reader.readAsText(file);
+    if (!isExcel) {
+      toast('Please upload an Excel spreadsheet (.xlsx or .xls)', 'error');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const buffer = event.target?.result as ArrayBuffer;
+        if (!buffer) {
+          toast('Excel file is empty', 'error');
+          return;
+        }
+        const data = new Uint8Array(buffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        if (!firstSheetName) {
+          toast('No worksheets found in Excel file', 'error');
+          return;
+        }
+        const worksheet = workbook.Sheets[firstSheetName];
+        const csvText = XLSX.utils.sheet_to_csv(worksheet);
+        if (!csvText || !csvText.trim()) {
+          toast('Excel worksheet contains no data rows', 'error');
+          return;
+        }
+
+        setPastedText(csvText);
+        setImportTab('paste');
+        setImportSheetOpen(true);
+        toast(`Loaded Excel: ${file.name} (${firstSheetName})`, 'success');
+      } catch (err: any) {
+        toast(`Excel read error: ${err.message}`, 'error');
+      }
+    };
+    reader.readAsArrayBuffer(file);
 
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -683,7 +709,7 @@ export function BankTransactionsModal({
                   selectedCurrency === 'USD' ? 'bg-white text-black shadow-sm' : 'text-white/60 hover:text-white'
                 )}
               >
-                USD ($)
+                USD
               </button>
               <button
                 onClick={() => setSelectedCurrency('KHR')}
@@ -692,7 +718,7 @@ export function BankTransactionsModal({
                   selectedCurrency === 'KHR' ? 'bg-white text-black shadow-sm' : 'text-white/60 hover:text-white'
                 )}
               >
-                KHR (៛)
+                KHR
               </button>
             </div>
           </div>
@@ -815,12 +841,12 @@ export function BankTransactionsModal({
           <div className="py-8 text-center text-tg-text-hint text-xs bg-tg-bg-secondary/40 rounded-2xl border border-tg-border/20 p-6">
             <Receipt className="w-8 h-8 mx-auto mb-2 opacity-40" />
             <p className="font-semibold text-tg-text text-sm">No transactions found</p>
-            <p className="mt-0.5">Import bank statement CSV or tap Manual Input above</p>
+            <p className="mt-0.5">Import Excel spreadsheet (.xlsx) or tap Manual Input above</p>
           </div>
         ) : (
           <div className="space-y-2.5">
             {filteredList.map((tx) => {
-              const badge = BANK_BADGES[tx.bank] || BANK_BADGES.Other;
+              const meta = BANK_META[tx.bank] || BANK_META.Other;
               const isCredit = tx.type === 'credit';
               const symbol = tx.currency === 'USD' ? '$' : '៛';
               const amountStr = `${isCredit ? '+' : '-'}${symbol}${tx.amount.toLocaleString(undefined, { minimumFractionDigits: tx.currency === 'USD' ? 2 : 0 })}`;
@@ -828,56 +854,79 @@ export function BankTransactionsModal({
               return (
                 <div
                   key={tx.id}
-                  className="bg-tg-bg-secondary rounded-2xl border border-tg-border/25 p-3.5 shadow-sm space-y-2 hover:border-tg-border/60 transition-all"
+                  className="bg-tg-bg-secondary rounded-2xl border border-tg-border/25 hover:border-tg-border/50 p-3.5 shadow-xs transition-all flex items-start gap-3.5 group"
                 >
-                  {/* Top line: Bank + Amount */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={clsx('px-2 py-0.5 rounded-md text-[10px] font-black uppercase border', badge.color)}>
-                        {badge.label}
-                      </span>
-                      <span className="text-xs text-tg-text-hint font-medium">
-                        {tx.date} · {tx.time}
-                      </span>
-                    </div>
-
-                    <span className={clsx('text-[16px] font-black tracking-tight font-mono', isCredit ? 'text-emerald-400' : 'text-rose-400')}>
-                      {amountStr}
-                    </span>
+                  {/* Real Bank Logo */}
+                  <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shrink-0 p-1.5 shadow-xs border border-black/5 overflow-hidden mt-0.5">
+                    {meta.logo ? (
+                      <img
+                        src={meta.logo}
+                        alt={meta.label}
+                        className="w-full h-full object-contain"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-xl bg-indigo-600 flex items-center justify-center text-white">
+                        <Landmark className="w-5 h-5" />
+                      </div>
+                    )}
                   </div>
 
-                  {/* Description & Reference */}
-                  <div className="flex items-start justify-between gap-3 pt-0.5">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[14px] font-bold text-tg-text leading-snug break-words">
+                  {/* Transaction Details */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <h3 className="text-sm font-bold text-tg-text leading-snug break-words">
                         {tx.description}
-                      </p>
-                      {tx.counterparty && (
-                        <p className="text-xs text-tg-text-secondary mt-0.5">
-                          {isCredit ? 'From:' : 'To:'} <span className="font-semibold">{tx.counterparty}</span>
-                        </p>
-                      )}
+                      </h3>
+                      <span
+                        className={clsx(
+                          'text-[15px] font-black tracking-tight font-mono shrink-0',
+                          isCredit ? 'text-emerald-400' : 'text-rose-400'
+                        )}
+                      >
+                        {amountStr}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                      <span className="text-[11px] font-bold text-tg-text-secondary">
+                        {meta.label}
+                      </span>
+                      <span className="text-[10px] text-tg-text-hint">•</span>
+                      <span className="text-[11px] text-tg-text-hint">
+                        {tx.date}{tx.time ? ` · ${tx.time}` : ''}
+                      </span>
                       {tx.reference && (
-                        <p className="text-[10px] text-tg-text-hint font-mono mt-0.5">
-                          Ref: {tx.reference}
-                        </p>
+                        <>
+                          <span className="text-[10px] text-tg-text-hint">•</span>
+                          <span className="text-[10px] text-tg-text-hint font-mono">
+                            Ref: {tx.reference}
+                          </span>
+                        </>
                       )}
                     </div>
 
-                    {/* Actions: Copy Receipt & Delete */}
-                    <div className="flex items-center gap-1 shrink-0">
+                    {tx.counterparty && (
+                      <p className="text-[11px] text-tg-text-secondary mt-0.5">
+                        {isCredit ? 'From:' : 'To:'}{' '}
+                        <span className="font-semibold text-tg-text">{tx.counterparty}</span>
+                      </p>
+                    )}
+
+                    {/* Bottom Actions */}
+                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-tg-border/15">
                       <button
                         onClick={() => handleCopyReceipt(tx)}
-                        className="px-2.5 py-1 rounded-xl bg-tg-surface text-tg-blue hover:bg-tg-blue/10 text-xs font-bold border border-tg-border/30 flex items-center gap-1 active:scale-95 transition-all"
+                        className="px-2.5 py-1 rounded-lg bg-tg-surface hover:bg-tg-blue/15 text-tg-blue text-[11px] font-semibold border border-tg-border/30 flex items-center gap-1 active:scale-95 transition-all"
                         title="Copy receipt to share in Telegram chat"
                       >
                         <Copy className="w-3 h-3" />
-                        <span>Receipt</span>
+                        <span>Copy Receipt</span>
                       </button>
 
                       <button
                         onClick={() => handleDelete(tx.id)}
-                        className="w-7 h-7 rounded-xl flex items-center justify-center text-tg-text-hint hover:text-rose-500 hover:bg-rose-500/10 active:scale-95 transition-all"
+                        className="w-6 h-6 rounded-lg flex items-center justify-center text-tg-text-hint hover:text-rose-500 hover:bg-rose-500/10 active:scale-95 transition-all ml-auto"
                         title="Delete"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -955,25 +1004,35 @@ export function BankTransactionsModal({
             </div>
           </div>
 
-          {/* Bank Selection */}
+          {/* Bank Selection with Official Bank Logos */}
           <div className="space-y-1">
             <label className="text-xs font-bold uppercase tracking-wider text-tg-text-hint">Bank Channel</label>
             <div className="grid grid-cols-3 gap-2">
-              {(['ABA', 'Bakong', 'ACLEDA', 'Wing', 'Canadia', 'Other'] as const).map((b) => (
-                <button
-                  key={b}
-                  type="button"
-                  onClick={() => setBank(b)}
-                  className={clsx(
-                    'py-2 px-1 text-center rounded-xl text-xs font-extrabold border transition-all',
-                    bank === b
-                      ? 'bg-tg-blue text-white border-tg-blue shadow-sm'
-                      : 'bg-tg-bg-secondary text-tg-text border-tg-border/30'
-                  )}
-                >
-                  {b}
-                </button>
-              ))}
+              {(['ABA', 'Bakong', 'ACLEDA', 'Wing', 'Canadia', 'Other'] as const).map((b) => {
+                const m = BANK_META[b];
+                return (
+                  <button
+                    key={b}
+                    type="button"
+                    onClick={() => setBank(b)}
+                    className={clsx(
+                      'p-2.5 rounded-2xl border flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 text-center',
+                      bank === b
+                        ? 'bg-tg-blue/15 border-tg-blue text-white shadow-xs'
+                        : 'bg-tg-bg-secondary text-tg-text border-tg-border/30 hover:border-tg-border/60'
+                    )}
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-white p-1 flex items-center justify-center shrink-0 shadow-2xs">
+                      {m.logo ? (
+                        <img src={m.logo} alt={m.label} className="w-full h-full object-contain" />
+                      ) : (
+                        <Landmark className="w-4 h-4 text-indigo-600" />
+                      )}
+                    </div>
+                    <span className="text-[11px] font-bold leading-tight">{m.label.split(' ')[0]}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

@@ -15,11 +15,12 @@ import {
   RefreshCw,
   ExternalLink,
   GitBranch,
-  GitPullRequest,
-  Check,
   Layers,
+  LayoutGrid,
+  ListOrdered,
 } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { Avatar } from '@/components/ui/Avatar';
 import { toast } from '@/components/ui/Toast';
 import clsx from 'clsx';
 import {
@@ -129,9 +130,60 @@ const CATEGORY_META = {
   erp:      { label: 'ERP Sync', color: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30', icon: Layers },
 };
 
+// Pastel / Vibrant aesthetics matching Image 2 reference design
+const CARD_THEMES = [
+  {
+    bg: 'bg-[#F2C27D] dark:bg-[#5C3F16] text-[#2E1B04] dark:text-[#FBE5C3]',
+    pill: 'bg-black/15 dark:bg-white/15 text-[#2E1B04] dark:text-[#FBE5C3]',
+    sub: 'text-[#2E1B04]/75 dark:text-[#FBE5C3]/80',
+    btn: 'hover:bg-black/10 dark:hover:bg-white/10 text-[#2E1B04] dark:text-[#FBE5C3]',
+    chip: 'bg-[#402607] text-[#FBE5C3]',
+  },
+  {
+    bg: 'bg-[#B4C4C2] dark:bg-[#1C3633] text-[#0E201E] dark:text-[#D8E6E4]',
+    pill: 'bg-black/15 dark:bg-white/15 text-[#0E201E] dark:text-[#D8E6E4]',
+    sub: 'text-[#0E201E]/75 dark:text-[#D8E6E4]/80',
+    btn: 'hover:bg-black/10 dark:hover:bg-white/10 text-[#0E201E] dark:text-[#D8E6E4]',
+    chip: 'bg-[#152B29] text-[#D8E6E4]',
+  },
+  {
+    bg: 'bg-[#C6C0D9] dark:bg-[#322852] text-[#1E1738] dark:text-[#E2DCF5]',
+    pill: 'bg-black/15 dark:bg-white/15 text-[#1E1738] dark:text-[#E2DCF5]',
+    sub: 'text-[#1E1738]/75 dark:text-[#E2DCF5]/80',
+    btn: 'hover:bg-black/10 dark:hover:bg-white/10 text-[#1E1738] dark:text-[#E2DCF5]',
+    chip: 'bg-[#291F44] text-[#E2DCF5]',
+  },
+  {
+    bg: 'bg-[#E4A9A8] dark:bg-[#521E1D] text-[#2F1111] dark:text-[#F9D4D3]',
+    pill: 'bg-black/15 dark:bg-white/15 text-[#2F1111] dark:text-[#F9D4D3]',
+    sub: 'text-[#2F1111]/75 dark:text-[#F9D4D3]/80',
+    btn: 'hover:bg-black/10 dark:hover:bg-white/10 text-[#2F1111] dark:text-[#F9D4D3]',
+    chip: 'bg-[#411515] text-[#F9D4D3]',
+  },
+  {
+    bg: 'bg-[#A3CECD] dark:bg-[#153B39] text-[#0A2322] dark:text-[#CFF0EF]',
+    pill: 'bg-black/15 dark:bg-white/15 text-[#0A2322] dark:text-[#CFF0EF]',
+    sub: 'text-[#0A2322]/75 dark:text-[#CFF0EF]/80',
+    btn: 'hover:bg-black/10 dark:hover:bg-white/10 text-[#0A2322] dark:text-[#CFF0EF]',
+    chip: 'bg-[#133230] text-[#CFF0EF]',
+  },
+  {
+    bg: 'bg-[#D7D8A9] dark:bg-[#3D3E1A] text-[#232408] dark:text-[#F2F3D2]',
+    pill: 'bg-black/15 dark:bg-white/15 text-[#232408] dark:text-[#F2F3D2]',
+    sub: 'text-[#232408]/75 dark:text-[#F2F3D2]/80',
+    btn: 'hover:bg-black/10 dark:hover:bg-white/10 text-[#232408] dark:text-[#F2F3D2]',
+    chip: 'bg-[#2F300F] text-[#F2F3D2]',
+  },
+];
+
 export default function CalendarScreen() {
+  const [activeView, setActiveView] = useState<'today' | 'calendar'>('today');
+  const [calendarMode, setCalendarMode] = useState<'timeline' | 'grid'>('timeline');
+  const [taskFilter, setTaskFilter] = useState<'all' | 'github' | 'reminders'>('all');
+
   const [currentMonth, setCurrentMonth] = useState<Date>(() => new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
+  const [currentTime, setCurrentTime] = useState<Date>(() => new Date());
 
   const [events, setEvents] = useState<CalendarEvent[]>(() => {
     if (typeof window === 'undefined') return INITIAL_EVENTS;
@@ -166,6 +218,12 @@ export default function CalendarScreen() {
   const [newTime, setNewTime] = useState('09:00');
   const [newCategory, setNewCategory] = useState<CalendarEvent['category']>('work');
 
+  // Clock ticker for dual timezones
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 10000);
+    return () => clearInterval(timer);
+  }, []);
+
   // Reload sync config whenever user returns from Profile Settings
   useEffect(() => {
     const reloadConfig = () => {
@@ -193,6 +251,7 @@ export default function CalendarScreen() {
   }, [events]);
 
   const selectedKey = format(selectedDate, 'yyyy-MM-dd');
+  const todayKey = format(new Date(), 'yyyy-MM-dd');
 
   // Month grid calculations
   const monthStart = startOfMonth(currentMonth);
@@ -220,9 +279,32 @@ export default function CalendarScreen() {
     return map;
   }, [events]);
 
+  // Events for Today
+  const todayEvents = useMemo(() => {
+    return events
+      .filter((e) => {
+        if (taskFilter === 'github') return e.category === 'github';
+        if (taskFilter === 'reminders') return e.category === 'reminder' || e.category === 'urgent';
+        return e.date === todayKey;
+      })
+      .sort((a, b) => a.time.localeCompare(b.time));
+  }, [events, todayKey, taskFilter]);
+
+  // Selected date events
   const selectedEvents = useMemo(() => {
     return events.filter((e) => e.date === selectedKey).sort((a, b) => a.time.localeCompare(b.time));
   }, [events, selectedKey]);
+
+  // Month days for multi-day card timeline view
+  const monthTimelineDays = useMemo(() => {
+    const list: Date[] = [];
+    let day = monthStart;
+    while (day <= monthEnd) {
+      list.push(day);
+      day = addDays(day, 1);
+    }
+    return list;
+  }, [monthStart, monthEnd]);
 
   const handlePrevMonth = () => setCurrentMonth((prev) => subMonths(prev, 1));
   const handleNextMonth = () => setCurrentMonth((prev) => addMonths(prev, 1));
@@ -230,6 +312,7 @@ export default function CalendarScreen() {
     const today = new Date();
     setCurrentMonth(today);
     setSelectedDate(today);
+    setActiveView('today');
   };
 
   /**
@@ -264,7 +347,8 @@ export default function CalendarScreen() {
       Accept: 'application/vnd.github.v3+json',
     };
     if (cfg.githubToken.trim()) {
-      headers.Authorization = `token ${cfg.githubToken.trim()}`;
+      const t = cfg.githubToken.trim();
+      headers.Authorization = t.startsWith('github_pat_') || t.startsWith('ghp_') ? `Bearer ${t}` : `token ${t}`;
     }
 
     try {
@@ -348,7 +432,6 @@ export default function CalendarScreen() {
                 const isPr = Boolean(iss.pull_request);
                 const repoName = iss.repository_url ? iss.repository_url.split('/').slice(-2).join('/') : '';
                 const isOpen = iss.state === 'open';
-                // Active/open issues with no due date are scheduled on today so they are visible and actionable
                 const targetDate = iss.milestone?.due_on
                   ? format(new Date(iss.milestone.due_on), 'yyyy-MM-dd')
                   : isOpen
@@ -384,7 +467,6 @@ export default function CalendarScreen() {
             const repos = await reposRes.json();
             if (Array.isArray(repos)) {
               for (const repo of repos) {
-                // Fetch Milestones for repo
                 if (cfg.syncMilestones && repo.full_name) {
                   try {
                     const mRes = await fetch(`https://api.github.com/repos/${repo.full_name}/milestones?state=all&per_page=10`, {
@@ -412,7 +494,6 @@ export default function CalendarScreen() {
                   } catch {}
                 }
 
-                // Fetch Releases for top 3 pushed repos
                 if (cfg.syncReleases && repo.full_name && repos.indexOf(repo) < 3) {
                   try {
                     const rRes = await fetch(`https://api.github.com/repos/${repo.full_name}/releases?per_page=5`, {
@@ -447,7 +528,7 @@ export default function CalendarScreen() {
         }
       }
 
-      // 3. Fetch Custom ERP System Feed (if configured)
+      // 4. Fetch Custom ERP System Feed (if configured)
       if (cfg.erpApiUrl.trim()) {
         try {
           const erpHeaders: Record<string, string> = {};
@@ -491,7 +572,6 @@ export default function CalendarScreen() {
   }, [syncConfig]);
 
   useEffect(() => {
-    // Auto-sync on first mount if last synced > 15 minutes ago
     const lastSync = syncConfig.lastSyncedAt || 0;
     if (Date.now() - lastSync > 15 * 60 * 1000) {
       handleSyncGithubAndErp();
@@ -530,263 +610,584 @@ export default function CalendarScreen() {
     );
   };
 
+  // Dual clock strings
+  const localTimeStr = format(currentTime, 'h:mm a');
+  const utcTimeStr = currentTime.toLocaleTimeString('en-US', {
+    timeZone: 'UTC',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  // Calculate an end time roughly 30-45 mins after start time
+  const calculateEndTime = (start: string) => {
+    const [h, m] = start.split(':').map(Number);
+    if (isNaN(h) || isNaN(m)) return '17:00';
+    const total = h * 60 + m + 30;
+    const endH = Math.floor(total / 60) % 24;
+    const endM = total % 60;
+    const period = endH >= 12 ? 'PM' : 'AM';
+    const displayH = endH % 12 || 12;
+    return `${displayH}:${endM.toString().padStart(2, '0')} ${period}`;
+  };
+
+  const formatDisplayTime = (timeStr: string) => {
+    const [h, m] = timeStr.split(':').map(Number);
+    if (isNaN(h) || isNaN(m)) return timeStr;
+    const period = h >= 12 ? 'PM' : 'AM';
+    const displayH = h % 12 || 12;
+    return `${displayH}:${m.toString().padStart(2, '0')} ${period}`;
+  };
+
   return (
     <div className="flex flex-col h-full bg-tg-bg overflow-hidden select-none">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-2.5 safe-top border-b border-tg-border/20 [data-theme='manga']_&:border-b-0 shrink-0">
-        <div className="flex items-center gap-2">
-          <CalendarIcon className="w-5 h-5 text-tg-blue" />
-          <h1 className="text-tg-text text-[22px] font-bold tracking-tight">Calendar</h1>
+      {/* Top Header / View Toggle (Image 2 style) */}
+      <div className="flex items-center justify-between px-4 pt-3 pb-2 safe-top shrink-0">
+        {/* Segmented Pill: [ Today ] [ Calendar ] */}
+        <div className="flex items-center bg-tg-bg-secondary p-1 rounded-full border border-tg-border/30 shadow-inner">
+          <button
+            onClick={() => setActiveView('today')}
+            className={clsx(
+              'px-4 py-1.5 rounded-full text-xs font-bold transition-all',
+              activeView === 'today'
+                ? 'bg-tg-text text-tg-bg shadow-sm scale-[1.02]'
+                : 'text-tg-text-secondary hover:text-tg-text'
+            )}
+          >
+            Today
+          </button>
+          <button
+            onClick={() => setActiveView('calendar')}
+            className={clsx(
+              'px-4 py-1.5 rounded-full text-xs font-bold transition-all',
+              activeView === 'calendar'
+                ? 'bg-tg-text text-tg-bg shadow-sm scale-[1.02]'
+                : 'text-tg-text-secondary hover:text-tg-text'
+            )}
+          >
+            Calendar
+          </button>
         </div>
 
+        {/* Action Buttons: Refresh Sync + Add (+) */}
         <div className="flex items-center gap-2">
-          {/* Quick Refresh */}
           <button
             disabled={isSyncing}
             onClick={() => handleSyncGithubAndErp()}
             className={clsx(
-              'w-8 h-8 rounded-full bg-tg-bg-secondary border border-tg-border/30 flex items-center justify-center text-tg-text active:scale-95 transition-all',
+              'w-9 h-9 rounded-full bg-tg-bg-secondary border border-tg-border/30 flex items-center justify-center text-tg-text active:scale-95 transition-all shadow-sm hover:border-tg-border/60',
               isSyncing && 'opacity-60 pointer-events-none'
             )}
-            title="Refresh events from GitHub & ERP"
+            title="Sync GitHub & ERP"
           >
             <RefreshCw className={clsx('w-3.5 h-3.5', isSyncing && 'animate-spin text-tg-blue')} />
           </button>
 
-          {/* Today Button */}
-          <button
-            onClick={handleToday}
-            className="px-2.5 py-1 rounded-full bg-tg-bg-secondary text-tg-blue text-xs font-semibold border border-tg-border/30 active:scale-95 transition-transform"
-          >
-            Today
-          </button>
-
-          {/* Add Event Button */}
           <button
             onClick={() => setAddSheetOpen(true)}
-            className="w-8 h-8 rounded-full bg-tg-blue text-white flex items-center justify-center active:scale-95 transition-transform shadow-sm"
-            aria-label="Add Event"
+            className="w-9 h-9 rounded-full bg-tg-bg-secondary border border-tg-border/30 flex items-center justify-center text-tg-text active:scale-95 transition-all shadow-sm hover:border-tg-border/60"
+            aria-label="Add event"
           >
             <Plus className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-3 py-3 space-y-4">
-        {/* Month Selector Card */}
-        <div className="bg-tg-surface rounded-2xl border border-tg-border/30 shadow-sm p-3.5">
-          <div className="flex items-center justify-between mb-3 px-1">
-            <h2 className="text-tg-text font-bold text-base">
-              {format(currentMonth, 'MMMM yyyy')}
-            </h2>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={handlePrevMonth}
-                className="w-7 h-7 rounded-full hover:bg-tg-bg-secondary flex items-center justify-center text-tg-text active:scale-90 transition-transform"
-                aria-label="Previous Month"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={handleNextMonth}
-                className="w-7 h-7 rounded-full hover:bg-tg-bg-secondary flex items-center justify-center text-tg-text active:scale-90 transition-transform"
-                aria-label="Next Month"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-3 pb-6 space-y-4">
+        {/* ========================================================================= */}
+        {/* SCREEN 1: TODAY VIEW                                                     */}
+        {/* ========================================================================= */}
+        {activeView === 'today' && (
+          <div className="space-y-4 pt-1">
+            {/* Date Hero + Dual World Clocks (Screenshot Left) */}
+            <div className="flex items-start justify-between px-2 pt-1 pb-1">
+              <div>
+                <p className="text-tg-text-secondary text-sm font-bold tracking-wide">
+                  {format(new Date(), 'EEEE')}
+                </p>
+                <h1 className="text-[46px] sm:text-[54px] font-black tracking-tighter text-tg-text leading-none mt-1">
+                  {format(new Date(), 'dd.MM')}
+                </h1>
+                <p className="text-[30px] sm:text-[38px] font-black tracking-tight text-tg-text-secondary/70 leading-none mt-0.5 uppercase">
+                  {format(new Date(), 'MMM')}
+                </p>
+              </div>
 
-          {/* Weekday Labels (Mon - Sun) */}
-          <div className="grid grid-cols-7 text-center mb-1.5">
-            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((wd, i) => (
-              <span
-                key={i}
+              {/* World Clocks */}
+              <div className="space-y-2.5 pt-1 text-right">
+                <div>
+                  <p className="text-[17px] font-extrabold text-tg-text tracking-tight font-mono">{localTimeStr}</p>
+                  <p className="text-[11px] font-semibold text-tg-text-secondary">Local Time</p>
+                </div>
+                <div>
+                  <p className="text-[15px] font-bold text-tg-text/80 tracking-tight font-mono">{utcTimeStr}</p>
+                  <p className="text-[11px] font-semibold text-tg-text-secondary">UTC / GitHub</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Filter Bar: [ Todays tasks ] [ Reminders ] */}
+            <div className="flex items-center justify-between px-2 pt-2 border-t border-tg-border/15">
+              <button
+                onClick={() => setTaskFilter('all')}
                 className={clsx(
-                  'text-[11px] font-semibold tracking-wider py-1',
-                  i >= 5 ? 'text-tg-blue/80' : 'text-tg-text-hint'
+                  'text-[17px] font-bold tracking-tight transition-colors',
+                  taskFilter === 'all' ? 'text-tg-text' : 'text-tg-text-secondary hover:text-tg-text'
                 )}
               >
-                {wd}
-              </span>
-            ))}
-          </div>
-
-          {/* Day Grid */}
-          <div className="grid grid-cols-7 gap-y-1 text-center">
-            {calendarDays.map((d, i) => {
-              const dateStr = format(d, 'yyyy-MM-dd');
-              const isCurrMonth = isSameMonth(d, currentMonth);
-              const isSel = isSameDay(d, selectedDate);
-              const isTod = isToday(d);
-              const dayCategories = eventDatesMap.get(dateStr);
-              const hasEvents = Boolean(dayCategories && dayCategories.length > 0);
-              const hasGithub = dayCategories?.includes('github') || dayCategories?.includes('erp');
-
-              return (
-                <button
-                  key={i}
-                  onClick={() => setSelectedDate(d)}
-                  className="flex flex-col items-center justify-center h-9 relative active:scale-95 transition-transform"
-                >
-                  <div
-                    className={clsx(
-                      'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all',
-                      isSel
-                        ? 'bg-tg-blue text-white shadow-sm'
-                        : isTod
-                        ? 'bg-tg-blue/20 text-tg-blue font-bold'
-                        : isCurrMonth
-                        ? 'text-tg-text hover:bg-tg-bg-secondary/60'
-                        : 'text-tg-text-hint/40'
-                    )}
-                  >
-                    {format(d, 'd')}
-                  </div>
-                  {/* Indicator Dot for Days with Events / GitHub / ERP */}
-                  {hasEvents && !isSel && (
-                    <span
-                      className={clsx(
-                        'w-1.5 h-1.5 rounded-full absolute bottom-0.5',
-                        hasGithub ? 'bg-purple-400' : 'bg-tg-blue'
-                      )}
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Selected Day Agenda */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-tg-text font-bold text-sm flex items-center gap-1.5">
-              <span>{format(selectedDate, 'EEEE, MMMM d')}</span>
-              {isToday(selectedDate) && (
-                <span className="text-[10px] font-bold text-tg-blue bg-tg-blue/15 px-2 py-0.5 rounded-full">
-                  Today
+                Todays tasks
+                <span className="ml-1.5 text-xs px-2 py-0.5 rounded-full bg-tg-bg-secondary text-tg-text-secondary border border-tg-border/20">
+                  {todayEvents.length}
                 </span>
-              )}
-            </h3>
-            <span className="text-tg-text-hint text-xs">
-              {selectedEvents.length} {selectedEvents.length === 1 ? 'item' : 'items'}
-            </span>
-          </div>
+              </button>
 
-          {selectedEvents.length === 0 ? (
-            <div className="bg-tg-surface/60 rounded-2xl border border-tg-border/20 p-6 text-center">
-              <CalendarIcon className="w-8 h-8 text-tg-text-hint/60 mx-auto mb-2 opacity-50" />
-              <p className="text-tg-text text-sm font-medium">No schedule on this date</p>
-              <p className="text-tg-text-hint text-xs mt-1">Tap + to add or sync GitHub milestones</p>
-              <div className="flex items-center justify-center gap-2 mt-3">
+              <div className="flex items-center gap-1.5">
                 <button
-                  onClick={() => setAddSheetOpen(true)}
-                  className="px-3 py-1.5 rounded-full bg-tg-blue/10 text-tg-blue text-xs font-semibold active:scale-95 transition-transform inline-flex items-center gap-1"
+                  onClick={() => setTaskFilter('github')}
+                  className={clsx(
+                    'px-3 py-1 rounded-full text-xs font-bold border transition-all active:scale-95',
+                    taskFilter === 'github'
+                      ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                      : 'bg-tg-bg-secondary text-tg-text-secondary border-tg-border/30 hover:text-tg-text'
+                  )}
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Event
+                  GitHub
                 </button>
                 <button
-                  onClick={() => handleSyncGithubAndErp()}
-                  className="px-3 py-1.5 rounded-full bg-purple-500/10 text-purple-400 text-xs font-semibold active:scale-95 transition-transform inline-flex items-center gap-1"
+                  onClick={() => setTaskFilter('reminders')}
+                  className={clsx(
+                    'px-3 py-1 rounded-full text-xs font-bold border transition-all active:scale-95',
+                    taskFilter === 'reminders'
+                      ? 'bg-tg-text text-tg-bg border-tg-text shadow-sm'
+                      : 'bg-tg-bg-secondary text-tg-text-secondary border-tg-border/30 hover:text-tg-text'
+                  )}
                 >
-                  <GithubIcon className="w-3.5 h-3.5" />
-                  Sync GitHub
+                  Reminders
                 </button>
               </div>
             </div>
-          ) : (
-            <div className="space-y-2">
-              {selectedEvents.map((evt) => {
-                const meta = CATEGORY_META[evt.category] || CATEGORY_META.work;
-                const IconComponent = meta.icon;
-                return (
-                  <div
-                    key={evt.id}
-                    className={clsx(
-                      'bg-tg-surface rounded-2xl border border-tg-border/30 p-3.5 flex items-center gap-3 transition-all',
-                      evt.completed && 'opacity-65'
-                    )}
+
+            {/* Tasks Cards Stack */}
+            {todayEvents.length === 0 ? (
+              <div className="bg-tg-bg-secondary/60 rounded-3xl border border-tg-border/20 p-8 text-center space-y-3">
+                <CalendarIcon className="w-10 h-10 text-tg-text-hint/40 mx-auto stroke-[1.5]" />
+                <p className="text-tg-text font-bold text-base">No tasks for today</p>
+                <p className="text-tg-text-hint text-xs max-w-xs mx-auto">
+                  Syncing from GitHub @{syncConfig.githubUsername || 'dara-tech'} or tap + to create a custom reminder.
+                </p>
+                <div className="flex justify-center gap-2 pt-1">
+                  <button
+                    onClick={() => setAddSheetOpen(true)}
+                    className="px-4 py-2 rounded-full bg-tg-text text-tg-bg text-xs font-bold active:scale-95 transition-transform"
                   >
-                    {/* Toggle Complete Checkbox */}
-                    <button
-                      onClick={() => handleToggleComplete(evt.id)}
-                      className="shrink-0 text-tg-text-hint hover:text-tg-blue transition-colors"
-                      aria-label="Toggle Complete"
+                    + Add Task
+                  </button>
+                  <button
+                    onClick={() => handleSyncGithubAndErp()}
+                    className="px-4 py-2 rounded-full bg-tg-bg-secondary text-tg-text border border-tg-border/30 text-xs font-bold active:scale-95 transition-transform flex items-center gap-1.5"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>Sync Now</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {todayEvents.map((evt, idx) => {
+                  const theme = CARD_THEMES[idx % CARD_THEMES.length];
+                  const meta = CATEGORY_META[evt.category] || CATEGORY_META.work;
+                  const isGh = evt.category === 'github';
+                  const startTime = formatDisplayTime(evt.time);
+                  const endTime = calculateEndTime(evt.time);
+
+                  return (
+                    <div
+                      key={evt.id}
+                      className={clsx(
+                        'rounded-[24px] p-5 shadow-sm transition-all relative overflow-hidden',
+                        theme.bg,
+                        evt.completed && 'opacity-60 saturate-50'
+                      )}
                     >
-                      <CheckCircle2
-                        className={clsx(
-                          'w-5 h-5 transition-colors',
-                          evt.completed ? 'text-emerald-500 fill-emerald-500/20' : 'text-tg-border'
-                        )}
-                      />
-                    </button>
-
-                    {/* Event Details */}
-                    <div className="flex-1 min-w-0 text-left">
-                      <p
-                        className={clsx(
-                          'text-[14px] font-semibold text-tg-text truncate',
-                          evt.completed && 'line-through text-tg-text-hint'
-                        )}
-                      >
-                        {evt.title}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span className="flex items-center gap-1 text-xs text-tg-text-hint">
-                          <Clock className="w-3 h-3" />
-                          <span>{evt.time}</span>
-                        </span>
-
-                        <span
-                          className={clsx(
-                            'text-[10.5px] font-semibold px-2 py-0.5 rounded-full border inline-flex items-center gap-1',
-                            meta.color
+                      {/* Top Row: Title + Right Badge/Avatar */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className={clsx('text-[19px] font-extrabold tracking-tight leading-snug line-clamp-2', evt.completed && 'line-through')}>
+                            {evt.title}
+                          </h3>
+                          {evt.sourceUrl && (
+                            <a
+                              href={evt.sourceUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={clsx('inline-flex items-center gap-1 text-[11px] font-bold hover:underline mt-1', theme.sub)}
+                            >
+                              <span>{evt.sourceMeta?.repo || 'View on GitHub'}</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
                           )}
-                        >
-                          <IconComponent className="w-2.5 h-2.5" />
-                          <span>{meta.label}</span>
-                        </span>
+                        </div>
 
-                        {evt.sourceUrl && (
-                          <a
-                            href={evt.sourceUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[11px] font-medium text-tg-blue hover:underline inline-flex items-center gap-0.5"
+                        {/* Right Avatar / Icon */}
+                        <div className="shrink-0 flex items-center gap-1.5">
+                          {isGh ? (
+                            <div className="w-9 h-9 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center">
+                              <GithubIcon className="w-5 h-5" />
+                            </div>
+                          ) : (
+                            <Avatar letters={evt.title.slice(0, 2).toUpperCase()} size="sm" />
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Bottom Row: Start - Duration Pill - End - Actions */}
+                      <div className="flex items-end justify-between pt-5 border-t border-black/10 dark:border-white/10 mt-4">
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <p className="text-sm font-black tracking-tight">{startTime}</p>
+                            <p className={clsx('text-[10px] font-bold uppercase tracking-wider', theme.sub)}>Start</p>
+                          </div>
+
+                          <div className={clsx('px-3 py-1 rounded-full text-[11px] font-extrabold shadow-inner', theme.pill)}>
+                            {isGh ? 'GitHub' : meta.label}
+                          </div>
+
+                          <div>
+                            <p className="text-sm font-black tracking-tight">{endTime}</p>
+                            <p className={clsx('text-[10px] font-bold uppercase tracking-wider', theme.sub)}>End</p>
+                          </div>
+                        </div>
+
+                        {/* Actions: Toggle Complete & Delete */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleToggleComplete(evt.id)}
+                            className={clsx('w-8 h-8 rounded-full flex items-center justify-center transition-all', theme.btn)}
+                            title={evt.completed ? 'Mark incomplete' : 'Mark completed'}
                           >
-                            <span>Open</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        )}
+                            <CheckCircle2
+                              className={clsx(
+                                'w-5 h-5 transition-transform',
+                                evt.completed ? 'fill-current stroke-current scale-110' : 'opacity-70'
+                              )}
+                            />
+                          </button>
+
+                          {(evt.source === 'local' || !evt.source) && (
+                            <button
+                              onClick={() => handleDeleteEvent(evt.id)}
+                              className={clsx('w-8 h-8 rounded-full flex items-center justify-center transition-all', theme.btn)}
+                              title="Delete event"
+                            >
+                              <Trash2 className="w-4 h-4 opacity-70 hover:opacity-100" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
-                    {/* Delete button (only for local events) */}
-                    {evt.source === 'local' || !evt.source ? (
-                      <button
-                        onClick={() => handleDeleteEvent(evt.id)}
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-tg-text-hint hover:text-rose-500 hover:bg-rose-500/10 active:scale-95 transition-all shrink-0"
-                        aria-label="Delete Event"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    ) : (
-                      <div className="w-7 h-7 flex items-center justify-center shrink-0">
-                        {evt.category === 'github' ? (
-                          <GithubIcon className="w-4 h-4 text-purple-400 opacity-70" />
-                        ) : (
-                          <Layers className="w-4 h-4 text-indigo-400 opacity-70" />
+        {/* ========================================================================= */}
+        {/* SCREEN 2: CALENDAR VIEW (Image 2 Right side style)                       */}
+        {/* ========================================================================= */}
+        {activeView === 'calendar' && (
+          <div className="space-y-4 pt-1">
+            {/* Month Timeline Navigation: NOV < DEC > JAN */}
+            <div className="flex items-center justify-between px-3 pt-1">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold text-tg-text-hint tracking-wider uppercase">
+                  {format(subMonths(currentMonth, 1), 'MMM')}
+                </span>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={handlePrevMonth}
+                    className="w-7 h-7 rounded-full hover:bg-tg-bg-secondary flex items-center justify-center text-tg-text active:scale-90 transition-transform"
+                    aria-label="Previous Month"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  <span className="text-base font-black tracking-tight text-tg-text uppercase px-1">
+                    {format(currentMonth, 'MMM yyyy')}
+                  </span>
+
+                  <button
+                    onClick={handleNextMonth}
+                    className="w-7 h-7 rounded-full hover:bg-tg-bg-secondary flex items-center justify-center text-tg-text active:scale-90 transition-transform"
+                    aria-label="Next Month"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <span className="text-xs font-bold text-tg-text-hint tracking-wider uppercase">
+                  {format(addMonths(currentMonth, 1), 'MMM')}
+                </span>
+              </div>
+
+              {/* View Switcher: Stacked Timeline vs Grid */}
+              <div className="flex items-center bg-tg-bg-secondary p-0.5 rounded-xl border border-tg-border/25">
+                <button
+                  onClick={() => setCalendarMode('timeline')}
+                  className={clsx(
+                    'p-1.5 rounded-lg transition-colors',
+                    calendarMode === 'timeline' ? 'bg-tg-text text-tg-bg' : 'text-tg-text-hint hover:text-tg-text'
+                  )}
+                  title="Timeline Cards"
+                >
+                  <ListOrdered className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setCalendarMode('grid')}
+                  className={clsx(
+                    'p-1.5 rounded-lg transition-colors',
+                    calendarMode === 'grid' ? 'bg-tg-text text-tg-bg' : 'text-tg-text-hint hover:text-tg-text'
+                  )}
+                  title="Monthly Grid"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* TIMELINE MODE: Stacked Day Timeline Cards (Image 2 Right Screen) */}
+            {calendarMode === 'timeline' && (
+              <div className="space-y-3">
+                {monthTimelineDays.map((day, idx) => {
+                  const dayKey = format(day, 'yyyy-MM-dd');
+                  const dayEvents = events.filter((e) => e.date === dayKey);
+                  const isSelected = isSameDay(day, selectedDate);
+                  const isTodayDay = isToday(day);
+                  const theme = CARD_THEMES[idx % CARD_THEMES.length];
+
+                  // Hourly event buckets
+                  const morningEvent = dayEvents.find((e) => parseInt(e.time) < 12);
+                  const afternoonEvent = dayEvents.find((e) => parseInt(e.time) >= 12 && parseInt(e.time) < 16);
+                  const eveningEvent = dayEvents.find((e) => parseInt(e.time) >= 16);
+
+                  return (
+                    <div
+                      key={dayKey}
+                      onClick={() => setSelectedDate(day)}
+                      className={clsx(
+                        'rounded-[24px] p-4 shadow-sm transition-all flex items-stretch gap-4 cursor-pointer',
+                        theme.bg,
+                        isSelected && 'ring-2 ring-tg-blue scale-[1.01]'
+                      )}
+                    >
+                      {/* Left Column: Big Date */}
+                      <div className="w-20 shrink-0 flex flex-col justify-between border-r border-black/10 dark:border-white/10 pr-3">
+                        <div>
+                          <p className={clsx('text-[11px] font-extrabold uppercase tracking-wider', theme.sub)}>
+                            {format(day, 'EEEE')}
+                          </p>
+                          <h2 className="text-[34px] font-black tracking-tighter leading-none mt-1">
+                            {format(day, 'd')}
+                          </h2>
+                          <p className="text-xs font-black tracking-tight uppercase mt-0.5">
+                            {format(day, 'MMM')}
+                          </p>
+                        </div>
+
+                        {isTodayDay && (
+                          <span className="inline-block mt-2 text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-black/20 dark:bg-white/20 tracking-wider">
+                            Today
+                          </span>
                         )}
                       </div>
-                    )}
+
+                      {/* Right Column: Time Slots & Event Chips */}
+                      <div className="flex-1 min-w-0 grid grid-cols-3 gap-1 items-center">
+                        {/* Slot 1: Morning / 9 AM */}
+                        <div className="h-full flex flex-col justify-between py-1 border-r border-black/5 dark:border-white/5 pr-1">
+                          <span className={clsx('text-[10px] font-extrabold tracking-wider', theme.sub)}>9 am</span>
+                          {morningEvent ? (
+                            <div className={clsx('px-2 py-1.5 rounded-xl text-[10px] font-extrabold shadow-sm truncate', theme.chip)}>
+                              {morningEvent.title.replace(/^\[.*?\]\s*/, '')}
+                            </div>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedDate(day);
+                                setNewTime('09:00');
+                                setAddSheetOpen(true);
+                              }}
+                              className={clsx('w-6 h-6 rounded-full flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity', theme.btn)}
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Slot 2: Afternoon / 12 PM - 3 PM */}
+                        <div className="h-full flex flex-col justify-between py-1 border-r border-black/5 dark:border-white/5 pr-1">
+                          <span className={clsx('text-[10px] font-extrabold tracking-wider', theme.sub)}>2 pm</span>
+                          {afternoonEvent ? (
+                            <div className={clsx('px-2 py-1.5 rounded-xl text-[10px] font-extrabold shadow-sm truncate', theme.chip)}>
+                              {afternoonEvent.title.replace(/^\[.*?\]\s*/, '')}
+                            </div>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedDate(day);
+                                setNewTime('14:00');
+                                setAddSheetOpen(true);
+                              }}
+                              className={clsx('w-6 h-6 rounded-full flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity', theme.btn)}
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Slot 3: Evening / 5 PM */}
+                        <div className="h-full flex flex-col justify-between py-1 pl-1">
+                          <span className={clsx('text-[10px] font-extrabold tracking-wider', theme.sub)}>5 pm</span>
+                          {eveningEvent ? (
+                            <div className={clsx('px-2 py-1.5 rounded-xl text-[10px] font-extrabold shadow-sm truncate', theme.chip)}>
+                              {eveningEvent.title.replace(/^\[.*?\]\s*/, '')}
+                            </div>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedDate(day);
+                                setNewTime('17:00');
+                                setAddSheetOpen(true);
+                              }}
+                              className={clsx('w-6 h-6 rounded-full flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity', theme.btn)}
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* GRID MODE: Classic Month Grid */}
+            {calendarMode === 'grid' && (
+              <div className="space-y-4">
+                <div className="bg-tg-bg-secondary rounded-3xl border border-tg-border/25 shadow-sm p-4">
+                  <div className="grid grid-cols-7 text-center mb-2">
+                    {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((wd, i) => (
+                      <span key={i} className="text-[11px] font-bold text-tg-text-hint py-1">
+                        {wd}
+                      </span>
+                    ))}
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+
+                  <div className="grid grid-cols-7 gap-y-1.5 text-center">
+                    {calendarDays.map((d, i) => {
+                      const dateStr = format(d, 'yyyy-MM-dd');
+                      const isCurrMonth = isSameMonth(d, currentMonth);
+                      const isSel = isSameDay(d, selectedDate);
+                      const isTod = isToday(d);
+                      const dayCategories = eventDatesMap.get(dateStr);
+                      const hasEvents = Boolean(dayCategories && dayCategories.length > 0);
+                      const hasGithub = dayCategories?.includes('github') || dayCategories?.includes('erp');
+
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => setSelectedDate(d)}
+                          className="flex flex-col items-center justify-center h-10 relative active:scale-95 transition-transform"
+                        >
+                          <div
+                            className={clsx(
+                              'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all',
+                              isSel
+                                ? 'bg-tg-blue text-white shadow-sm'
+                                : isTod
+                                ? 'bg-tg-blue/20 text-tg-blue font-extrabold'
+                                : isCurrMonth
+                                ? 'text-tg-text hover:bg-tg-surface'
+                                : 'text-tg-text-hint/40'
+                            )}
+                          >
+                            {format(d, 'd')}
+                          </div>
+                          {hasEvents && !isSel && (
+                            <span
+                              className={clsx(
+                                'w-1.5 h-1.5 rounded-full absolute bottom-0.5',
+                                hasGithub ? 'bg-purple-400' : 'bg-tg-blue'
+                              )}
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Selected Day Agenda in Grid Mode */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between px-2">
+                    <h3 className="text-tg-text font-bold text-sm">
+                      {format(selectedDate, 'EEEE, MMMM d')}
+                    </h3>
+                    <span className="text-xs font-semibold text-tg-text-hint">
+                      {selectedEvents.length} {selectedEvents.length === 1 ? 'task' : 'tasks'}
+                    </span>
+                  </div>
+
+                  {selectedEvents.length === 0 ? (
+                    <div className="bg-tg-bg-secondary/40 rounded-2xl border border-tg-border/20 p-6 text-center text-tg-text-hint text-xs">
+                      No events on {format(selectedDate, 'MMMM d')}. Tap + to add.
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {selectedEvents.map((evt) => (
+                        <div
+                          key={evt.id}
+                          className="bg-tg-bg-secondary rounded-2xl border border-tg-border/30 p-3.5 flex items-center justify-between gap-3"
+                        >
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <button onClick={() => handleToggleComplete(evt.id)}>
+                              <CheckCircle2
+                                className={clsx(
+                                  'w-5 h-5',
+                                  evt.completed ? 'text-emerald-500 fill-emerald-500/20' : 'text-tg-border'
+                                )}
+                              />
+                            </button>
+                            <div className="min-w-0 flex-1">
+                              <p className={clsx('text-sm font-bold text-tg-text truncate', evt.completed && 'line-through text-tg-text-hint')}>
+                                {evt.title}
+                              </p>
+                              <p className="text-xs text-tg-text-hint mt-0.5">{evt.time}</p>
+                            </div>
+                          </div>
+                          {(evt.source === 'local' || !evt.source) && (
+                            <button
+                              onClick={() => handleDeleteEvent(evt.id)}
+                              className="text-tg-text-hint hover:text-rose-500 p-1"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Add Event Bottom Sheet */}

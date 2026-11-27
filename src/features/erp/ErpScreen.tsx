@@ -355,44 +355,49 @@ export default function ErpScreen() {
 
   return (
     <div className="flex-1 flex flex-col h-full bg-tg-bg overflow-hidden select-none">
-      {/* ── Top Header ── */}
-      <header className="px-4 pt-3 pb-3 safe-top border-b border-tg-border/20 sticky top-0 bg-tg-bg/95 backdrop-blur-xl z-20 shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <button
-              onClick={() => router.push('/calendar')}
-              className="flex items-center gap-0.5 text-tg-blue font-semibold text-sm active:opacity-70 transition-opacity -ml-1 pr-1.5 py-1"
-            >
-              <ChevronLeft className="w-5 h-5 -mr-0.5 stroke-[2.5]" />
-              <span>Calendar</span>
-            </button>
-            <div className="h-4 w-px bg-tg-border/30 mx-1" />
-            <div className="min-w-0">
-              <h1 className="text-base font-bold text-tg-text truncate flex items-center gap-1.5">
-                <Landmark className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span>ERP Bank Ledger</span>
-              </h1>
-            </div>
+      {/* ── Top Header (iOS Telegram Navigation Bar) ── */}
+      <header className="sticky top-0 z-20 shrink-0 bg-tg-bg/90 backdrop-blur-2xl border-b border-tg-border/15 safe-top">
+        <div className="relative flex items-center justify-between px-3 h-11">
+          {/* Left: Back button with iOS chevron and label */}
+          <button
+            onClick={() => router.push('/calendar')}
+            className="flex items-center gap-0.5 text-tg-blue font-normal text-[17px] active:opacity-60 transition-opacity -ml-1 py-1 z-10"
+            aria-label="Back to Calendar"
+          >
+            <ChevronLeft className="w-6 h-6 -mr-0.5 stroke-[2.5]" />
+            <span>Calendar</span>
+          </button>
+
+          {/* Center: Title & Subtitle cleanly centered */}
+          <div className="absolute inset-x-0 flex flex-col items-center justify-center pointer-events-none px-24">
+            <h1 className="text-[17px] font-semibold text-tg-text tracking-tight truncate leading-tight">
+              ERP Bank Ledger
+            </h1>
+            <p className="text-[11px] text-tg-text-hint font-normal leading-tight mt-0.5 truncate">
+              {transactions.length === 0
+                ? 'Cash Flow & Statements'
+                : `${transactions.length} transaction${transactions.length === 1 ? '' : 's'}`}
+            </p>
           </div>
 
-          {/* Header Action Buttons */}
-          <div className="flex items-center gap-1.5">
+          {/* Right: Actions matching circular buttons */}
+          <div className="flex items-center gap-1.5 z-10">
             <button
               onClick={() => setImportSheetOpen(true)}
-              className="px-2.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 text-xs font-bold hover:bg-emerald-500/20 active:scale-95 transition-all flex items-center gap-1"
-              title="Import ERP / CSV"
+              className="w-9 h-9 rounded-full bg-tg-bg-secondary border border-tg-border/30 flex items-center justify-center text-tg-text active:scale-95 transition-all shadow-sm hover:border-tg-border/60"
+              title="Import ERP / Bank Records"
+              aria-label="Import ERP"
             >
-              <Upload className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Import</span>
+              <Upload className="w-4 h-4" />
             </button>
 
             <button
               onClick={() => setAddSheetOpen(true)}
-              className="px-2.5 py-1.5 rounded-full bg-tg-blue text-white text-xs font-bold shadow-sm active:scale-95 transition-all flex items-center gap-1"
+              className="w-9 h-9 rounded-full bg-tg-bg-secondary border border-tg-border/30 flex items-center justify-center text-tg-blue active:scale-95 transition-all shadow-sm hover:border-tg-border/60"
               title="Add Transaction"
+              aria-label="Add Transaction"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Add</span>
+              <Plus className="w-4 h-4 stroke-[2.5]" />
             </button>
           </div>
         </div>

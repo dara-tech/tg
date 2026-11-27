@@ -1,11 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" style="background-color: #0e1621; color: #ffffff;">
   <head>
     <meta charset="UTF-8" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content"
     />
+    <meta name="theme-color" content="#0e1621" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#0e1621" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -13,26 +14,35 @@
     <meta name="apple-mobile-web-app-title" content="Telegram" />
     <meta name="format-detection" content="telephone=no" />
 
-    <title>Telegram Web</title>
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-    <link rel="manifest" href="/manifest.json" />
+    <!-- Apple Touch Startup Splash Screens to eliminate iOS PWA launch white flash -->
+    <link rel="apple-touch-startup-image" href="/icons/splash-dark.png" />
+    <link rel="apple-touch-startup-image" href="/icons/splash-dark.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" />
+    <link rel="apple-touch-startup-image" href="/icons/splash-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" />
+    <link rel="apple-touch-startup-image" href="/icons/splash-dark.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" />
+    <link rel="apple-touch-startup-image" href="/icons/splash-dark.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" />
+    <link rel="apple-touch-startup-image" href="/icons/splash-dark.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Battambang:wght@300;400;700;900&family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <!-- Instant critical dark surface CSS (rendered in 0ms before any external network asset) -->
     <style>
+      :root {
+        color-scheme: dark;
+      }
       html, body {
-        background-color: #0e1621;
+        background-color: #0e1621 !important;
+        background: #0e1621 !important;
         color: #ffffff;
         margin: 0;
         padding: 0;
         height: 100%;
+        width: 100%;
         overflow: hidden;
         -webkit-tap-highlight-color: transparent;
+      }
+      #root {
+        background-color: #0e1621;
+        min-height: 100%;
+        height: 100%;
+        width: 100%;
       }
       .tg-shell-shimmer {
         animation: tgShimmer 1.5s infinite linear;
@@ -44,8 +54,40 @@
         100% { background-position: -200% 0; }
       }
     </style>
+
+    <!-- Synchronous stored theme check -->
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('tg_theme') || localStorage.getItem('theme');
+          var bg = '#0e1621';
+          if (t === 'light' || t === 'day' || t === 'arctic') bg = '#ffffff';
+          document.documentElement.style.backgroundColor = bg;
+        } catch(e) {}
+      })();
+    </script>
+
+    <title>Telegram Web</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Non-blocking asynchronous font loading (does NOT block initial dark skeleton paint) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Battambang:wght@300;400;700;900&family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&display=swap"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Battambang:wght@300;400;700;900&family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
+    />
   </head>
-  <body class="bg-tg-bg text-tg-text font-sans antialiased">
+  <body style="background-color: #0e1621; color: #ffffff;" class="bg-tg-bg text-tg-text font-sans antialiased">
     <div id="root">
       <div style="display:flex;flex-direction:column;height:100vh;background-color:#0e1621;color:#fff;overflow:hidden;user-select:none;">
         <!-- Top App Header -->

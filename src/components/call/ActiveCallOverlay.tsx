@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, PhoneOff, Smartphone, Volume2, Users, X } from 'lucide-react';
+import { Mic, MicOff, PhoneOff, Smartphone, Volume2, Users, X, Sparkles } from 'lucide-react';
 import { useUIStore } from '@/store/ui.store';
 import { usePersonaStore } from '@/store/persona.store';
 import { createAiCall, stopAiCall, getActiveAiCall } from '@/services/aiCall/aiCallService';
@@ -282,7 +282,13 @@ export function ActiveCallOverlay() {
             onClick={isAiCall && aiState === 'speaking' ? handleInterrupt : undefined}
             className="relative w-32 h-32 rounded-full overflow-hidden border border-tg-border/30 shadow-2xl flex items-center justify-center cursor-pointer transition-transform active:scale-95 bg-tg-surface z-10"
           >
-            {isAiCall && customPersonaConfig ? (
+            {isAiCall && customPersonaConfig?.avatarImage ? (
+              <img
+                src={customPersonaConfig.avatarImage}
+                alt={displayName}
+                className="w-full h-full object-cover"
+              />
+            ) : isAiCall && customPersonaConfig ? (
               <div
                 className="w-full h-full flex items-center justify-center text-5xl"
                 style={{ background: `linear-gradient(135deg, ${customPersonaConfig.gradientFrom}, ${customPersonaConfig.gradientTo})` }}
@@ -312,7 +318,14 @@ export function ActiveCallOverlay() {
 
         {/* Name & Clean Status with Live Wire-Signal Indicator */}
         <div className="text-center space-y-1.5 flex flex-col items-center">
-          <h2 className="text-2xl font-bold tracking-tight text-tg-text">{displayName}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold tracking-tight text-tg-text">{displayName}</h2>
+            {isAiCall && (
+              <span className="p-1 rounded-full bg-gradient-to-tr from-purple-500/20 to-sky-500/20 border border-purple-500/40 text-purple-400">
+                <Sparkles className="w-3.5 h-3.5 fill-purple-400/20" />
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             {/* Smooth live signal waveform bars */}
             {isAiCall && (aiState === 'speaking' || aiState === 'listening') && (
@@ -429,10 +442,14 @@ export function ActiveCallOverlay() {
                   }`}
                 >
                   <div
-                    className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-base"
-                    style={{ background: `linear-gradient(135deg, ${p.gradientFrom}, ${p.gradientTo})` }}
+                    className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-base overflow-hidden"
+                    style={p.avatarImage ? {} : { background: `linear-gradient(135deg, ${p.gradientFrom}, ${p.gradientTo})` }}
                   >
-                    {p.avatarEmoji}
+                    {p.avatarImage ? (
+                      <img src={p.avatarImage} alt={p.name} className="w-full h-full object-cover" />
+                    ) : (
+                      p.avatarEmoji
+                    )}
                   </div>
                   <span className="text-xs font-medium truncate">{p.name}</span>
                 </button>

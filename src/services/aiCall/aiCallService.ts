@@ -19,6 +19,7 @@ function resolvePersonaConfig(personaId: string) {
       const { state } = JSON.parse(raw) as { state?: { customs?: Array<{
         id: string; name: string; tagline?: string; voice?: string;
         prompt: string; greeting: string; avatarEmoji?: string;
+        avatarImage?: string;
         gradientFrom?: string; gradientTo?: string;
       }> } };
       const custom = state?.customs?.find((c) => c.id === personaId);
@@ -28,11 +29,11 @@ function resolvePersonaConfig(personaId: string) {
           name: custom.name,
           tagline: custom.tagline || '',
           description: custom.name,
-          avatar: '',
+          avatar: custom.avatarImage || '',
           voice: (custom.voice || 'Aoede') as 'Aoede' | 'Kore' | 'Puck' | 'Charon' | 'Fenrir',
           prompt: custom.prompt,
           greeting: custom.greeting,
-          gradient: { from: custom.gradientFrom || '#3b82f6', to: custom.gradientTo || '#1d4ed8', initial: custom.avatarEmoji || '🤖' },
+          gradient: { from: custom.gradientFrom || '#3b82f6', to: custom.gradientTo || '#1d4ed8', initial: custom.avatarEmoji || '✨' },
           category: 'general' as const,
           tags: ['Custom'],
         };

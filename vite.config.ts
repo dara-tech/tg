@@ -106,6 +106,55 @@ Enhanced Message:
           return;
         }
 
+        if (url.pathname === '/api/cf/run' && req.method === 'POST') {
+          let bodyStr = '';
+          req.on('data', (chunk) => { bodyStr += chunk; });
+          req.on('end', async () => {
+            try {
+              const body = JSON.parse(bodyStr || '{}');
+              const accountId = body.accountId || env.CLOUDFLARE_ACCOUNT_ID || env.NEXT_PUBLIC_CF_ACCOUNT_ID || '';
+              const apiToken = body.apiToken || env.CLOUDFLARE_API_TOKEN || env.NEXT_PUBLIC_CF_API_TOKEN || '';
+              const model = body.model;
+              const payload = body.payload || {};
+
+              if (!model) {
+                res.statusCode = 400;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ error: 'Missing model parameter' }));
+                return;
+              }
+
+              const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`;
+              const cfRes = await fetch(cfUrl, {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${apiToken}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+              });
+
+              const contentType = cfRes.headers.get('content-type') || 'application/json';
+              if (contentType.includes('application/json')) {
+                const data = await cfRes.json();
+                res.statusCode = cfRes.status;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify(data));
+              } else {
+                const buffer = await cfRes.arrayBuffer();
+                res.statusCode = cfRes.status;
+                res.setHeader('Content-Type', contentType);
+                res.end(Buffer.from(buffer));
+              }
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: err?.message || 'Cloudflare proxy error' }));
+            }
+          });
+          return;
+        }
+
         if (url.pathname === '/api/stories') {
           res.statusCode = 200;
           res.setHeader('Content-Type', 'application/json');
@@ -139,6 +188,8 @@ export default defineConfig(({ mode }) => {
       'process.env.NEXT_PUBLIC_API_HASH': JSON.stringify(env.NEXT_PUBLIC_API_HASH || 'ce41f5915389862a172974121887c711'),
       'process.env.NEXT_PUBLIC_GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.NEXT_PUBLIC_GEMINI_API_KEY || ''),
       'process.env.NEXT_PUBLIC_CARTO_API_KEY': JSON.stringify(env.NEXT_PUBLIC_CARTO_API_KEY || ''),
+      'process.env.NEXT_PUBLIC_CF_ACCOUNT_ID': JSON.stringify(env.CLOUDFLARE_ACCOUNT_ID || env.NEXT_PUBLIC_CF_ACCOUNT_ID || ''),
+      'process.env.NEXT_PUBLIC_CF_API_TOKEN': JSON.stringify(env.CLOUDFLARE_API_TOKEN || env.NEXT_PUBLIC_CF_API_TOKEN || ''),
       'process.env.NODE_ENV': JSON.stringify(mode),
     },
     server: {

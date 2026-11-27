@@ -28,6 +28,7 @@ import {
   ExternalLink,
   AlertCircle,
   Bot,
+  Sparkles,
 } from 'lucide-react';
 import { AI_PERSONAS, getPersonaConfig } from '@/services/aiCall/personas';
 import type { AIPersona } from '@/services/aiCall/types';
@@ -1217,10 +1218,14 @@ export default function SettingsScreen() {
                       }`}
                     >
                       <div
-                        className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-lg"
-                        style={{ background: `linear-gradient(135deg, ${p.gradientFrom}, ${p.gradientTo})` }}
+                        className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-lg overflow-hidden"
+                        style={p.avatarImage ? {} : { background: `linear-gradient(135deg, ${p.gradientFrom}, ${p.gradientTo})` }}
                       >
-                        {p.avatarEmoji}
+                        {p.avatarImage ? (
+                          <img src={p.avatarImage} alt={p.name} className="w-full h-full object-cover" />
+                        ) : (
+                          p.avatarEmoji
+                        )}
                       </div>
                       <div className="truncate min-w-0 flex-1">
                         <p className="text-xs font-semibold text-tg-text truncate">{p.name}</p>
@@ -1236,18 +1241,39 @@ export default function SettingsScreen() {
             <button
               type="button"
               onClick={() => setShowCustomPersonas(true)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-tg-surface border border-tg-border/30 hover:border-tg-blue/40 transition-colors"
+              className="w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl bg-gradient-to-r from-purple-500/10 via-indigo-500/5 to-transparent border border-purple-500/30 hover:border-purple-500/50 transition-all active:scale-[0.99]"
             >
-              <div className="w-9 h-9 rounded-full bg-tg-blue/15 flex items-center justify-center shrink-0">
-                <Bot className="w-4 h-4 text-tg-blue" />
+              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-md shadow-purple-500/20 text-white">
+                <Sparkles className="w-4 h-4 fill-white/20" />
               </div>
-              <div className="text-left flex-1">
-                <p className="text-sm font-medium text-tg-text">My AI Characters</p>
-                <p className="text-xs text-tg-text-hint">
-                  {customPersonas.length > 0 ? `${customPersonas.length} custom character${customPersonas.length !== 1 ? 's' : ''}` : 'Create custom personas'}
+              <div className="text-left flex-1 min-w-0">
+                <p className="text-sm font-bold text-tg-text flex items-center gap-1.5">
+                  <span>My AI Characters</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-400 font-semibold">
+                    Auto-Gen ✨
+                  </span>
+                </p>
+                <p className="text-xs text-tg-text-hint truncate mt-0.5">
+                  {customPersonas.length > 0 ? `${customPersonas.length} custom character${customPersonas.length !== 1 ? 's' : ''}` : 'Generate personas with Cloudflare AI'}
                 </p>
               </div>
-              <ChevronRight className="w-4 h-4 text-tg-text-hint" />
+              <ChevronRight className="w-4 h-4 text-tg-text-hint/60" />
+            </button>
+
+            {/* Cloudflare AI Quick Shortcut */}
+            <button
+              type="button"
+              onClick={() => setPanel('cloudflare')}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-orange-500/10 border border-orange-500/20 text-xs text-orange-400 hover:bg-orange-500/15 transition-colors"
+            >
+              <span className="flex items-center gap-1.5 font-medium">
+                <span className="font-black text-orange-500">CF</span>
+                <span>Cloudflare AI (Llama 3.3 + Flux Schnell)</span>
+              </span>
+              <span className="text-[11px] font-semibold flex items-center gap-1 text-orange-400/80">
+                {ui.cfAccountId ? 'Configured ✓' : 'Configure'}
+                <ChevronRight className="w-3.5 h-3.5" />
+              </span>
             </button>
 
             <div className="space-y-1.5 pt-1">

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowDown, Bell, BellOff, Copy, Forward, Pin, Share2, Trash2, User, X } from 'lucide-react';
+import { ArrowDown, Bell, BellOff, Copy, Forward, Pin, Share2, Trash2, User, X, Sparkles } from 'lucide-react';
 import { Avatar }        from '@/components/ui/Avatar';
 import { BubbleGroup }   from '@/components/ui/bubble';
 import { BottomSheet }   from '@/components/ui/BottomSheet';
@@ -961,11 +961,11 @@ export default function ConversationScreen() {
               unlockAudioPlayback();
               startAiCall();
             }}
-            className="w-[34px] h-[34px] rounded-full bg-tg-surface/70 border border-tg-border/20 flex items-center justify-center active:opacity-60 transition-opacity"
+            className="w-[34px] h-[34px] rounded-full bg-gradient-to-tr from-purple-500/20 via-sky-500/20 to-pink-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400 hover:text-purple-300 active:scale-95 transition-all shadow-sm"
             aria-label="AI Voice Call"
-            title="AI Voice Call"
+            title="AI Voice Call (Gemini Live)"
           >
-            <img src="/icons/ai-brain.png" alt="AI" className="w-5 h-5 object-contain" />
+            <Sparkles className="w-4 h-4 fill-purple-400/20 animate-pulse" />
           </button>
           <button
             onClick={() => setActiveCall(chatMeta.peerId, chatMeta.title)}
@@ -1295,9 +1295,9 @@ export default function ConversationScreen() {
         <div className="px-4 pb-6 space-y-1">
           <button
             onClick={() => { setMenuOpen(false); startAiCall(); }}
-            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-tg-blue active:bg-tg-surface text-left font-medium"
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-purple-400 active:bg-tg-surface text-left font-medium"
           >
-            <img src="/icons/ai-brain.png" alt="AI" className="w-5 h-5 object-contain" />
+            <Sparkles className="w-5 h-5 text-purple-400" />
             <span>AI Voice Call</span>
           </button>
           <button

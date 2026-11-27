@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -8,11 +8,16 @@ import {
   Clock,
   Trash2,
   CheckCircle2,
-  Tag,
   Bell,
   Briefcase,
   User,
   AlertCircle,
+  RefreshCw,
+  ExternalLink,
+  GitBranch,
+  GitPullRequest,
+  Check,
+  Layers,
 } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { toast } from '@/components/ui/Toast';
@@ -36,53 +41,96 @@ export interface CalendarEvent {
   title: string;
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
-  category: 'personal' | 'work' | 'reminder' | 'urgent';
+  category: 'personal' | 'work' | 'reminder' | 'urgent' | 'github' | 'erp';
   completed?: boolean;
+  source?: 'local' | 'github' | 'erp';
+  sourceUrl?: string;
+  sourceMeta?: {
+    repo?: string;
+    number?: number;
+    type?: 'milestone' | 'issue' | 'pr' | 'release' | 'erp';
+  };
 }
 
-const STORAGE_KEY = 'tg_calendar_events_v1';
+export interface SyncConfig {
+  githubRepo: string; // e.g. "dara-tech/tg"
+  githubToken: string; // optional personal access token
+  erpApiUrl: string; // optional ERP endpoint
+  erpToken: string;
+  syncMilestones: boolean;
+  syncIssues: boolean;
+  syncReleases: boolean;
+  lastSyncedAt?: number;
+}
+
+const STORAGE_KEY = 'tg_calendar_events_v2';
+const SYNC_CONFIG_KEY = 'tg_calendar_sync_config_v2';
+
+const DEFAULT_SYNC_CONFIG: SyncConfig = {
+  githubRepo: 'dara-tech/tg',
+  githubToken: '',
+  erpApiUrl: '',
+  erpToken: '',
+  syncMilestones: true,
+  syncIssues: true,
+  syncReleases: true,
+};
 
 const INITIAL_EVENTS: CalendarEvent[] = [
   {
     id: 'evt-1',
-    title: 'Weekly Team Sync',
+    title: 'Weekly ERP & Tech Sync',
     date: format(new Date(), 'yyyy-MM-dd'),
     time: '14:00',
     category: 'work',
+    source: 'local',
   },
   {
     id: 'evt-2',
-    title: 'Review Project Updates',
+    title: 'Review Telegram Web V2 Deployment',
     date: format(new Date(), 'yyyy-MM-dd'),
     time: '17:30',
-    category: 'reminder',
+    category: 'github',
+    source: 'github',
+    sourceUrl: 'https://github.com/dara-tech/tg',
+    sourceMeta: { repo: 'dara-tech/tg', type: 'pr' },
   },
   {
     id: 'evt-3',
-    title: 'Doctor Appointment',
+    title: 'STI Database ERP Milestone',
     date: format(addDays(new Date(), 2), 'yyyy-MM-dd'),
     time: '09:00',
-    category: 'personal',
-  },
-  {
-    id: 'evt-4',
-    title: 'Water Festival Holiday',
-    date: format(addDays(new Date(), 4), 'yyyy-MM-dd'),
-    time: '08:00',
-    category: 'personal',
+    category: 'erp',
+    source: 'erp',
+    sourceMeta: { type: 'erp' },
   },
 ];
+
+function GithubIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+      />
+    </svg>
+  );
+}
 
 const CATEGORY_META = {
   personal: { label: 'Personal', color: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30', icon: User },
   work:     { label: 'Work',     color: 'bg-sky-500/15 text-sky-500 border-sky-500/30',         icon: Briefcase },
   reminder: { label: 'Reminder', color: 'bg-amber-500/15 text-amber-500 border-amber-500/30',     icon: Bell },
   urgent:   { label: 'Urgent',   color: 'bg-rose-500/15 text-rose-500 border-rose-500/30',       icon: AlertCircle },
+  github:   { label: 'GitHub',   color: 'bg-purple-500/15 text-purple-400 border-purple-500/30', icon: GitBranch },
+  erp:      { label: 'ERP Sync', color: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30', icon: Layers },
 };
 
 export default function CalendarScreen() {
   const [currentMonth, setCurrentMonth] = useState<Date>(() => new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
+
   const [events, setEvents] = useState<CalendarEvent[]>(() => {
     if (typeof window === 'undefined') return INITIAL_EVENTS;
     try {
@@ -92,16 +140,41 @@ export default function CalendarScreen() {
     return INITIAL_EVENTS;
   });
 
+  const [syncConfig, setSyncConfig] = useState<SyncConfig>(() => {
+    if (typeof window === 'undefined') return DEFAULT_SYNC_CONFIG;
+    try {
+      const stored = localStorage.getItem(SYNC_CONFIG_KEY);
+      if (stored) return { ...DEFAULT_SYNC_CONFIG, ...JSON.parse(stored) };
+    } catch {}
+    return DEFAULT_SYNC_CONFIG;
+  });
+
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncSheetOpen, setSyncSheetOpen] = useState(false);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
+
+  // New Event Form State
   const [newTitle, setNewTitle] = useState('');
   const [newTime, setNewTime] = useState('09:00');
-  const [newCategory, setNewCategory] = useState<CalendarEvent['category']>('personal');
+  const [newCategory, setNewCategory] = useState<CalendarEvent['category']>('work');
+
+  // Sync Form State
+  const [editRepo, setEditRepo] = useState(syncConfig.githubRepo);
+  const [editToken, setEditToken] = useState(syncConfig.githubToken);
+  const [editErpUrl, setEditErpUrl] = useState(syncConfig.erpApiUrl);
+  const [editErpToken, setEditErpToken] = useState(syncConfig.erpToken);
 
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
     } catch {}
   }, [events]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(syncConfig));
+    } catch {}
+  }, [syncConfig]);
 
   const selectedKey = format(selectedDate, 'yyyy-MM-dd');
 
@@ -122,8 +195,12 @@ export default function CalendarScreen() {
   }, [startDate, endDate]);
 
   const eventDatesMap = useMemo(() => {
-    const map = new Set<string>();
-    events.forEach((e) => map.add(e.date));
+    const map = new Map<string, Array<CalendarEvent['category']>>();
+    events.forEach((e) => {
+      const list = map.get(e.date) || [];
+      if (!list.includes(e.category)) list.push(e.category);
+      map.set(e.date, list);
+    });
     return map;
   }, [events]);
 
@@ -139,6 +216,186 @@ export default function CalendarScreen() {
     setSelectedDate(today);
   };
 
+  /**
+   * Syncs milestones, issues, and releases from GitHub & ERP
+   */
+  const handleSyncGithubAndErp = useCallback(async (cfg = syncConfig) => {
+    if (!cfg.githubRepo.trim() && !cfg.erpApiUrl.trim()) {
+      toast('Please enter a GitHub repository or ERP API URL', 'error');
+      setSyncSheetOpen(true);
+      return;
+    }
+
+    setIsSyncing(true);
+    const newSyncedEvents: CalendarEvent[] = [];
+
+    const headers: Record<string, string> = {
+      Accept: 'application/vnd.github.v3+json',
+    };
+    if (cfg.githubToken.trim()) {
+      headers.Authorization = `token ${cfg.githubToken.trim()}`;
+    }
+
+    try {
+      // 1. Fetch GitHub Milestones
+      if (cfg.githubRepo && cfg.syncMilestones) {
+        try {
+          const res = await fetch(`https://api.github.com/repos/${cfg.githubRepo.trim()}/milestones?state=all&per_page=30`, {
+            headers,
+          });
+          if (res.ok) {
+            const milestones = await res.json();
+            if (Array.isArray(milestones)) {
+              milestones.forEach((m: { id: number; title: string; due_on?: string; html_url?: string; state?: string }) => {
+                const targetDate = m.due_on ? format(new Date(m.due_on), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+                newSyncedEvents.push({
+                  id: `gh-m-${m.id}`,
+                  title: `[Milestone] ${m.title}`,
+                  date: targetDate,
+                  time: '10:00',
+                  category: 'github',
+                  source: 'github',
+                  sourceUrl: m.html_url,
+                  completed: m.state === 'closed',
+                  sourceMeta: { repo: cfg.githubRepo, type: 'milestone' },
+                });
+              });
+            }
+          }
+        } catch (err) {
+          console.warn('[Calendar] GitHub Milestones sync failed:', err);
+        }
+      }
+
+      // 2. Fetch GitHub Issues / PRs
+      if (cfg.githubRepo && cfg.syncIssues) {
+        try {
+          const res = await fetch(`https://api.github.com/repos/${cfg.githubRepo.trim()}/issues?state=all&per_page=30`, {
+            headers,
+          });
+          if (res.ok) {
+            const issues = await res.json();
+            if (Array.isArray(issues)) {
+              issues.forEach((iss: {
+                id: number;
+                number: number;
+                title: string;
+                html_url: string;
+                created_at: string;
+                closed_at?: string;
+                milestone?: { due_on?: string };
+                pull_request?: unknown;
+                state?: string;
+              }) => {
+                const isPr = Boolean(iss.pull_request);
+                const rawDate = iss.milestone?.due_on || iss.created_at;
+                const targetDate = format(new Date(rawDate), 'yyyy-MM-dd');
+                newSyncedEvents.push({
+                  id: `gh-i-${iss.id}`,
+                  title: `${isPr ? '[PR #' : '[Issue #'}${iss.number}] ${iss.title}`,
+                  date: targetDate,
+                  time: '15:00',
+                  category: 'github',
+                  source: 'github',
+                  sourceUrl: iss.html_url,
+                  completed: iss.state === 'closed',
+                  sourceMeta: { repo: cfg.githubRepo, number: iss.number, type: isPr ? 'pr' : 'issue' },
+                });
+              });
+            }
+          }
+        } catch (err) {
+          console.warn('[Calendar] GitHub Issues sync failed:', err);
+        }
+      }
+
+      // 3. Fetch GitHub Releases
+      if (cfg.githubRepo && cfg.syncReleases) {
+        try {
+          const res = await fetch(`https://api.github.com/repos/${cfg.githubRepo.trim()}/releases?per_page=15`, {
+            headers,
+          });
+          if (res.ok) {
+            const releases = await res.json();
+            if (Array.isArray(releases)) {
+              releases.forEach((rel: { id: number; name?: string; tag_name: string; published_at: string; html_url: string }) => {
+                const targetDate = format(new Date(rel.published_at), 'yyyy-MM-dd');
+                newSyncedEvents.push({
+                  id: `gh-r-${rel.id}`,
+                  title: `[Release] ${rel.name || rel.tag_name}`,
+                  date: targetDate,
+                  time: '12:00',
+                  category: 'github',
+                  source: 'github',
+                  sourceUrl: rel.html_url,
+                  completed: true,
+                  sourceMeta: { repo: cfg.githubRepo, type: 'release' },
+                });
+              });
+            }
+          }
+        } catch (err) {
+          console.warn('[Calendar] GitHub Releases sync failed:', err);
+        }
+      }
+
+      // 4. Fetch Custom ERP System Feed (if configured)
+      if (cfg.erpApiUrl.trim()) {
+        try {
+          const erpHeaders: Record<string, string> = {};
+          if (cfg.erpToken.trim()) erpHeaders.Authorization = `Bearer ${cfg.erpToken.trim()}`;
+          const res = await fetch(cfg.erpApiUrl.trim(), { headers: erpHeaders });
+          if (res.ok) {
+            const data = await res.json();
+            const list = Array.isArray(data) ? data : data.events || data.items || [];
+            list.forEach((item: { id?: string | number; title: string; date: string; time?: string; url?: string; completed?: boolean }) => {
+              newSyncedEvents.push({
+                id: `erp-${item.id || Math.random()}`,
+                title: `[ERP] ${item.title}`,
+                date: item.date,
+                time: item.time || '09:00',
+                category: 'erp',
+                source: 'erp',
+                sourceUrl: item.url,
+                completed: item.completed ?? false,
+                sourceMeta: { type: 'erp' },
+              });
+            });
+          }
+        } catch (err) {
+          console.warn('[Calendar] ERP feed sync failed:', err);
+        }
+      }
+
+      // Merge synced items into events (replacing older synced items, preserving local user events)
+      setEvents((prev) => {
+        const localOnly = prev.filter((e) => e.source === 'local' || (!e.source && !e.id.startsWith('gh-') && !e.id.startsWith('erp-')));
+        return [...localOnly, ...newSyncedEvents];
+      });
+
+      setSyncConfig((prev) => ({ ...prev, lastSyncedAt: Date.now() }));
+      toast(`Synced ${newSyncedEvents.length} items from GitHub & ERP`, 'success');
+    } catch {
+      toast('Failed to sync GitHub / ERP calendar', 'error');
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [syncConfig]);
+
+  const handleSaveSyncConfig = (e: React.FormEvent) => {
+    e.preventDefault();
+    const updated: SyncConfig = {
+      ...syncConfig,
+      githubRepo: editRepo.trim(),
+      githubToken: editToken.trim(),
+      erpApiUrl: editErpUrl.trim(),
+      erpToken: editErpToken.trim(),
+    };
+    setSyncConfig(updated);
+    setSyncSheetOpen(false);
+    handleSyncGithubAndErp(updated);
+  };
+
   const handleAddEvent = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) {
@@ -151,6 +408,7 @@ export default function CalendarScreen() {
       date: selectedKey,
       time: newTime || '09:00',
       category: newCategory,
+      source: 'local',
     };
     setEvents((prev) => [...prev, newEvent]);
     setNewTitle('');
@@ -177,13 +435,43 @@ export default function CalendarScreen() {
           <CalendarIcon className="w-5 h-5 text-tg-blue" />
           <h1 className="text-tg-text text-[22px] font-bold tracking-tight">Calendar</h1>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-1.5">
+          {/* GitHub / ERP Sync Status Button */}
+          <button
+            onClick={() => setSyncSheetOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tg-bg-secondary text-xs font-semibold border border-tg-border/30 text-tg-text hover:bg-tg-surface active:scale-95 transition-all"
+            title="GitHub & ERP Sync Settings"
+          >
+            <GithubIcon className="w-3.5 h-3.5 text-purple-400" />
+            <span className="truncate max-w-[85px] sm:max-w-[120px]">
+              {syncConfig.githubRepo ? syncConfig.githubRepo.split('/')[1] || syncConfig.githubRepo : 'Connect'}
+            </span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+          </button>
+
+          {/* Quick Refresh */}
+          <button
+            disabled={isSyncing}
+            onClick={() => handleSyncGithubAndErp()}
+            className={clsx(
+              'w-8 h-8 rounded-full bg-tg-bg-secondary border border-tg-border/30 flex items-center justify-center text-tg-text active:scale-95 transition-all',
+              isSyncing && 'opacity-60 pointer-events-none'
+            )}
+            title="Sync with GitHub & ERP"
+          >
+            <RefreshCw className={clsx('w-3.5 h-3.5', isSyncing && 'animate-spin text-tg-blue')} />
+          </button>
+
+          {/* Today Button */}
           <button
             onClick={handleToday}
             className="px-2.5 py-1 rounded-full bg-tg-bg-secondary text-tg-blue text-xs font-semibold border border-tg-border/30 active:scale-95 transition-transform"
           >
             Today
           </button>
+
+          {/* Add Event Button */}
           <button
             onClick={() => setAddSheetOpen(true)}
             className="w-8 h-8 rounded-full bg-tg-blue text-white flex items-center justify-center active:scale-95 transition-transform shadow-sm"
@@ -241,7 +529,9 @@ export default function CalendarScreen() {
               const isCurrMonth = isSameMonth(d, currentMonth);
               const isSel = isSameDay(d, selectedDate);
               const isTod = isToday(d);
-              const hasEvents = eventDatesMap.has(dateStr);
+              const dayCategories = eventDatesMap.get(dateStr);
+              const hasEvents = Boolean(dayCategories && dayCategories.length > 0);
+              const hasGithub = dayCategories?.includes('github') || dayCategories?.includes('erp');
 
               return (
                 <button
@@ -263,9 +553,14 @@ export default function CalendarScreen() {
                   >
                     {format(d, 'd')}
                   </div>
-                  {/* Indicator Dot for Days with Events */}
+                  {/* Indicator Dot for Days with Events / GitHub / ERP */}
                   {hasEvents && !isSel && (
-                    <span className="w-1 h-1 rounded-full bg-tg-blue absolute bottom-0.5" />
+                    <span
+                      className={clsx(
+                        'w-1.5 h-1.5 rounded-full absolute bottom-0.5',
+                        hasGithub ? 'bg-purple-400' : 'bg-tg-blue'
+                      )}
+                    />
                   )}
                 </button>
               );
@@ -285,34 +580,43 @@ export default function CalendarScreen() {
               )}
             </h3>
             <span className="text-tg-text-hint text-xs">
-              {selectedEvents.length} {selectedEvents.length === 1 ? 'event' : 'events'}
+              {selectedEvents.length} {selectedEvents.length === 1 ? 'item' : 'items'}
             </span>
           </div>
 
           {selectedEvents.length === 0 ? (
             <div className="bg-tg-surface/60 rounded-2xl border border-tg-border/20 p-6 text-center">
               <CalendarIcon className="w-8 h-8 text-tg-text-hint/60 mx-auto mb-2 opacity-50" />
-              <p className="text-tg-text text-sm font-medium">No events scheduled</p>
-              <p className="text-tg-text-hint text-xs mt-1">Tap + to add a reminder or event</p>
-              <button
-                onClick={() => setAddSheetOpen(true)}
-                className="mt-3 px-4 py-1.5 rounded-full bg-tg-blue/10 text-tg-blue text-xs font-semibold active:scale-95 transition-transform inline-flex items-center gap-1"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add Event
-              </button>
+              <p className="text-tg-text text-sm font-medium">No schedule on this date</p>
+              <p className="text-tg-text-hint text-xs mt-1">Tap + to add or sync GitHub milestones</p>
+              <div className="flex items-center justify-center gap-2 mt-3">
+                <button
+                  onClick={() => setAddSheetOpen(true)}
+                  className="px-3 py-1.5 rounded-full bg-tg-blue/10 text-tg-blue text-xs font-semibold active:scale-95 transition-transform inline-flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add Event
+                </button>
+                <button
+                  onClick={() => handleSyncGithubAndErp()}
+                  className="px-3 py-1.5 rounded-full bg-purple-500/10 text-purple-400 text-xs font-semibold active:scale-95 transition-transform inline-flex items-center gap-1"
+                >
+                  <GithubIcon className="w-3.5 h-3.5" />
+                  Sync GitHub
+                </button>
+              </div>
             </div>
           ) : (
             <div className="space-y-2">
               {selectedEvents.map((evt) => {
-                const meta = CATEGORY_META[evt.category];
+                const meta = CATEGORY_META[evt.category] || CATEGORY_META.work;
                 const IconComponent = meta.icon;
                 return (
                   <div
                     key={evt.id}
                     className={clsx(
                       'bg-tg-surface rounded-2xl border border-tg-border/30 p-3.5 flex items-center gap-3 transition-all',
-                      evt.completed && 'opacity-60'
+                      evt.completed && 'opacity-65'
                     )}
                   >
                     {/* Toggle Complete Checkbox */}
@@ -339,11 +643,12 @@ export default function CalendarScreen() {
                       >
                         {evt.title}
                       </p>
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <span className="flex items-center gap-1 text-xs text-tg-text-hint">
                           <Clock className="w-3 h-3" />
                           <span>{evt.time}</span>
                         </span>
+
                         <span
                           className={clsx(
                             'text-[10.5px] font-semibold px-2 py-0.5 rounded-full border inline-flex items-center gap-1',
@@ -353,17 +658,39 @@ export default function CalendarScreen() {
                           <IconComponent className="w-2.5 h-2.5" />
                           <span>{meta.label}</span>
                         </span>
+
+                        {evt.sourceUrl && (
+                          <a
+                            href={evt.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] font-medium text-tg-blue hover:underline inline-flex items-center gap-0.5"
+                          >
+                            <span>Open</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
                       </div>
                     </div>
 
-                    {/* Delete button */}
-                    <button
-                      onClick={() => handleDeleteEvent(evt.id)}
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-tg-text-hint hover:text-rose-500 hover:bg-rose-500/10 active:scale-95 transition-all shrink-0"
-                      aria-label="Delete Event"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {/* Delete button (only for local events) */}
+                    {evt.source === 'local' || !evt.source ? (
+                      <button
+                        onClick={() => handleDeleteEvent(evt.id)}
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-tg-text-hint hover:text-rose-500 hover:bg-rose-500/10 active:scale-95 transition-all shrink-0"
+                        aria-label="Delete Event"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <div className="w-7 h-7 flex items-center justify-center shrink-0">
+                        {evt.category === 'github' ? (
+                          <GithubIcon className="w-4 h-4 text-purple-400 opacity-70" />
+                        ) : (
+                          <Layers className="w-4 h-4 text-indigo-400 opacity-70" />
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -371,6 +698,77 @@ export default function CalendarScreen() {
           )}
         </div>
       </div>
+
+      {/* GitHub & ERP Connection BottomSheet */}
+      <BottomSheet open={syncSheetOpen} onClose={() => setSyncSheetOpen(false)} title="GitHub & ERP System Connection">
+        <form onSubmit={handleSaveSyncConfig} className="p-4 space-y-4">
+          <div className="bg-tg-bg-secondary/60 rounded-xl p-3 border border-tg-border/20 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center shrink-0">
+              <GithubIcon className="w-5 h-5" />
+            </div>
+            <div className="min-w-0 flex-1 text-left">
+              <p className="text-sm font-semibold text-tg-text">ERP & GitHub Calendar Sync</p>
+              <p className="text-xs text-tg-text-hint">Sync milestones, issues, and ERP deadlines</p>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-tg-text-hint block mb-1">
+              GitHub Repository (owner/repo)
+            </label>
+            <input
+              type="text"
+              value={editRepo}
+              onChange={(e) => setEditRepo(e.target.value)}
+              placeholder="e.g. dara-tech/tg"
+              className="w-full bg-tg-bg-secondary rounded-xl px-3.5 py-2.5 text-sm text-tg-text placeholder:text-tg-text-hint border border-tg-border/30 focus:outline-none focus:border-tg-blue"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-tg-text-hint block mb-1">
+              GitHub Personal Access Token (Optional for private repos)
+            </label>
+            <input
+              type="password"
+              value={editToken}
+              onChange={(e) => setEditToken(e.target.value)}
+              placeholder="ghp_xxxxxxxxxxxx"
+              className="w-full bg-tg-bg-secondary rounded-xl px-3.5 py-2.5 text-sm text-tg-text placeholder:text-tg-text-hint border border-tg-border/30 focus:outline-none focus:border-tg-blue"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-tg-text-hint block mb-1">
+              ERP System API / Calendar Endpoint (Optional)
+            </label>
+            <input
+              type="url"
+              value={editErpUrl}
+              onChange={(e) => setEditErpUrl(e.target.value)}
+              placeholder="https://erp.example.com/api/v1/calendar"
+              className="w-full bg-tg-bg-secondary rounded-xl px-3.5 py-2.5 text-sm text-tg-text placeholder:text-tg-text-hint border border-tg-border/30 focus:outline-none focus:border-tg-blue"
+            />
+          </div>
+
+          {syncConfig.lastSyncedAt && (
+            <p className="text-xs text-tg-text-hint text-center">
+              Last synced: {new Date(syncConfig.lastSyncedAt).toLocaleString()}
+            </p>
+          )}
+
+          <div className="flex gap-2 pt-1">
+            <button
+              type="submit"
+              disabled={isSyncing}
+              className="flex-1 py-3 rounded-xl bg-tg-blue text-white font-semibold text-sm active:scale-98 transition-transform shadow-md flex items-center justify-center gap-1.5"
+            >
+              <RefreshCw className={clsx('w-4 h-4', isSyncing && 'animate-spin')} />
+              <span>{isSyncing ? 'Syncing...' : 'Save & Sync Now'}</span>
+            </button>
+          </div>
+        </form>
+      </BottomSheet>
 
       {/* Add Event Bottom Sheet */}
       <BottomSheet open={addSheetOpen} onClose={() => setAddSheetOpen(false)} title="New Calendar Event">
@@ -384,7 +782,7 @@ export default function CalendarScreen() {
               autoFocus
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="e.g. Team Meeting, Doctor Visit…"
+              placeholder="e.g. ERP Release, Database Backup…"
               className="w-full bg-tg-bg-secondary rounded-xl px-3.5 py-2.5 text-sm text-tg-text placeholder:text-tg-text-hint border border-tg-border/30 focus:outline-none focus:border-tg-blue transition-colors"
             />
           </div>
@@ -415,8 +813,8 @@ export default function CalendarScreen() {
             <label className="text-xs font-semibold text-tg-text-hint block mb-1.5">
               Category
             </label>
-            <div className="grid grid-cols-4 gap-2">
-              {(Object.keys(CATEGORY_META) as Array<keyof typeof CATEGORY_META>).map((cat) => {
+            <div className="grid grid-cols-3 gap-2">
+              {(['work', 'personal', 'reminder', 'urgent', 'erp', 'github'] as const).map((cat) => {
                 const meta = CATEGORY_META[cat];
                 const active = newCategory === cat;
                 return (

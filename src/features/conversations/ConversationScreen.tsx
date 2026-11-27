@@ -868,13 +868,13 @@ export default function ConversationScreen() {
           </button>
         </div>
       ) : (
-        <div className="flex items-center gap-2 px-3 pb-2.5 pt-2 bg-tg-bg safe-top border-b border-tg-border/20 [data-theme='manga']_&:border-b-0 shrink-0">
+        <div className="flex items-center gap-2 px-3 pb-2.5 pt-2 bg-tg-bg/85 backdrop-blur-2xl safe-top border-b border-tg-border/15 [data-theme='manga']_&:border-b-0 shrink-0">
         <button
           onClick={() => router.push('/dialogs')}
-          className="w-10 h-10 -ml-1 rounded-full flex items-center justify-center text-tg-blue active:scale-95 transition-transform shrink-0"
+          className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-tg-blue active:scale-95 transition-transform shrink-0"
           aria-label="Back"
         >
-          <svg className="w-[24px] h-[24px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/>
           </svg>
         </button>
@@ -893,8 +893,8 @@ export default function ConversationScreen() {
             photoId={chatMeta.photoId}
           />
           <div className="text-left min-w-0">
-            <p className="text-tg-text font-semibold text-sm leading-tight truncate">{chatMeta.title}</p>
-            <p className={`text-xs ${partnerAction || chatMeta.isOnline ? 'text-emerald-400' : 'text-tg-text-hint'}`}>
+            <p className="text-tg-text font-semibold text-[16px] leading-tight truncate">{chatMeta.title}</p>
+            <p className={`text-[12px] font-normal leading-tight mt-0.5 ${partnerAction || chatMeta.isOnline ? 'text-emerald-400' : 'text-tg-text-hint'}`}>
               {partnerAction
                 ? `• ${partnerAction}…`
                 : chatMeta.isSavedMessages
@@ -910,32 +910,37 @@ export default function ConversationScreen() {
           </div>
         </button>
 
-        <button
-          onClick={() => { setSearchOpen((v) => !v); setSearchQuery(''); }}
-          className="w-8 h-8 rounded-full bg-tg-surface flex items-center justify-center text-tg-text-secondary active:scale-95 shrink-0"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
-          </svg>
-        </button>
-        <button
-          onClick={() => setActiveCall(chatMeta.peerId, chatMeta.title)}
-          className="w-8 h-8 rounded-full bg-tg-surface flex items-center justify-center text-tg-blue active:scale-95 shrink-0"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498A1 1 0 0121 17.72V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-          </svg>
-        </button>
-        <button
-          onClick={() => setMenuOpen(true)}
-          className="w-8 h-8 rounded-full bg-tg-surface flex items-center justify-center text-tg-text-secondary active:scale-95 shrink-0"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <circle cx="12" cy="5"  r="1.3" fill="currentColor"/>
-            <circle cx="12" cy="12" r="1.3" fill="currentColor"/>
-            <circle cx="12" cy="19" r="1.3" fill="currentColor"/>
-          </svg>
-        </button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            onClick={() => { setSearchOpen((v) => !v); setSearchQuery(''); }}
+            className="w-8.5 h-8.5 w-[34px] h-[34px] rounded-full bg-tg-surface/70 border border-tg-border/20 flex items-center justify-center text-tg-text-secondary active:opacity-60 transition-opacity"
+            aria-label="Search chat"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+            </svg>
+          </button>
+          <button
+            onClick={() => setActiveCall(chatMeta.peerId, chatMeta.title)}
+            className="w-[34px] h-[34px] rounded-full bg-tg-surface/70 border border-tg-border/20 flex items-center justify-center text-tg-text-secondary active:opacity-60 transition-opacity"
+            aria-label="Voice Call"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498A1 1 0 0121 17.72V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+            </svg>
+          </button>
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="w-[34px] h-[34px] rounded-full bg-tg-surface/70 border border-tg-border/20 flex items-center justify-center text-tg-text-secondary active:opacity-60 transition-opacity"
+            aria-label="More options"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="5"  r="1.3" fill="currentColor"/>
+              <circle cx="12" cy="12" r="1.3" fill="currentColor"/>
+              <circle cx="12" cy="19" r="1.3" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
       </div>
       )}
 

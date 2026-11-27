@@ -390,14 +390,14 @@ export function MessageInput({
 
       <div
         className={clsx(
-          'px-3 pt-2 bg-tg-bg-tertiary transition-[padding] duration-150',
+          'px-3 pt-2 bg-tg-bg/85 backdrop-blur-2xl border-t border-tg-border/15 transition-[padding] duration-150',
           inputFocused
             ? 'pb-2'
             : "pb-[max(8px,env(safe-area-inset-bottom,0px))] [[data-keyboard='open']_&]:pb-2"
         )}
       >
         {recording ? (
-          <div className="h-11 rounded-full bg-tg-bg-secondary border border-tg-border px-3 flex items-center justify-between gap-2">
+          <div className="h-11 rounded-full bg-tg-surface/90 border border-tg-border/30 px-3 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 pl-2">
               <span className="w-2.5 h-2.5 rounded-full bg-tg-red animate-pulse" />
               <span className="text-tg-text text-sm font-medium">{fmtTime(recSec)}</span>
@@ -408,7 +408,7 @@ export function MessageInput({
               </button>
               <button
                 onClick={() => stopRecording(true)}
-                className="w-9 h-9 rounded-full chat-go-gradient flex items-center justify-center text-white"
+                className="w-9 h-9 rounded-full bg-tg-blue flex items-center justify-center text-white shadow-sm active:scale-95"
               >
                 <Send className="w-4 h-4" />
               </button>
@@ -420,7 +420,7 @@ export function MessageInput({
             {canSendMedia ? (
               <button
                 onClick={() => { setShowEmoji(false); setShowAttach(true); }}
-                className="w-10 h-10 rounded-full bg-tg-bg-secondary border border-tg-border flex items-center justify-center text-tg-text hover:text-tg-blue active:scale-95 transition-all shrink-0"
+                className="w-9 h-9 rounded-full bg-tg-surface/80 border border-tg-border/20 flex items-center justify-center text-tg-text-secondary hover:text-tg-text active:scale-95 transition-all shrink-0 mb-0.5"
                 aria-label="Attach"
               >
                 <Paperclip className="w-[18px] h-[18px]" />
@@ -428,15 +428,12 @@ export function MessageInput({
             ) : null}
 
             {/* Center Pill Input */}
-            <div className="flex-1 min-w-0 min-h-[40px] rounded-[22px] bg-tg-bg-secondary border border-tg-border pl-3.5 pr-1.5 py-1 flex items-end gap-1 transition-all">
+            <div className="flex-1 min-w-0 min-h-[38px] rounded-[19px] bg-tg-surface/80 border border-tg-border/30 pl-3.5 pr-1.5 py-1 flex items-end gap-1 transition-all">
               <textarea
                 ref={inputRef}
                 rows={1}
                 value={text}
                 placeholder={editing ? 'Edit message...' : 'Message'}
-                // iOS Safari: suppress ▲▼✓ input accessory bar.
-                // In standalone PWA mode, a single textarea with these attrs
-                // tells WebKit this is NOT a form-navigation target.
                 enterKeyHint="send"
                 autoCorrect="off"
                 autoCapitalize="sentences"
@@ -455,7 +452,7 @@ export function MessageInput({
                     handleSend();
                   }
                 }}
-                className="flex-1 min-w-0 bg-transparent text-tg-text text-sm focus:outline-none leading-5 py-1.5 resize-none overflow-y-auto break-words placeholder:text-tg-text-hint scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden select-text"
+                className="flex-1 min-w-0 bg-transparent text-tg-text text-[16px] leading-[20px] focus:outline-none py-1 resize-none overflow-y-auto break-words placeholder:text-tg-text-hint scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden select-text"
                 style={{ maxHeight: '112px', height: 'auto' }}
               />
 
@@ -467,7 +464,7 @@ export function MessageInput({
                   setShowAi((v) => !v);
                 }}
                 className={clsx(
-                  'w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95',
+                  'w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95 mb-0.5',
                   showAi
                     ? 'bg-tg-blue text-white'
                     : 'text-tg-text-hint hover:text-tg-blue'
@@ -485,7 +482,7 @@ export function MessageInput({
                   setShowEmoji(v => !v);
                 }}
                 className={clsx(
-                  'w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors active:scale-95',
+                  'w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors active:scale-95 mb-0.5',
                   showEmoji ? 'text-tg-blue' : 'text-tg-text-hint hover:text-tg-text'
                 )}
                 aria-label={showEmoji ? 'Show keyboard' : 'Stickers & Emoji'}
@@ -494,11 +491,11 @@ export function MessageInput({
               </button>
             </div>
 
-            {/* Right Floating Action Circle */}
+            {/* Right Action Circle */}
             {text.trim() ? (
               <button
                 onClick={handleSend}
-                className="w-10 h-10 rounded-full chat-go-gradient flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+                className="w-9 h-9 rounded-full bg-tg-blue text-white shadow-sm flex items-center justify-center shrink-0 active:scale-95 transition-transform mb-0.5"
                 aria-label="Send"
               >
                 <Send className="w-4 h-4 text-white" />
@@ -506,7 +503,7 @@ export function MessageInput({
             ) : showEmoji ? (
               <button
                 onClick={() => setShowEmoji(false)}
-                className="w-10 h-10 rounded-full bg-tg-bg-secondary border border-tg-border flex items-center justify-center shrink-0 text-tg-text active:scale-95 transition-transform"
+                className="w-9 h-9 rounded-full bg-tg-surface/80 border border-tg-border/20 flex items-center justify-center shrink-0 text-tg-text active:scale-95 transition-transform mb-0.5"
                 aria-label="Collapse stickers"
               >
                 <ChevronUp className="w-5 h-5" />
@@ -514,7 +511,7 @@ export function MessageInput({
             ) : (
               <button
                 onClick={startRecording}
-                className="w-10 h-10 rounded-full bg-tg-bg-secondary border border-tg-border flex items-center justify-center shrink-0 text-tg-text hover:text-tg-blue active:scale-95 transition-transform"
+                className="w-9 h-9 rounded-full bg-tg-surface/80 border border-tg-border/20 flex items-center justify-center shrink-0 text-tg-text-secondary hover:text-tg-text active:scale-95 transition-transform mb-0.5"
                 aria-label="Voice message"
               >
                 <Mic className="w-[18px] h-[18px]" />

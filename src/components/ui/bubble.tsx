@@ -14,11 +14,11 @@ export type BubbleVariant =
 export type BubbleAlign = 'start' | 'end';
 
 const variantStyles: Record<BubbleVariant, string> = {
-  default:     'chat-go-gradient text-white',
-  secondary:   'bg-tg-bg-secondary border border-tg-border/40 text-tg-text',
+  default:     'bg-tg-blue text-white shadow-[0_1px_2px_rgba(0,0,0,0.12)]',
+  secondary:   'bg-tg-bg-secondary border border-tg-border/20 text-tg-text shadow-[0_1px_2px_rgba(0,0,0,0.06)]',
   muted:       'bg-tg-surface text-tg-text-secondary',
   tinted:      'bg-tg-blue/15 text-tg-blue border border-tg-blue/30',
-  outline:     'bg-transparent border border-tg-border/40 text-tg-text',
+  outline:     'bg-transparent border border-tg-border/30 text-tg-text',
   ghost:       'bg-transparent text-tg-text',
   destructive: 'bg-rose-600 text-white',
 };

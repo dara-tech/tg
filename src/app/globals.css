@@ -58,59 +58,59 @@
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
 
-  --tg-blue: #7C3AED;
-  --tg-blue-rgb: 124 58 237;
-  --tg-blue-dark: #6D28D9;
-  --tg-blue-dark-rgb: 109 40 217;
+  --tg-blue: #0A84FF;
+  --tg-blue-rgb: 10 132 255;
+  --tg-blue-dark: #0071E3;
+  --tg-blue-dark-rgb: 0 113 227;
 
   --tg-bg: #000000;
   --tg-bg-rgb: 0 0 0;
-  --tg-bg-secondary: #121216;
-  --tg-bg-secondary-rgb: 18 18 22;
+  --tg-bg-secondary: #1C1C1E;
+  --tg-bg-secondary-rgb: 28 28 30;
   --tg-bg-tertiary: #000000;
   --tg-bg-tertiary-rgb: 0 0 0;
 
-  --tg-surface: #1A1A20;
-  --tg-surface-rgb: 26 26 32;
+  --tg-surface: #2C2C2E;
+  --tg-surface-rgb: 44 44 46;
 
-  --tg-text: #F8FAFC;
-  --tg-text-rgb: 248 250 252;
-  --tg-text-secondary: #94A3B8;
-  --tg-text-secondary-rgb: 148 163 184;
-  --tg-text-hint: #64748B;
-  --tg-text-hint-rgb: 100 116 139;
+  --tg-text: #FFFFFF;
+  --tg-text-rgb: 255 255 255;
+  --tg-text-secondary: #8E8E93;
+  --tg-text-secondary-rgb: 142 142 147;
+  --tg-text-hint: #636366;
+  --tg-text-hint-rgb: 99 99 102;
 
-  --tg-border: #26262E;
-  --tg-border-rgb: 38 38 46;
+  --tg-border: #2C2C2E;
+  --tg-border-rgb: 44 44 46;
 
-  --tg-bubble: #7C3AED;
-  --tg-bubble-rgb: 124 58 237;
+  --tg-bubble: #0A84FF;
+  --tg-bubble-rgb: 10 132 255;
 }
 
 [data-theme='dark'] {
   color-scheme: dark;
 
-  --tg-bg: #0F172A;
-  --tg-bg-rgb: 15 23 42;
-  --tg-bg-secondary: #1E293B;
-  --tg-bg-secondary-rgb: 30 41 59;
-  --tg-bg-tertiary: #0B1120;
-  --tg-bg-tertiary-rgb: 11 17 32;
+  --tg-bg: #121214;
+  --tg-bg-rgb: 18 18 20;
+  --tg-bg-secondary: #1C1C1E;
+  --tg-bg-secondary-rgb: 28 28 30;
+  --tg-bg-tertiary: #121214;
+  --tg-bg-tertiary-rgb: 18 18 20;
 
-  --tg-surface: #1E293B;
-  --tg-surface-rgb: 30 41 59;
+  --tg-surface: #2C2C2E;
+  --tg-surface-rgb: 44 44 46;
 
-  --tg-text: #F8FAFC;
-  --tg-text-rgb: 248 250 252;
-  --tg-text-secondary: #94A3B8;
-  --tg-text-secondary-rgb: 148 163 184;
-  --tg-text-hint: #64748B;
-  --tg-text-hint-rgb: 100 116 139;
+  --tg-text: #FFFFFF;
+  --tg-text-rgb: 255 255 255;
+  --tg-text-secondary: #8E8E93;
+  --tg-text-secondary-rgb: 142 142 147;
+  --tg-text-hint: #636366;
+  --tg-text-hint-rgb: 99 99 102;
 
-  --tg-border: #334155;
-  --tg-border-rgb: 51 65 85;
-  --tg-bubble: #7C3AED;
-  --tg-bubble-rgb: 124 58 237;
+  --tg-border: #2C2C2E;
+  --tg-border-rgb: 44 44 46;
+  --tg-bubble: #0A84FF;
+  --tg-bubble-rgb: 10 132 255;
 }
 
 [data-theme='white'] {
@@ -364,114 +364,100 @@
 }
 
 /* =========================================
-   BENTO UI THEME & MODULAR GLASS AESTHETICS
+   BENTO UI THEME & NATIVE MODULAR AESTHETICS
    ========================================= */
 
 [data-theme='bento'] {
   color-scheme: dark;
 
-  --tg-bg: #09090B;
-  --tg-bg-rgb: 9 9 11;
-  --tg-bg-secondary: #121216;
-  --tg-bg-secondary-rgb: 18 18 22;
-  --tg-bg-tertiary: #09090B;
-  --tg-bg-tertiary-rgb: 9 9 11;
+  --tg-bg: #000000;
+  --tg-bg-rgb: 0 0 0;
+  --tg-bg-secondary: #141417;
+  --tg-bg-secondary-rgb: 20 20 23;
+  --tg-bg-tertiary: #000000;
+  --tg-bg-tertiary-rgb: 0 0 0;
 
-  --tg-surface: #1C1C24;
-  --tg-surface-rgb: 28 28 36;
+  --tg-surface: #1C1C22;
+  --tg-surface-rgb: 28 28 34;
 
-  --tg-text: #FAFAFA;
-  --tg-text-rgb: 250 250 250;
-  --tg-text-secondary: #A1A1AA;
-  --tg-text-secondary-rgb: 161 161 170;
-  --tg-text-hint: #71717A;
-  --tg-text-hint-rgb: 113 113 122;
+  --tg-text: #FFFFFF;
+  --tg-text-rgb: 255 255 255;
+  --tg-text-secondary: #8E8E93;
+  --tg-text-secondary-rgb: 142 142 147;
+  --tg-text-hint: #636366;
+  --tg-text-hint-rgb: 99 99 102;
 
-  --tg-border: #272732;
-  --tg-border-rgb: 39 39 50;
-  --tg-bubble: #3B82F6;
-  --tg-bubble-rgb: 59 130 246;
+  --tg-border: #242428;
+  --tg-border-rgb: 36 36 40;
+  --tg-bubble: #0A84FF;
+  --tg-bubble-rgb: 10 132 255;
 }
 
-/* Bento modular cards with micro-borders and frosted glass sheen */
+/* Native Bento modular cards with subtle micro-hairline */
 [data-theme='bento'] .rounded-2xl.border,
 [data-theme='bento'] .rounded-2xl.bg-tg-bg-secondary {
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  background: linear-gradient(180deg, rgba(22, 22, 28, 0.85) 0%, rgba(14, 14, 18, 0.85) 100%) !important;
-  backdrop-filter: blur(16px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.07) !important;
+  background-color: #141417 !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3) !important;
 }
 
-/* Bento card dividers: subtle frosted hairline */
+/* Native Bento dividers */
 [data-theme='bento'] .divide-tg-border,
 [data-theme='bento'] .divide-tg-border\/20,
 [data-theme='bento'] .divide-tg-border\/35 {
   border-color: rgba(255, 255, 255, 0.06) !important;
 }
 
-/* Header & Safe Top in Bento mode: frosted glass blur */
+/* Header & Safe Top in Bento mode: native translucent blur */
 [data-theme='bento'] header,
 [data-theme='bento'] .safe-top {
-  background: rgba(9, 9, 11, 0.82) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
+  background: rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
-/* Bottom Navigation Bar in Bento mode: floating frosted dock */
+/* Bottom Navigation Bar in Bento mode: native iOS translucent dock */
 [data-theme='bento'] nav {
-  background: rgba(14, 14, 18, 0.88) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  background: rgba(20, 20, 24, 0.85) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
   border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4) !important;
 }
 
 /* Bento Speech Bubbles */
-[data-theme='bento'] [data-slot='bubble-surface'] {
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
-}
-
-/* Outgoing message: vibrant accent with soft glass glow and inner highlight */
 [data-theme='bento'] [data-align='end'] [data-slot='bubble-surface'] {
-  background: linear-gradient(135deg, var(--tg-blue) 0%, var(--tg-blue-dark) 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.25) !important;
+  background: #0A84FF !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
 }
 
-/* Incoming message: frosted dark Bento tile */
 [data-theme='bento'] [data-align='start'] [data-slot='bubble-surface'] {
-  background: rgba(22, 22, 28, 0.9) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.05) !important;
-  color: #FAFAFA !important;
+  background: #242426 !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
 }
 
-/* Date / Chapter divider: sleek frosted glass pill */
+/* Date divider in Bento mode */
 [data-theme='bento'] .bg-tg-bg-secondary\/90 {
-  background: rgba(24, 24, 30, 0.8) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
+  background: rgba(28, 28, 30, 0.85) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
-  color: #A1A1AA !important;
+  color: #8E8E93 !important;
 }
 
 /* Bottom composer pill in Bento mode */
 [data-theme='bento'] .rounded-\[22px\] {
-  background: rgba(20, 20, 26, 0.88) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05) !important;
+  background: #1C1C1E !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
-/* Search bars: sleek frosted pill */
+/* Search bars in Bento mode */
 [data-theme='bento'] .h-9.rounded-full.bg-tg-surface {
-  background: rgba(24, 24, 30, 0.8) !important;
-  backdrop-filter: blur(12px) !important;
+  background: #1C1C1E !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
@@ -504,14 +490,18 @@ body {
   overflow: hidden;
 
   font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    'SF Pro Text',
+    'SF Pro Display',
     'Google Sans',
     'Google Sans Text',
     'BattambangKhmer',
-    -apple-system,
-    BlinkMacSystemFont,
     'Segoe UI',
     Roboto,
     sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 
   background: var(--tg-bg-tertiary);
   color: var(--tg-text);

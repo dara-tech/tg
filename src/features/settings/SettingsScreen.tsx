@@ -217,7 +217,7 @@ export default function SettingsScreen() {
     <div className="flex flex-col h-full bg-tg-bg-tertiary">
       {/* Header matching Screenshot 8 */}
       <div className="flex items-center justify-between px-4 pt-3 pb-3 safe-top bg-tg-bg-tertiary">
-        <h1 className="text-tg-text text-[26px] font-bold tracking-tight">Profile</h1>
+        <h1 className="text-tg-text text-[30px] font-bold tracking-tight">Profile</h1>
         <div className="flex items-center gap-2">
           <button
             onClick={() => router.push('/qr-scan')}
@@ -265,7 +265,7 @@ export default function SettingsScreen() {
         </button>
 
         {/* Inline Accent Color + 5 Background Themes Card (Screenshot 8) */}
-        <div className="bg-tg-bg-secondary border border-tg-border/35 shadow-sm rounded-2xl p-4 space-y-4">
+        <div className="bg-tg-bg-secondary border border-tg-border/20 shadow-sm rounded-2xl p-4 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-tg-blue/20 text-tg-blue flex items-center justify-center">
@@ -306,7 +306,7 @@ export default function SettingsScreen() {
             })}
           </div>
 
-          <div className="pt-3 border-t border-tg-border/35 space-y-2.5">
+          <div className="pt-3 border-t border-tg-border/20 space-y-2.5">
             <div>
               <p className="text-tg-text text-sm font-semibold">Background Theme</p>
               <p className="text-tg-text-hint text-xs">{BG_THEMES[safeTheme].name} · {BG_THEMES[safeTheme].subtitle}</p>
@@ -325,7 +325,7 @@ export default function SettingsScreen() {
                       className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
                         active
                           ? 'ring-2 ring-tg-blue ring-offset-2 ring-offset-tg-bg-secondary scale-105'
-                          : 'border border-tg-border/40'
+                          : 'border border-tg-border/30'
                       }`}
                       style={{ background: t.preview }}
                     >
@@ -350,7 +350,7 @@ export default function SettingsScreen() {
             </div>
           </div>
 
-          <div className="pt-3 border-t border-tg-border/35 space-y-2.5">
+          <div className="pt-3 border-t border-tg-border/20 space-y-2.5">
             <div>
               <p className="text-tg-text text-sm font-semibold">Navigation Bar Style</p>
               <p className="text-tg-text-hint text-xs">{NAV_STYLES[safeNavStyle].name} · {NAV_STYLES[safeNavStyle].desc}</p>
@@ -369,32 +369,32 @@ export default function SettingsScreen() {
                       className={`w-full h-10 rounded-xl bg-tg-bg-tertiary flex items-end justify-center p-1.5 transition-all ${
                         active
                           ? 'ring-2 ring-tg-blue ring-offset-2 ring-offset-tg-bg-secondary'
-                          : 'border border-tg-border/40'
+                          : 'border border-tg-border/30'
                       }`}
                     >
                       {id === 'pill' && (
-                        <div className="w-full h-3.5 rounded-full bg-tg-bg-secondary border border-tg-border flex items-center justify-around px-1">
+                        <div className="w-full h-3.5 rounded-full bg-tg-bg-secondary border border-tg-border/30 flex items-center justify-around px-1">
                           <span className="w-2.5 h-1.5 rounded-full bg-tg-blue" />
                           <span className="w-1.5 h-1 rounded-full bg-tg-text-hint/50" />
                           <span className="w-1.5 h-1 rounded-full bg-tg-text-hint/50" />
                         </div>
                       )}
                       {id === 'classic' && (
-                        <div className="w-full h-3 border-t border-tg-border bg-tg-bg-secondary flex items-center justify-around px-1">
+                        <div className="w-full h-3 border-t border-tg-border/30 bg-tg-bg-secondary flex items-center justify-around px-1">
                           <span className="w-2 h-1.5 rounded-sm bg-tg-blue" />
                           <span className="w-1.5 h-1 rounded-sm bg-tg-text-hint/50" />
                           <span className="w-1.5 h-1 rounded-sm bg-tg-text-hint/50" />
                         </div>
                       )}
                       {id === 'card' && (
-                        <div className="w-full h-3.5 rounded-md bg-tg-bg-secondary border border-tg-border flex items-center justify-around px-0.5">
+                        <div className="w-full h-3.5 rounded-md bg-tg-bg-secondary border border-tg-border/30 flex items-center justify-around px-0.5">
                           <span className="w-3 h-2 rounded-sm bg-tg-blue" />
                           <span className="w-1.5 h-1 rounded-sm bg-tg-text-hint/50" />
                           <span className="w-1.5 h-1 rounded-sm bg-tg-text-hint/50" />
                         </div>
                       )}
                       {id === 'minimal' && (
-                        <div className="w-full h-3 border-t border-tg-border/60 flex items-center justify-around px-1">
+                        <div className="w-full h-3 border-t border-tg-border/30 flex items-center justify-around px-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-tg-blue" />
                           <span className="w-1 h-1 rounded-full bg-tg-text-hint/40" />
                           <span className="w-1 h-1 rounded-full bg-tg-text-hint/40" />
@@ -411,55 +411,60 @@ export default function SettingsScreen() {
           </div>
         </div>
 
-        {/* ACCOUNT section (Screenshot 8) */}
+        {/* ACCOUNT section */}
         <div>
-          <p className="text-tg-text-hint text-[11px] font-semibold uppercase tracking-wider px-1 mb-1.5">Account</p>
-          <div className="bg-tg-bg-secondary border border-tg-border/35 shadow-sm rounded-2xl overflow-hidden divide-y divide-tg-border/35">
-            <button onClick={() => router.push('/profile/me')} className="w-full px-4 py-3 flex items-center justify-between active:bg-tg-surface">
+          <p className="text-tg-text-hint text-[13px] font-normal uppercase px-4 mb-2 tracking-tight">Account</p>
+          <div className="bg-tg-bg-secondary border border-tg-border/25 shadow-sm rounded-2xl overflow-hidden">
+            <button onClick={() => router.push('/profile/me')} className="w-full px-4 py-3 flex items-center justify-between active:bg-tg-surface transition-colors">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white shrink-0">
                   <Avatar letters={name.slice(0, 2).toUpperCase()} color="transparent" size="sm" />
                 </div>
-                <span className="text-tg-text text-sm font-medium">Name</span>
+                <span className="text-tg-text text-[15px] font-medium">Name</span>
               </div>
-              <span className="text-tg-text-secondary text-sm">{name}</span>
+              <span className="text-tg-text-secondary text-[15px]">{name}</span>
             </button>
+            <div className="ml-14 border-b border-tg-border/20" />
             <div className="px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center text-white">
+                <div className="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center text-white shrink-0">
                   <AtSign className="w-4 h-4" />
                 </div>
-                <span className="text-tg-text text-sm font-medium">Username</span>
+                <span className="text-tg-text text-[15px] font-medium">Username</span>
               </div>
-              <span className="text-tg-text-secondary text-sm">{username || 'Not set'}</span>
+              <span className="text-tg-text-secondary text-[15px]">{username || 'Not set'}</span>
             </div>
+            <div className="ml-14 border-b border-tg-border/20" />
             <div className="px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center text-white">
+                <div className="w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center text-white shrink-0">
                   <Hash className="w-4 h-4" />
                 </div>
-                <span className="text-tg-text text-sm font-medium">User ID</span>
+                <span className="text-tg-text text-[15px] font-medium">User ID</span>
               </div>
-              <span className="text-tg-text-secondary text-sm">#{userId ?? 0}</span>
+              <span className="text-tg-text-secondary text-[15px]">#{userId ?? 0}</span>
             </div>
             {phone && (
-              <div className="px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white">
-                    <Phone className="w-4 h-4" />
+              <>
+                <div className="ml-14 border-b border-tg-border/20" />
+                <div className="px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
+                      <Phone className="w-4 h-4" />
+                    </div>
+                    <span className="text-tg-text text-[15px] font-medium">Phone</span>
                   </div>
-                  <span className="text-tg-text text-sm font-medium">Phone</span>
+                  <span className="text-tg-text-secondary text-[15px]">{phone}</span>
                 </div>
-                <span className="text-tg-text-secondary text-sm">{phone}</span>
-              </div>
+              </>
             )}
           </div>
         </div>
 
         {/* PREFERENCES */}
         <div>
-          <p className="text-tg-text-hint text-[11px] font-semibold uppercase tracking-wider px-1 mb-1.5">Preferences</p>
-          <div className="bg-tg-bg-secondary border border-tg-border/35 shadow-sm rounded-2xl overflow-hidden divide-y divide-tg-border/35">
+          <p className="text-tg-text-hint text-[13px] font-normal uppercase px-4 mb-2 tracking-tight">Preferences</p>
+          <div className="bg-tg-bg-secondary border border-tg-border/25 shadow-sm rounded-2xl overflow-hidden">
             {[
               { id: 'notifications' as const, bg: 'bg-amber-500',   icon: <Bell className="w-4 h-4 text-white" />,       label: 'Notifications & Sounds', desc: ui.notifySound ? 'On' : 'Muted' },
               { id: 'privacy'       as const, bg: 'bg-emerald-500', icon: <Shield className="w-4 h-4 text-white" />,     label: 'Privacy & Security',     desc: ui.lastSeenPrivacy },
@@ -468,19 +473,21 @@ export default function SettingsScreen() {
               { id: 'khmerFont'     as const, bg: 'bg-violet-500',  icon: <Type className="w-4 h-4 text-white" />,       label: 'Khmer Font',             desc: KHMER_FONTS[safeKhmerFont].name },
               { id: 'language'      as const, bg: 'bg-indigo-500',  icon: <Globe className="w-4 h-4 text-white" />,      label: 'Language',               desc: ui.language },
               { id: 'help'          as const, bg: 'bg-slate-500',   icon: <HelpCircle className="w-4 h-4 text-white" />, label: 'Help & FAQ',             desc: '' },
-            ].map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setPanel(item.id)}
-                className="w-full flex items-center gap-3 px-4 py-3 active:bg-tg-surface text-left"
-              >
-                <div className={`w-8 h-8 rounded-full ${item.bg} flex items-center justify-center shrink-0`}>
-                  {item.icon}
-                </div>
-                <span className="text-tg-text text-sm font-medium flex-1">{item.label}</span>
-                {item.desc && <span className="text-tg-text-hint text-xs capitalize">{item.desc}</span>}
-                <ChevronRight className="w-4 h-4 text-tg-text-hint shrink-0" />
-              </button>
+            ].map((item, idx, arr) => (
+              <div key={item.id}>
+                <button
+                  onClick={() => setPanel(item.id)}
+                  className="w-full flex items-center gap-3 px-4 py-3 active:bg-tg-surface text-left transition-colors"
+                >
+                  <div className={`w-8 h-8 rounded-full ${item.bg} flex items-center justify-center shrink-0`}>
+                    {item.icon}
+                  </div>
+                  <span className="text-tg-text text-[15px] font-medium flex-1">{item.label}</span>
+                  {item.desc && <span className="text-tg-text-hint text-xs capitalize mr-1">{item.desc}</span>}
+                  <ChevronRight className="w-4 h-4 text-tg-text-hint/60 shrink-0" />
+                </button>
+                {idx < arr.length - 1 && <div className="ml-14 border-b border-tg-border/20" />}
+              </div>
             ))}
           </div>
         </div>

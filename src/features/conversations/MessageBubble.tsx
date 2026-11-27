@@ -758,7 +758,7 @@ function MediaContent({
         ) : (
           <div
             className={clsx(
-              'bg-tg-surface flex flex-col items-center justify-center gap-2 text-tg-text-hint select-none',
+              'bg-tg-surface/60 backdrop-blur-sm flex flex-col items-center justify-center gap-2 text-tg-text-hint select-none',
               isFullWidth
                 ? `w-full h-[200px] ${radiusClass}`
                 : isOut
@@ -767,11 +767,15 @@ function MediaContent({
             )}
           >
             {loading ? (
-              <div className="w-6 h-6 border-2 border-tg-blue/30 border-t-tg-blue rounded-full animate-spin" />
+              <div className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              </div>
             ) : (
-              <ImageIcon className="w-7 h-7 opacity-60" />
+              <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white/80 shadow-md">
+                <ImageIcon className="w-5 h-5 opacity-80" />
+              </div>
             )}
-            <span className="text-xs font-medium">
+            <span className="text-[11px] font-medium opacity-75">
               {loading ? 'Loading photo…' : 'Tap to load photo'}
             </span>
           </div>
@@ -897,10 +901,30 @@ function MediaContent({
 
   if (media.kind === 'webpage' && media.webPage) {
     return (
-      <a href={media.webPage.url} target="_blank" rel="noreferrer" className="block border-l-2 border-white/60 pl-2.5 my-1 text-left">
-        {media.webPage.siteName && <p className="text-[11px] font-bold opacity-85">{media.webPage.siteName}</p>}
-        {media.webPage.title && <p className="text-xs font-semibold line-clamp-2">{media.webPage.title}</p>}
-        {media.webPage.description && <p className="text-[11px] opacity-75 line-clamp-2">{media.webPage.description}</p>}
+      <a
+        href={media.webPage.url}
+        target="_blank"
+        rel="noreferrer"
+        className={clsx(
+          'block pl-2.5 my-1.5 text-left transition-opacity hover:opacity-90',
+          isOut ? 'border-l-[3px] border-white/80' : 'border-l-[3px] border-tg-blue'
+        )}
+      >
+        {media.webPage.siteName && (
+          <p className={clsx('text-[11.5px] font-semibold tracking-tight', isOut ? 'text-white/90' : 'text-tg-blue')}>
+            {media.webPage.siteName}
+          </p>
+        )}
+        {media.webPage.title && (
+          <p className={clsx('text-[13px] font-semibold line-clamp-2 mt-0.5', isOut ? 'text-white' : 'text-tg-text')}>
+            {media.webPage.title}
+          </p>
+        )}
+        {media.webPage.description && (
+          <p className={clsx('text-[11.5px] line-clamp-2 mt-0.5 leading-snug', isOut ? 'text-white/80' : 'text-tg-text-secondary')}>
+            {media.webPage.description}
+          </p>
+        )}
       </a>
     );
   }
@@ -1154,119 +1178,123 @@ export function MessageBubble({
           )
         )}
 
-        <Bubble
-          align={message.out ? 'end' : 'start'}
-          variant={isEdgeMedia ? 'ghost' : message.out ? 'default' : 'secondary'}
-          className={clsx(isEdgeMedia && 'shadow-none')}
-          onContextMenu={openMenu}
-          onTouchStart={e => { longPressTimer.current = setTimeout(() => openMenu(e), 450); }}
-          onTouchEnd={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
-          onTouchMove={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
-        >
-          <BubbleContent className={clsx(
-            (isEdgeMedia || hasEdgeCaption) && '!p-0 overflow-hidden'
-          )}>
-            {hasSenderName && senderMeta?.name && (
-              <p
-                className={clsx(
-                  'text-xs font-semibold truncate mb-0.5',
-                  hasEdgeCaption && 'px-3 pt-2',
-                  'text-tg-blue'
-                )}
-              >
-                {senderMeta.name}
-              </p>
-            )}
-
-            {message.forwardedFrom && (
-              <button
-                type="button"
-                disabled={!message.forwardedFrom.chatId}
-                onClick={(e) => {
-                  if (message.forwardedFrom?.chatId) {
-                    e.stopPropagation();
-                    onOpenForwarded?.(message.forwardedFrom.chatId);
-                  }
-                }}
-                className={clsx(
-                  'flex items-center gap-1 text-[11.5px] leading-tight text-left mb-1 max-w-full',
-                  hasEdgeCaption && (hasSenderName ? 'px-3 pb-0.5' : 'px-3 pt-2 pb-0.5'),
-                  message.out ? 'text-white/90' : 'text-tg-blue',
-                  message.forwardedFrom.chatId ? 'hover:underline cursor-pointer' : 'cursor-default'
-                )}
-              >
-                <Forward className="w-3 h-3 shrink-0" />
-                <span className="truncate">
-                  Forwarded from <span className="font-semibold">{message.forwardedFrom.name}</span>
-                </span>
-              </button>
-            )}
-
-            {message.replyTo && (
-              <div className={clsx('border-l-2 pl-2 mb-1 opacity-85', hasEdgeCaption && 'mx-3 mt-2', message.out ? 'border-white/70' : 'border-tg-blue')}>
-                <p className={clsx('text-xs font-medium', message.out ? 'text-white/90' : 'text-tg-blue')}>Reply</p>
-                <p className={clsx('text-xs truncate max-w-[200px]', message.out ? 'text-white/75' : 'text-tg-text-secondary')}>
-                  {replyPreviewText || `Message #${message.replyTo}`}
-                </p>
-              </div>
-            )}
-
-            {isAlbum && message.albumMedia ? (
-              <AlbumGrid
-                items={message.albumMedia}
-                time={time}
-                isOut={message.out}
-                status={message.status}
-                hasCaption={Boolean(message.text)}
-                hasHeader={hasFwd || hasSenderName}
-                onOpenMedia={onOpenMedia}
-              />
-            ) : message.media ? (
-              <MediaContent
-                media={message.media}
-                time={time}
-                isOut={message.out}
-                status={message.status}
-                hasCaption={Boolean(message.text)}
-                hasHeader={hasFwd || hasSenderName}
-                onOpenMedia={onOpenMedia}
-                onOpenLocation={onOpenLocation}
-              />
-            ) : null}
-
-            {message.text && (
-              <div className={clsx(
-                hasEdgeCaption
-                  ? 'px-3 pt-2 pb-1.5 flex flex-wrap items-end gap-x-2 gap-y-0.5'
-                  : hasCaption
-                  ? 'pt-2 flex flex-wrap items-end gap-x-2 gap-y-0.5'
-                  : 'flex flex-wrap items-end gap-x-2 gap-y-0.5'
-              )}>
-                <div className="min-w-0 flex-1">
-                  <RichText text={message.text} entities={message.entities} isOut={message.out} />
-                </div>
-                <div className="flex items-center gap-1 ml-auto shrink-0 pb-[1px]">
-                  {message.edited && (
-                    <span className={clsx('text-[10px]', message.out ? 'text-white/70' : 'text-tg-text-hint')}>edited</span>
+        <div className="flex flex-col gap-0.5 max-w-[82%] min-w-0">
+          <Bubble
+            align={message.out ? 'end' : 'start'}
+            variant={isEdgeMedia ? 'ghost' : message.out ? 'default' : 'secondary'}
+            className={clsx(isEdgeMedia && 'shadow-none', 'w-full')}
+            onContextMenu={openMenu}
+            onTouchStart={e => { longPressTimer.current = setTimeout(() => openMenu(e), 450); }}
+            onTouchEnd={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
+            onTouchMove={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
+          >
+            <BubbleContent className={clsx(
+              (isEdgeMedia || hasEdgeCaption) && '!p-0 overflow-hidden'
+            )}>
+              {hasSenderName && senderMeta?.name && (
+                <p
+                  className={clsx(
+                    'text-xs font-semibold truncate mb-0.5',
+                    hasEdgeCaption && 'px-3 pt-2',
+                    'text-tg-blue'
                   )}
+                >
+                  {senderMeta.name}
+                </p>
+              )}
+
+              {message.forwardedFrom && (
+                <button
+                  type="button"
+                  disabled={!message.forwardedFrom.chatId}
+                  onClick={(e) => {
+                    if (message.forwardedFrom?.chatId) {
+                      e.stopPropagation();
+                      onOpenForwarded?.(message.forwardedFrom.chatId);
+                    }
+                  }}
+                  className={clsx(
+                    'flex items-center gap-1 text-[11.5px] leading-tight text-left mb-1 max-w-full',
+                    hasEdgeCaption && (hasSenderName ? 'px-3 pb-0.5' : 'px-3 pt-2 pb-0.5'),
+                    message.out ? 'text-white/90' : 'text-tg-blue',
+                    message.forwardedFrom.chatId ? 'hover:underline cursor-pointer' : 'cursor-default'
+                  )}
+                >
+                  <Forward className="w-3 h-3 shrink-0" />
+                  <span className="truncate">
+                    Forwarded from <span className="font-semibold">{message.forwardedFrom.name}</span>
+                  </span>
+                </button>
+              )}
+
+              {message.replyTo && (
+                <div className={clsx('border-l-2 pl-2 mb-1 opacity-85', hasEdgeCaption && 'mx-3 mt-2', message.out ? 'border-white/70' : 'border-tg-blue')}>
+                  <p className={clsx('text-xs font-medium', message.out ? 'text-white/90' : 'text-tg-blue')}>Reply</p>
+                  <p className={clsx('text-xs truncate max-w-[200px]', message.out ? 'text-white/75' : 'text-tg-text-secondary')}>
+                    {replyPreviewText || `Message #${message.replyTo}`}
+                  </p>
+                </div>
+              )}
+
+              {isAlbum && message.albumMedia ? (
+                <AlbumGrid
+                  items={message.albumMedia}
+                  time={time}
+                  isOut={message.out}
+                  status={message.status}
+                  hasCaption={Boolean(message.text)}
+                  hasHeader={hasFwd || hasSenderName}
+                  onOpenMedia={onOpenMedia}
+                />
+              ) : message.media ? (
+                <MediaContent
+                  media={message.media}
+                  time={time}
+                  isOut={message.out}
+                  status={message.status}
+                  hasCaption={Boolean(message.text)}
+                  hasHeader={hasFwd || hasSenderName}
+                  onOpenMedia={onOpenMedia}
+                  onOpenLocation={onOpenLocation}
+                />
+              ) : null}
+
+              {message.text && (
+                <div className={clsx(
+                  hasEdgeCaption
+                    ? 'px-3 pt-2 pb-1.5 flex flex-wrap items-end gap-x-2 gap-y-0.5'
+                    : hasCaption
+                    ? 'pt-2 flex flex-wrap items-end gap-x-2 gap-y-0.5'
+                    : 'flex flex-wrap items-end gap-x-2 gap-y-0.5'
+                )}>
+                  <div className="min-w-0 flex-1">
+                    <RichText text={message.text} entities={message.entities} isOut={message.out} />
+                  </div>
+                  <div className="flex items-center gap-1 ml-auto shrink-0 pb-[1px]">
+                    {message.edited && (
+                      <span className={clsx('text-[10px]', message.out ? 'text-white/70' : 'text-tg-text-hint')}>edited</span>
+                    )}
+                    <span suppressHydrationWarning className={clsx('text-[10px]', message.out ? 'text-white/75' : 'text-tg-text-hint')}>{time}</span>
+                    {message.out && <StatusTick status={message.status ?? 'sent'} />}
+                  </div>
+                </div>
+              )}
+
+              {!message.text && !isEdgeMedia && !isVoice && !(isAlbum || (message.media && ['photo', 'video', 'geo', 'sticker'].includes(message.media.kind))) && (
+                <div className="flex items-center gap-1 mt-0.5 justify-end">
                   <span suppressHydrationWarning className={clsx('text-[10px]', message.out ? 'text-white/75' : 'text-tg-text-hint')}>{time}</span>
                   {message.out && <StatusTick status={message.status ?? 'sent'} />}
                 </div>
-              </div>
-            )}
-
-            {!message.text && !isEdgeMedia && !isVoice && !(isAlbum || (message.media && ['photo', 'video', 'geo', 'sticker'].includes(message.media.kind))) && (
-              <div className="flex items-center gap-1 mt-0.5 justify-end">
-                <span suppressHydrationWarning className={clsx('text-[10px]', message.out ? 'text-white/75' : 'text-tg-text-hint')}>{time}</span>
-                {message.out && <StatusTick status={message.status ?? 'sent'} />}
-              </div>
-            )}
-          </BubbleContent>
+              )}
+            </BubbleContent>
+          </Bubble>
 
           {localReactions.length > 0 && (
-            <BubbleReactions
-              align={message.out ? 'end' : 'start'}
-              className={clsx(isEdgeMedia ? 'px-0 pt-1.5 pb-0' : '-mt-0.5')}
+            <div
+              className={clsx(
+                'flex flex-wrap items-center gap-1 -mt-2 z-10',
+                message.out ? 'justify-end pr-1.5' : 'justify-start pl-1.5'
+              )}
             >
               {localReactions.map((r) => {
                 const displayEmoji = r.emoji === '❤' ? '❤️' : r.emoji;
@@ -1278,14 +1306,10 @@ export function MessageBubble({
                       handleReact(r.emoji);
                     }}
                     className={clsx(
-                      'h-6 px-2 rounded-full text-xs flex items-center gap-1 transition-all active:scale-95',
+                      'h-6 px-2.5 rounded-full text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-sm backdrop-blur-md',
                       r.chosen
-                        ? message.out && !isEdgeMedia
-                          ? 'bg-white/25 text-white'
-                          : 'bg-tg-blue text-white shadow-sm'
-                        : message.out && !isEdgeMedia
-                          ? 'bg-black/20 text-white/90 hover:bg-black/30'
-                          : 'bg-tg-surface text-tg-text-secondary hover:bg-tg-border/60'
+                        ? 'bg-tg-blue text-white ring-1 ring-white/20'
+                        : 'bg-tg-surface/90 border border-tg-border/30 text-tg-text hover:bg-tg-surface'
                     )}
                   >
                     <span
@@ -1300,9 +1324,9 @@ export function MessageBubble({
                   </button>
                 );
               })}
-            </BubbleReactions>
+            </div>
           )}
-        </Bubble>
+        </div>
       </div>
 
       {menu && (

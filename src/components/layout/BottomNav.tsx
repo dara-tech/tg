@@ -74,7 +74,7 @@ export function BottomNav() {
   if (navStyle === 'pill') {
     return (
       <nav
-        className="shrink-0 w-full bg-tg-bg-secondary border-t border-tg-border/25 [data-theme='manga']_&:border-t-0 backdrop-blur-xl pt-1"
+        className="shrink-0 w-full bg-tg-bg-secondary/85 border-t border-tg-border/15 [data-theme='manga']_&:border-t-0 backdrop-blur-2xl pt-1"
         style={safeStyle}
       >
         <div className="flex items-stretch justify-around px-2 pb-1">
@@ -106,7 +106,7 @@ export function BottomNav() {
   if (navStyle === 'classic') {
     return (
       <nav
-        className="shrink-0 w-full bg-tg-bg-secondary/95 backdrop-blur-xl border-t border-tg-border/25 [data-theme='manga']_&:border-t-0 pt-1"
+        className="shrink-0 w-full bg-tg-bg-secondary/85 backdrop-blur-2xl border-t border-tg-border/15 [data-theme='manga']_&:border-t-0 pt-1"
         style={safeStyle}
       >
         <div className="flex items-stretch justify-around px-2 pb-1">
@@ -135,7 +135,7 @@ export function BottomNav() {
   if (navStyle === 'card') {
     return (
       <nav
-        className="shrink-0 w-full bg-tg-bg-secondary border-t border-tg-border/25 [data-theme='manga']_&:border-t-0 backdrop-blur-xl pt-1"
+        className="shrink-0 w-full bg-tg-bg-secondary/85 border-t border-tg-border/15 [data-theme='manga']_&:border-t-0 backdrop-blur-2xl pt-1"
         style={safeStyle}
       >
         <div className="flex items-stretch justify-around gap-1 px-3 pb-1">
@@ -166,7 +166,7 @@ export function BottomNav() {
   /* ── MINIMAL ── */
   return (
     <nav
-      className="shrink-0 w-full bg-tg-bg-secondary/88 backdrop-blur-xl border-t border-tg-border/25 [data-theme='manga']_&:border-t-0 pt-1"
+      className="shrink-0 w-full bg-tg-bg-secondary/85 backdrop-blur-2xl border-t border-tg-border/15 [data-theme='manga']_&:border-t-0 pt-1"
       style={safeStyle}
     >
       <div className="flex items-stretch justify-around px-4 pb-1">

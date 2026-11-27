@@ -1,6 +1,7 @@
 import type { AIState, AIPersona, TranscriptEntry } from './types';
 import { AI_PERSONAS, DEFAULT_AI_PERSONA, getPersonaConfig } from './personas';
 import { downsampleBuffer, floatTo16BitPCM, arrayBufferToBase64, base64ToFloat32Array } from './audioUtils';
+import { getSharedAudioContext } from './sharedAudio';
 
 export class AICallService extends EventTarget {
   private ws: WebSocket | null = null;
@@ -19,6 +20,7 @@ export class AICallService extends EventTarget {
   private isPlayingAudio: boolean = false;
   private speechEndTimer: ReturnType<typeof setTimeout> | null = null;
   private lastInterruptTime: number = 0;
+  private lastSpeechStartTime: number = 0;
 
   // VAD (Voice Activity Detection)
   private readonly NORMAL_VAD_THRESHOLD = 0.003;
@@ -94,28 +96,11 @@ export class AICallService extends EventTarget {
     if (apiKey) this.customApiKey = apiKey;
     this.isIntentionalDisconnect = false;
 
-    // 1. Initialize Web Audio API (with iOS Safari sampleRate fallback)
-    const AudioContextClass =
-      typeof window !== 'undefined'
-        ? window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-        : undefined;
-    if (!AudioContextClass) {
-      this.dispatchEvent(
-        new CustomEvent('error', { detail: { message: 'Audio playback is not supported in this browser.' } })
-      );
-      this.setState('error');
-      return;
-    }
-
+    // 1. Initialize Web Audio API with shared context
     try {
-      if (!this.audioContext || this.audioContext.state === 'closed') {
-        try {
-          this.audioContext = new AudioContextClass({ sampleRate: 24000 });
-        } catch {
-          this.audioContext = new AudioContextClass();
-        }
-      } else if (this.audioContext.state === 'suspended') {
-        await this.audioContext.resume();
+      this.audioContext = getSharedAudioContext();
+      if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume().catch(() => {});
       }
     } catch {
       this.dispatchEvent(
@@ -125,18 +110,9 @@ export class AICallService extends EventTarget {
       return;
     }
 
-    // Output compression chain
-    this.outputCompressor = this.audioContext.createDynamicsCompressor();
-    this.outputCompressor.threshold.value = -20;
-    this.outputCompressor.knee.value = 16;
-    this.outputCompressor.ratio.value = 2.5;
-    this.outputCompressor.attack.value = 0.005;
-    this.outputCompressor.release.value = 0.12;
-
+    // Direct output gain connected straight to speakers
     this.outputGain = this.audioContext.createGain();
     this.outputGain.gain.value = 1.0;
-
-    this.outputCompressor.connect(this.outputGain);
     this.outputGain.connect(this.audioContext.destination);
 
     // 2. Request microphone stream (guard against missing mediaDevices on non-HTTPS / restricted WebViews)
@@ -219,9 +195,11 @@ export class AICallService extends EventTarget {
       );
 
       if (this.isPlayingAudio) {
-        if (rms > this.INTERRUPT_VAD_THRESHOLD) {
+        // Protect first 1.8s of speech from echo feedback
+        const speechDuration = Date.now() - this.lastSpeechStartTime;
+        if (speechDuration > 1800 && rms > 0.16) {
           this.interruptStreak++;
-          if (this.interruptStreak >= 4) {
+          if (this.interruptStreak >= 6) {
             this.silenceCount = 0;
             this.isSendingAudio = true;
             this.interrupt(false);
@@ -408,10 +386,13 @@ export class AICallService extends EventTarget {
   }
 
   private playAudioChunk(base64Data: string) {
-    if (!this.audioContext || !this.outputCompressor) return;
+    if (!this.audioContext) return;
+    if (this.audioContext.state === 'suspended') {
+      this.audioContext.resume().catch(() => {});
+    }
 
     const float32 = base64ToFloat32Array(base64Data);
-    if (!float32) return;
+    if (!float32 || float32.length === 0) return;
 
     let sum = 0;
     for (let i = 0; i < float32.length; i++) sum += float32[i] * float32[i];
@@ -427,7 +408,11 @@ export class AICallService extends EventTarget {
 
     const source = this.audioContext.createBufferSource();
     source.buffer = audioBuffer;
-    source.connect(this.outputCompressor);
+    if (this.outputGain) {
+      source.connect(this.outputGain);
+    } else {
+      source.connect(this.audioContext.destination);
+    }
 
     const currentTime = this.audioContext.currentTime;
 
@@ -446,6 +431,7 @@ export class AICallService extends EventTarget {
     this.isPlayingAudio = true;
 
     if (!wasPlaying) {
+      this.lastSpeechStartTime = Date.now();
       this.setState('speaking');
       this.dispatchEvent(new CustomEvent('speechstart'));
     }
@@ -594,6 +580,12 @@ export class AICallService extends EventTarget {
 
   public interruptAudio() {
     this.interrupt(true);
+  }
+
+  public resumeAudioContext() {
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      this.audioContext.resume().catch(() => {});
+    }
   }
 }
 

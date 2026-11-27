@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useUIStore } from '@/store/ui.store';
 import { AI_PERSONAS } from '@/services/aiCall/personas';
+import { unlockAudioPlayback } from '@/services/aiCall/sharedAudio';
 import type { PersonaConfig } from '@/services/aiCall/types';
 import { toast } from '@/components/ui/Toast';
 import { useRouter } from 'next/navigation';
@@ -44,6 +45,7 @@ export default function AiScreen() {
   const activePersonaConfig = AI_PERSONAS[aiPersona as keyof typeof AI_PERSONAS] || AI_PERSONAS.telegram || Object.values(AI_PERSONAS)[0];
 
   const handleStartCall = (persona: PersonaConfig) => {
+    unlockAudioPlayback();
     setAiPersona(persona.id);
     startAiCall(persona.id);
   };

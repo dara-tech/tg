@@ -4,6 +4,7 @@ import { Mic, MicOff, PhoneOff, Smartphone, Volume2, Users, X } from 'lucide-rea
 import { useUIStore } from '@/store/ui.store';
 import { createAiCall, stopAiCall, getActiveAiCall } from '@/services/aiCall/aiCallService';
 import { AI_PERSONAS, getPersonaConfig } from '@/services/aiCall/personas';
+import { unlockAudioPlayback } from '@/services/aiCall/sharedAudio';
 import type { AIPersona, AIState, AiTranscriptEvent } from '@/services/aiCall/types';
 
 export function ActiveCallOverlay() {
@@ -152,7 +153,13 @@ export function ActiveCallOverlay() {
   const pulseScale = 1 + Math.min(0.35, currentVolume * 0.45);
 
   return (
-    <div className="fixed inset-0 z-[100] bg-tg-bg/95 text-tg-text backdrop-blur-3xl flex flex-col justify-between items-center px-6 py-10 safe-top safe-bottom select-none overflow-hidden transition-colors">
+    <div
+      onClick={() => {
+        unlockAudioPlayback();
+        getActiveAiCall()?.resumeAudioContext();
+      }}
+      className="fixed inset-0 z-[100] bg-tg-bg/95 text-tg-text backdrop-blur-3xl flex flex-col justify-between items-center px-6 py-10 safe-top safe-bottom select-none overflow-hidden transition-colors"
+    >
       {/* Top clean bar */}
       <div className="w-full max-w-sm flex items-center justify-between z-10 pt-2">
         <div className="flex items-center gap-1.5 text-xs text-tg-text-hint font-medium">

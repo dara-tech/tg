@@ -10,6 +10,7 @@ export class AICallService extends EventTarget {
   private sourceNode: MediaStreamAudioSourceNode | null = null;
   private processorNode: ScriptProcessorNode | null = null;
   private mixerNode: GainNode | null = null;
+  private silentGainNode: GainNode | null = null;
   private outputCompressor: DynamicsCompressorNode | null = null;
   private outputGain: GainNode | null = null;
 
@@ -22,10 +23,10 @@ export class AICallService extends EventTarget {
   private lastInterruptTime: number = 0;
   private lastSpeechStartTime: number = 0;
 
-  // VAD (Voice Activity Detection)
-  private readonly NORMAL_VAD_THRESHOLD = 0.0035;
-  private readonly INTERRUPT_VAD_THRESHOLD = 0.075;
-  private readonly SILENCE_CHUNKS_BEFORE_PAUSE = 10; // ~850ms natural conversational pause
+  // VAD (Voice Activity Detection) - Matching v_call
+  private readonly NORMAL_VAD_THRESHOLD = 0.002;
+  private readonly INTERRUPT_VAD_THRESHOLD = 0.045;
+  private readonly SILENCE_CHUNKS_BEFORE_PAUSE = 24;
   private silenceCount = 0;
   private isSendingAudio = false;
   private interruptStreak = 0;
@@ -127,14 +128,18 @@ export class AICallService extends EventTarget {
     }
 
     try {
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          channelCount: 1,
-        },
-      });
+      try {
+        this.mediaStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+      } catch {
+        this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
+
       if (this.isIntentionalDisconnect || !this.audioContext || this.audioContext.state === 'closed') {
         this.mediaStream.getTracks().forEach((t) => t.stop());
         this.mediaStream = null;
@@ -160,10 +165,10 @@ export class AICallService extends EventTarget {
     this.processorNode = this.audioContext.createScriptProcessor(4096, 1, 1);
     this.mixerNode.connect(this.processorNode);
 
-    const silentGain = this.audioContext.createGain();
-    silentGain.gain.value = 0;
-    this.processorNode.connect(silentGain);
-    silentGain.connect(this.audioContext.destination);
+    this.silentGainNode = this.audioContext.createGain();
+    this.silentGainNode.gain.value = 0;
+    this.processorNode.connect(this.silentGainNode);
+    this.silentGainNode.connect(this.audioContext.destination);
 
     this.setupAudioProcessing();
 
@@ -195,25 +200,22 @@ export class AICallService extends EventTarget {
       );
 
       if (this.isPlayingAudio) {
-        // While AI is speaking, allow user interruption with sustained voice
-        const speechDuration = Date.now() - this.lastSpeechStartTime;
-        if (speechDuration > 800 && rms > this.INTERRUPT_VAD_THRESHOLD) {
+        // While AI is actively speaking, require sustained human voice to barge in
+        if (rms > this.INTERRUPT_VAD_THRESHOLD) {
           this.interruptStreak++;
           if (this.interruptStreak >= 4) {
             this.silenceCount = 0;
             this.isSendingAudio = true;
             this.interrupt(false);
+            this.setState('listening');
             this.dispatchEvent(new CustomEvent('userSpeaking', { detail: true }));
           }
         } else {
           this.interruptStreak = 0;
           this.silenceCount++;
           if (this.silenceCount > this.SILENCE_CHUNKS_BEFORE_PAUSE) {
-            if (this.isSendingAudio) {
-              this.isSendingAudio = false;
-              this.dispatchEvent(new CustomEvent('userSpeaking', { detail: false }));
-              this.sendTurnComplete();
-            }
+            this.isSendingAudio = false;
+            this.dispatchEvent(new CustomEvent('userSpeaking', { detail: false }));
           }
         }
       } else {
@@ -221,15 +223,16 @@ export class AICallService extends EventTarget {
         if (rms > this.NORMAL_VAD_THRESHOLD) {
           this.silenceCount = 0;
           this.isSendingAudio = true;
+          this.setState('listening');
           this.dispatchEvent(new CustomEvent('userSpeaking', { detail: true }));
         } else {
           this.silenceCount++;
           if (this.silenceCount > this.SILENCE_CHUNKS_BEFORE_PAUSE) {
-            if (this.isSendingAudio) {
-              this.isSendingAudio = false;
-              this.dispatchEvent(new CustomEvent('userSpeaking', { detail: false }));
-              this.sendTurnComplete();
+            this.isSendingAudio = false;
+            if (this.currentState === 'listening') {
+              this.setState('connected');
             }
+            this.dispatchEvent(new CustomEvent('userSpeaking', { detail: false }));
           }
         }
       }
@@ -245,6 +248,10 @@ export class AICallService extends EventTarget {
         this.ws.send(
           JSON.stringify({
             realtimeInput: {
+              audio: {
+                mimeType: 'audio/pcm;rate=16000',
+                data: base64Data,
+              },
               mediaChunks: [
                 {
                   mimeType: 'audio/pcm;rate=16000',
@@ -258,22 +265,6 @@ export class AICallService extends EventTarget {
         console.error('[AICallService] Send audio error:', err);
       }
     };
-  }
-
-  private sendTurnComplete() {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
-    try {
-      this.ws.send(
-        JSON.stringify({
-          clientContent: {
-            turns: [],
-            turnComplete: true,
-          },
-        })
-      );
-    } catch (err) {
-      console.warn('[AICallService] Failed to send turnComplete:', err);
-    }
   }
 
   private playConnectionChime() {
@@ -618,6 +609,8 @@ export class AICallService extends EventTarget {
       this.processorNode?.disconnect();
       this.mixerNode?.disconnect();
       this.sourceNode?.disconnect();
+      this.silentGainNode?.disconnect();
+      this.silentGainNode = null;
       this.outputCompressor?.disconnect();
       this.outputGain?.disconnect();
       // Keep shared AudioContext alive and ready for future calls

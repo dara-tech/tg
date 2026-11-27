@@ -93,123 +93,132 @@ export function BottomNav() {
 
   if (hide) return null;
 
-  const safeStyle: React.CSSProperties = {
-    paddingBottom: 'max(14px, env(safe-area-inset-bottom, 14px))',
+  const outerSafeStyle: React.CSSProperties = {
+    paddingBottom: 'max(8px, calc(env(safe-area-inset-bottom, 0px) + 2px))',
   };
 
-  const renderNavContent = () => {
-    /* ── PILL (default) ── */
-    if (navStyle === 'pill') {
-      return (
-        <div className="flex items-stretch justify-around p-1.5">
-          {TABS.map((tab) => {
-            const active = pathname.startsWith(tab.href);
-            return (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                prefetch
-                className={clsx(
-                  'flex-1 flex flex-col items-center justify-center gap-0.5 py-1 px-1 rounded-2xl transition-all mx-0.5',
-                  active ? 'bg-tg-blue' : 'active:bg-tg-surface'
-                )}
-              >
-                {renderTabIcon(tab, active, 'text-white', tab.href === '/dialogs' ? totalUnread : 0)}
-                <span className={clsx('text-[10px] font-semibold', active ? 'text-white' : 'text-tg-text-hint')}>
-                  {tab.label}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      );
-    }
+  /* Common wrapper that curves the bottom corners (rounded-b-[26px])
+     and aligns left, right, and bottom equally with padding (px-3 pb-2),
+     keeping the top edge uncurved and flush with the screen content. */
+  const navContainerClass =
+    "w-full bg-tg-bg-secondary/85 backdrop-blur-2xl border-t border-b border-x border-tg-border/15 rounded-b-[26px] overflow-hidden shadow-sm [data-theme='manga']_&:border-t-0 pt-1.5 pb-1";
 
-    /* ── CLASSIC ── */
-    if (navStyle === 'classic') {
-      return (
-        <div className="flex items-stretch justify-around px-1.5 py-1.5">
-          {TABS.map((tab) => {
-            const active = pathname.startsWith(tab.href);
-            return (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                prefetch
-                className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-colors active:bg-tg-surface"
-              >
-                {renderTabIcon(tab, active, 'text-tg-blue', tab.href === '/dialogs' ? totalUnread : 0)}
-                <span className={clsx('text-[10px] font-semibold', active ? 'text-tg-blue' : 'text-tg-text-hint')}>
-                  {tab.label}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      );
-    }
-
-    /* ── CARD ── */
-    if (navStyle === 'card') {
-      return (
-        <div className="flex items-stretch justify-around gap-1 p-1.5">
-          {TABS.map((tab) => {
-            const active = pathname.startsWith(tab.href);
-            return (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                prefetch
-                className={clsx(
-                  'flex-1 flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all',
-                  active ? 'bg-tg-blue text-white' : 'active:bg-tg-surface'
-                )}
-              >
-                {renderTabIcon(tab, active, 'text-white', tab.href === '/dialogs' ? totalUnread : 0)}
-                <span className={clsx('text-[10px] font-semibold', active ? 'text-white' : 'text-tg-text-hint')}>
-                  {tab.label}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      );
-    }
-
-    /* ── MINIMAL ── */
+  /* ── PILL (default) ── */
+  if (navStyle === 'pill') {
     return (
-      <div className="flex items-stretch justify-around px-2 py-2">
-        {TABS.map((tab) => {
-          const active = pathname.startsWith(tab.href);
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              prefetch
-              aria-label={tab.label}
-              className="flex-1 flex flex-col items-center justify-center gap-1 py-1 px-2 rounded-2xl transition-all active:scale-95"
-            >
-              {renderTabIcon(tab, active, 'text-tg-blue', tab.href === '/dialogs' ? totalUnread : 0)}
-              <span
-                className={clsx(
-                  'w-1.5 h-1.5 rounded-full transition-all',
-                  active ? 'bg-tg-blue scale-100' : 'bg-transparent scale-0'
-                )}
-              />
-            </Link>
-          );
-        })}
+      <div className="shrink-0 w-full px-3 pt-0 bg-transparent" style={outerSafeStyle}>
+        <nav className={navContainerClass}>
+          <div className="flex items-stretch justify-around px-2 pb-0.5">
+            {TABS.map(tab => {
+              const active = pathname.startsWith(tab.href);
+              return (
+                <Link
+                  key={tab.href}
+                  href={tab.href}
+                  prefetch
+                  className={clsx(
+                    'flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-2xl transition-all mx-0.5',
+                    active ? 'bg-tg-blue' : 'active:bg-tg-surface'
+                  )}
+                >
+                  {renderTabIcon(tab, active, 'text-white', tab.href === '/dialogs' ? totalUnread : 0)}
+                  <span className={clsx('text-[10px] font-semibold', active ? 'text-white' : 'text-tg-text-hint')}>
+                    {tab.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
       </div>
     );
-  };
+  }
 
+  /* ── CLASSIC ── */
+  if (navStyle === 'classic') {
+    return (
+      <div className="shrink-0 w-full px-3 pt-0 bg-transparent" style={outerSafeStyle}>
+        <nav className={navContainerClass}>
+          <div className="flex items-stretch justify-around px-2 pb-0.5">
+            {TABS.map(tab => {
+              const active = pathname.startsWith(tab.href);
+              return (
+                <Link
+                  key={tab.href}
+                  href={tab.href}
+                  prefetch
+                  className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-2 rounded-xl transition-colors active:bg-tg-surface"
+                >
+                  {renderTabIcon(tab, active, 'text-tg-blue', tab.href === '/dialogs' ? totalUnread : 0)}
+                  <span className={clsx('text-[10px] font-semibold', active ? 'text-tg-blue' : 'text-tg-text-hint')}>
+                    {tab.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      </div>
+    );
+  }
+
+  /* ── CARD ── */
+  if (navStyle === 'card') {
+    return (
+      <div className="shrink-0 w-full px-3 pt-0 bg-transparent" style={outerSafeStyle}>
+        <nav className={navContainerClass}>
+          <div className="flex items-stretch justify-around gap-1 px-2.5 pb-0.5">
+            {TABS.map(tab => {
+              const active = pathname.startsWith(tab.href);
+              return (
+                <Link
+                  key={tab.href}
+                  href={tab.href}
+                  prefetch
+                  className={clsx(
+                    'flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-2 rounded-xl transition-all',
+                    active ? 'bg-tg-blue text-white' : 'active:bg-tg-surface'
+                  )}
+                >
+                  {renderTabIcon(tab, active, 'text-white', tab.href === '/dialogs' ? totalUnread : 0)}
+                  <span className={clsx('text-[10px] font-semibold', active ? 'text-white' : 'text-tg-text-hint')}>
+                    {tab.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      </div>
+    );
+  }
+
+  /* ── MINIMAL ── */
   return (
-    <div
-      className="shrink-0 w-full px-4 pt-2 select-none pointer-events-none z-30"
-      style={safeStyle}
-    >
-      <nav className="pointer-events-auto mx-auto max-w-md w-full bg-tg-bg-secondary/90 backdrop-blur-2xl border border-tg-border/25 shadow-lg shadow-black/15 dark:shadow-black/40 rounded-[28px] overflow-hidden">
-        {renderNavContent()}
+    <div className="shrink-0 w-full px-3 pt-0 bg-transparent" style={outerSafeStyle}>
+      <nav className={navContainerClass}>
+        <div className="flex items-stretch justify-around px-3 pb-0.5">
+          {TABS.map(tab => {
+            const active = pathname.startsWith(tab.href);
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                prefetch
+                aria-label={tab.label}
+                className="flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-2 rounded-xl transition-all active:scale-95"
+              >
+                {renderTabIcon(tab, active, 'text-tg-blue', tab.href === '/dialogs' ? totalUnread : 0)}
+                <span
+                  className={clsx(
+                    'w-1.5 h-1.5 rounded-full transition-all',
+                    active ? 'bg-tg-blue scale-100' : 'bg-transparent scale-0'
+                  )}
+                />
+              </Link>
+            );
+          })}
+        </div>
       </nav>
     </div>
   );

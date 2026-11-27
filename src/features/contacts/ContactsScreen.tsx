@@ -102,7 +102,7 @@ export default function ContactsScreen() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-hide pb-24">
+      <div className="flex-1 overflow-y-auto scrollbar-hide pb-4">
         {/* RECENT CHATS horizontal row (Screenshot 5) */}
         {recentChats.length > 0 && !q && (
           <div className="pt-3 pb-3 border-b border-tg-border/35">

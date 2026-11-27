@@ -75,7 +75,7 @@ export default function SettingsScreen() {
   const [fontSearch, setFontSearch] = useState('');
   const safeKhmerFont: KhmerFontId = KHMER_FONTS[ui.khmerFont] ? ui.khmerFont : 'hanuman';
 
-  const [githubRepo, setGithubRepo] = useState('dara-tech/tg');
+  const [githubUsername, setGithubUsername] = useState('dara-tech');
   const [githubToken, setGithubToken] = useState('');
   const [erpApiUrl, setErpApiUrl] = useState('');
   const [showToken, setShowToken] = useState(false);
@@ -87,7 +87,11 @@ export default function SettingsScreen() {
       const raw = localStorage.getItem('tg_calendar_sync_config_v2');
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed.githubRepo) setGithubRepo(parsed.githubRepo);
+        if (parsed.githubUsername) {
+          setGithubUsername(parsed.githubUsername);
+        } else if (parsed.githubRepo) {
+          setGithubUsername(parsed.githubRepo.split('/')[0]);
+        }
         if (parsed.githubToken) setGithubToken(parsed.githubToken);
         if (parsed.erpApiUrl) setErpApiUrl(parsed.erpApiUrl);
       }
@@ -241,14 +245,15 @@ export default function SettingsScreen() {
       if (githubToken.trim()) {
         headers.Authorization = `token ${githubToken.trim()}`;
       }
+      const userToTest = githubUsername.trim().replace(/^@/, '') || 'dara-tech';
       const url = githubToken.trim()
         ? 'https://api.github.com/user'
-        : `https://api.github.com/repos/${githubRepo.trim() || 'dara-tech/tg'}`;
+        : `https://api.github.com/users/${encodeURIComponent(userToTest)}`;
       const res = await fetch(url, { headers });
       if (res.ok) {
         const data = await res.json();
-        const login = data.login ? `Logged in as @${data.login}` : `Connected to ${data.full_name || githubRepo}`;
-        setTokenStatus({ ok: true, message: `Success: ${login}` });
+        const login = data.login || userToTest;
+        setTokenStatus({ ok: true, message: `Connected to @${login} (${data.public_repos ?? 0} repos)` });
       } else {
         const err = await res.json().catch(() => ({}));
         setTokenStatus({ ok: false, message: `GitHub error: ${err.message || res.statusText}` });
@@ -264,9 +269,11 @@ export default function SettingsScreen() {
     try {
       const raw = localStorage.getItem('tg_calendar_sync_config_v2');
       const existing = raw ? JSON.parse(raw) : {};
+      const userClean = githubUsername.trim().replace(/^@/, '') || 'dara-tech';
       const updated = {
         ...existing,
-        githubRepo: githubRepo.trim() || 'dara-tech/tg',
+        githubUsername: userClean,
+        githubRepo: `${userClean}/tg`,
         githubToken: githubToken.trim(),
         erpApiUrl: erpApiUrl.trim(),
       };
@@ -546,7 +553,7 @@ export default function SettingsScreen() {
               { id: 'storage'       as const, bg: 'bg-cyan-500',    icon: <Database className="w-4 h-4 text-white" />,   label: 'Data & Storage',         desc: ui.autoDownloadPhotos ? 'Auto' : 'Manual' },
               { id: 'wallpaper'     as const, bg: 'bg-pink-500',    icon: <ImageIcon className="w-4 h-4 text-white" />,  label: 'Chat Wallpaper',         desc: ui.chatWallpaper === 'custom' ? 'Custom Image' : (CHAT_WALLPAPERS[ui.chatWallpaper]?.name ?? 'Theme Default') },
               { id: 'khmerFont'     as const, bg: 'bg-violet-500',  icon: <Type className="w-4 h-4 text-white" />,       label: 'Khmer Font',             desc: KHMER_FONTS[safeKhmerFont].name },
-              { id: 'github'        as const, bg: 'bg-purple-600',  icon: <Key className="w-4 h-4 text-white" />,        label: 'GitHub & ERP Integration', desc: githubToken ? 'Connected' : (githubRepo.split('/')[1] || githubRepo || 'Configure') },
+              { id: 'github'        as const, bg: 'bg-purple-600',  icon: <Key className="w-4 h-4 text-white" />,        label: 'GitHub & ERP Integration', desc: githubToken ? 'Connected' : (githubUsername ? `@${githubUsername.replace(/^@/, '')}` : 'Configure') },
               { id: 'language'      as const, bg: 'bg-indigo-500',  icon: <Globe className="w-4 h-4 text-white" />,      label: 'Language',               desc: ui.language },
               { id: 'help'          as const, bg: 'bg-slate-500',   icon: <HelpCircle className="w-4 h-4 text-white" />, label: 'Help & FAQ',             desc: '' },
             ].map((item, idx, arr) => (
@@ -1064,17 +1071,23 @@ export default function SettingsScreen() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-tg-text uppercase tracking-wider">GitHub Target Repository</label>
-            <input
-              type="text"
-              value={githubRepo}
-              onChange={(e) => {
-                setGithubRepo(e.target.value);
-                setTokenStatus(null);
-              }}
-              placeholder="owner/repo (e.g. dara-tech/tg)"
-              className="w-full bg-tg-bg border border-tg-border rounded-xl px-3.5 py-2.5 text-sm text-tg-text focus:outline-none focus:border-tg-blue font-mono"
-            />
+            <label className="text-xs font-semibold text-tg-text uppercase tracking-wider">GitHub Username</label>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-tg-text-hint font-mono font-medium">@</span>
+              <input
+                type="text"
+                value={githubUsername}
+                onChange={(e) => {
+                  setGithubUsername(e.target.value.replace(/^@/, ''));
+                  setTokenStatus(null);
+                }}
+                placeholder="username (e.g. dara-tech)"
+                className="w-full bg-tg-bg border border-tg-border rounded-xl pl-8 pr-3.5 py-2.5 text-sm text-tg-text focus:outline-none focus:border-tg-blue font-mono"
+              />
+            </div>
+            <p className="text-[11px] text-tg-text-hint">
+              Synchronizes issues, pull requests, releases, and milestones associated with this GitHub user.
+            </p>
           </div>
 
           <div className="space-y-1.5">

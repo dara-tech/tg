@@ -53,7 +53,8 @@ export interface CalendarEvent {
 }
 
 export interface SyncConfig {
-  githubRepo: string; // e.g. "dara-tech/tg"
+  githubUsername: string; // e.g. "dara-tech"
+  githubRepo?: string; // optional backward compatibility
   githubToken: string; // optional personal access token
   erpApiUrl: string; // optional ERP endpoint
   erpToken: string;
@@ -67,6 +68,7 @@ const STORAGE_KEY = 'tg_calendar_events_v2';
 const SYNC_CONFIG_KEY = 'tg_calendar_sync_config_v2';
 
 const DEFAULT_SYNC_CONFIG: SyncConfig = {
+  githubUsername: 'dara-tech',
   githubRepo: 'dara-tech/tg',
   githubToken: '',
   erpApiUrl: '',
@@ -144,7 +146,14 @@ export default function CalendarScreen() {
     if (typeof window === 'undefined') return DEFAULT_SYNC_CONFIG;
     try {
       const stored = localStorage.getItem(SYNC_CONFIG_KEY);
-      if (stored) return { ...DEFAULT_SYNC_CONFIG, ...JSON.parse(stored) };
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return {
+          ...DEFAULT_SYNC_CONFIG,
+          ...parsed,
+          githubUsername: parsed.githubUsername || (parsed.githubRepo ? parsed.githubRepo.split('/')[0] : 'dara-tech'),
+        };
+      }
     } catch {}
     return DEFAULT_SYNC_CONFIG;
   });
@@ -163,7 +172,12 @@ export default function CalendarScreen() {
       try {
         const stored = localStorage.getItem(SYNC_CONFIG_KEY);
         if (stored) {
-          setSyncConfig({ ...DEFAULT_SYNC_CONFIG, ...JSON.parse(stored) });
+          const parsed = JSON.parse(stored);
+          setSyncConfig({
+            ...DEFAULT_SYNC_CONFIG,
+            ...parsed,
+            githubUsername: parsed.githubUsername || (parsed.githubRepo ? parsed.githubRepo.split('/')[0] : 'dara-tech'),
+          });
         }
       } catch {}
     };
@@ -219,20 +233,27 @@ export default function CalendarScreen() {
   };
 
   /**
-   * Syncs milestones, issues, and releases from GitHub & ERP
+   * Syncs milestones, issues, and releases from GitHub by Username & ERP
    */
   const handleSyncGithubAndErp = useCallback(async (customCfg?: SyncConfig) => {
     let cfg = customCfg || syncConfig;
     try {
       const stored = localStorage.getItem(SYNC_CONFIG_KEY);
       if (stored) {
-        cfg = { ...DEFAULT_SYNC_CONFIG, ...JSON.parse(stored) };
+        const parsed = JSON.parse(stored);
+        cfg = {
+          ...DEFAULT_SYNC_CONFIG,
+          ...parsed,
+          githubUsername: parsed.githubUsername || (parsed.githubRepo ? parsed.githubRepo.split('/')[0] : 'dara-tech'),
+        };
         setSyncConfig(cfg);
       }
     } catch {}
 
-    if (!cfg.githubRepo.trim() && !cfg.erpApiUrl.trim()) {
-      toast('Configure GitHub & ERP in Profile Settings', 'error');
+    const username = (cfg.githubUsername || (cfg.githubRepo ? cfg.githubRepo.split('/')[0] : '')).trim().replace(/^@/, '');
+
+    if (!username && !cfg.erpApiUrl.trim()) {
+      toast('Configure GitHub Username in Profile Settings', 'error');
       return;
     }
 
@@ -247,109 +268,126 @@ export default function CalendarScreen() {
     }
 
     try {
-      // 1. Fetch GitHub Milestones
-      if (cfg.githubRepo && cfg.syncMilestones) {
+      // 1. Fetch GitHub Issues / PRs involving the user across GitHub
+      if (username && cfg.syncIssues) {
         try {
-          const res = await fetch(`https://api.github.com/repos/${cfg.githubRepo.trim()}/milestones?state=all&per_page=30`, {
+          const query = encodeURIComponent(`involves:${username}`);
+          const res = await fetch(`https://api.github.com/search/issues?q=${query}&sort=updated&order=desc&per_page=40`, {
             headers,
           });
           if (res.ok) {
-            const milestones = await res.json();
-            if (Array.isArray(milestones)) {
-              milestones.forEach((m: { id: number; title: string; due_on?: string; html_url?: string; state?: string }) => {
-                const targetDate = m.due_on ? format(new Date(m.due_on), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
-                newSyncedEvents.push({
-                  id: `gh-m-${m.id}`,
-                  title: `[Milestone] ${m.title}`,
-                  date: targetDate,
-                  time: '10:00',
-                  category: 'github',
-                  source: 'github',
-                  sourceUrl: m.html_url,
-                  completed: m.state === 'closed',
-                  sourceMeta: { repo: cfg.githubRepo, type: 'milestone' },
-                });
-              });
-            }
-          }
-        } catch (err) {
-          console.warn('[Calendar] GitHub Milestones sync failed:', err);
-        }
-      }
-
-      // 2. Fetch GitHub Issues / PRs
-      if (cfg.githubRepo && cfg.syncIssues) {
-        try {
-          const res = await fetch(`https://api.github.com/repos/${cfg.githubRepo.trim()}/issues?state=all&per_page=30`, {
-            headers,
-          });
-          if (res.ok) {
-            const issues = await res.json();
-            if (Array.isArray(issues)) {
-              issues.forEach((iss: {
+            const data = await res.json();
+            const items = data.items || [];
+            if (Array.isArray(items)) {
+              items.forEach((iss: {
                 id: number;
                 number: number;
                 title: string;
                 html_url: string;
                 created_at: string;
                 closed_at?: string;
-                milestone?: { due_on?: string };
+                milestone?: { due_on?: string; title?: string };
                 pull_request?: unknown;
                 state?: string;
+                repository_url: string;
               }) => {
                 const isPr = Boolean(iss.pull_request);
-                const rawDate = iss.milestone?.due_on || iss.created_at;
+                const repoName = iss.repository_url ? iss.repository_url.split('/').slice(-2).join('/') : '';
+                const rawDate = iss.milestone?.due_on || iss.closed_at || iss.created_at;
                 const targetDate = format(new Date(rawDate), 'yyyy-MM-dd');
                 newSyncedEvents.push({
                   id: `gh-i-${iss.id}`,
-                  title: `${isPr ? '[PR #' : '[Issue #'}${iss.number}] ${iss.title}`,
+                  title: `${isPr ? '[PR' : '[Issue'} #${iss.number}${repoName ? ` · ${repoName.split('/')[1] || repoName}` : ''}] ${iss.title}`,
                   date: targetDate,
-                  time: '15:00',
+                  time: '14:00',
                   category: 'github',
                   source: 'github',
                   sourceUrl: iss.html_url,
                   completed: iss.state === 'closed',
-                  sourceMeta: { repo: cfg.githubRepo, number: iss.number, type: isPr ? 'pr' : 'issue' },
+                  sourceMeta: { repo: repoName, number: iss.number, type: isPr ? 'pr' : 'issue' },
                 });
               });
             }
           }
         } catch (err) {
-          console.warn('[Calendar] GitHub Issues sync failed:', err);
+          console.warn('[Calendar] GitHub user issues sync failed:', err);
         }
       }
 
-      // 3. Fetch GitHub Releases
-      if (cfg.githubRepo && cfg.syncReleases) {
+      // 2. Fetch User Repositories to extract Milestones & Releases
+      if (username && (cfg.syncMilestones || cfg.syncReleases)) {
         try {
-          const res = await fetch(`https://api.github.com/repos/${cfg.githubRepo.trim()}/releases?per_page=15`, {
+          const reposRes = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=pushed&per_page=6`, {
             headers,
           });
-          if (res.ok) {
-            const releases = await res.json();
-            if (Array.isArray(releases)) {
-              releases.forEach((rel: { id: number; name?: string; tag_name: string; published_at: string; html_url: string }) => {
-                const targetDate = format(new Date(rel.published_at), 'yyyy-MM-dd');
-                newSyncedEvents.push({
-                  id: `gh-r-${rel.id}`,
-                  title: `[Release] ${rel.name || rel.tag_name}`,
-                  date: targetDate,
-                  time: '12:00',
-                  category: 'github',
-                  source: 'github',
-                  sourceUrl: rel.html_url,
-                  completed: true,
-                  sourceMeta: { repo: cfg.githubRepo, type: 'release' },
-                });
-              });
+          if (reposRes.ok) {
+            const repos = await reposRes.json();
+            if (Array.isArray(repos)) {
+              for (const repo of repos) {
+                // Fetch Milestones for repo
+                if (cfg.syncMilestones && repo.full_name) {
+                  try {
+                    const mRes = await fetch(`https://api.github.com/repos/${repo.full_name}/milestones?state=all&per_page=10`, {
+                      headers,
+                    });
+                    if (mRes.ok) {
+                      const milestones = await mRes.json();
+                      if (Array.isArray(milestones)) {
+                        milestones.forEach((m: { id: number; title: string; due_on?: string; html_url?: string; state?: string }) => {
+                          const targetDate = m.due_on ? format(new Date(m.due_on), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+                          newSyncedEvents.push({
+                            id: `gh-m-${m.id}`,
+                            title: `[Milestone · ${repo.name}] ${m.title}`,
+                            date: targetDate,
+                            time: '10:00',
+                            category: 'github',
+                            source: 'github',
+                            sourceUrl: m.html_url,
+                            completed: m.state === 'closed',
+                            sourceMeta: { repo: repo.full_name, type: 'milestone' },
+                          });
+                        });
+                      }
+                    }
+                  } catch {}
+                }
+
+                // Fetch Releases for top 3 pushed repos
+                if (cfg.syncReleases && repo.full_name && repos.indexOf(repo) < 3) {
+                  try {
+                    const rRes = await fetch(`https://api.github.com/repos/${repo.full_name}/releases?per_page=5`, {
+                      headers,
+                    });
+                    if (rRes.ok) {
+                      const releases = await rRes.json();
+                      if (Array.isArray(releases)) {
+                        releases.forEach((rel: { id: number; name?: string; tag_name: string; published_at: string; html_url: string }) => {
+                          const targetDate = format(new Date(rel.published_at), 'yyyy-MM-dd');
+                          newSyncedEvents.push({
+                            id: `gh-r-${rel.id}`,
+                            title: `[Release · ${repo.name}] ${rel.name || rel.tag_name}`,
+                            date: targetDate,
+                            time: '12:00',
+                            category: 'github',
+                            source: 'github',
+                            sourceUrl: rel.html_url,
+                            completed: true,
+                            sourceMeta: { repo: repo.full_name, type: 'release' },
+                          });
+                        });
+                      }
+                    }
+                  } catch {}
+                }
+              }
             }
           }
         } catch (err) {
-          console.warn('[Calendar] GitHub Releases sync failed:', err);
+          console.warn('[Calendar] GitHub repos sync failed:', err);
         }
       }
 
-      // 4. Fetch Custom ERP System Feed (if configured)
+      // 3. Fetch Custom ERP System Feed (if configured)
       if (cfg.erpApiUrl.trim()) {
         try {
           const erpHeaders: Record<string, string> = {};
@@ -384,7 +422,7 @@ export default function CalendarScreen() {
       });
 
       setSyncConfig((prev) => ({ ...prev, lastSyncedAt: Date.now() }));
-      toast(`Synced ${newSyncedEvents.length} items from GitHub & ERP`, 'success');
+      toast(`Synced ${newSyncedEvents.length} items for @${username || 'GitHub'}`, 'success');
     } catch {
       toast('Failed to sync GitHub / ERP calendar', 'error');
     } finally {

@@ -18,12 +18,9 @@ export function getSharedAudioContext(): AudioContext {
   }
 
   if (!sharedAudioCtx || sharedAudioCtx.state === 'closed') {
-    try {
-      // 24kHz matches Gemini Live native audio output
-      sharedAudioCtx = new AudioCtxClass({ sampleRate: 24000 });
-    } catch {
-      sharedAudioCtx = new AudioCtxClass();
-    }
+    // Default to hardware sample rate (typically 48000Hz or 44100Hz)
+    // so createMediaStreamSource(micStream) matches hardware mic rate without error
+    sharedAudioCtx = new AudioCtxClass();
   }
 
   if (sharedAudioCtx.state === 'suspended') {

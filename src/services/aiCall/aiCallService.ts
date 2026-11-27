@@ -23,9 +23,9 @@ export class AICallService extends EventTarget {
   private lastSpeechStartTime: number = 0;
 
   // VAD (Voice Activity Detection)
-  private readonly NORMAL_VAD_THRESHOLD = 0.003;
-  private readonly INTERRUPT_VAD_THRESHOLD = 0.085;
-  private readonly SILENCE_CHUNKS_BEFORE_PAUSE = 20;
+  private readonly NORMAL_VAD_THRESHOLD = 0.0035;
+  private readonly INTERRUPT_VAD_THRESHOLD = 0.075;
+  private readonly SILENCE_CHUNKS_BEFORE_PAUSE = 10; // ~850ms natural conversational pause
   private silenceCount = 0;
   private isSendingAudio = false;
   private interruptStreak = 0;
@@ -195,11 +195,11 @@ export class AICallService extends EventTarget {
       );
 
       if (this.isPlayingAudio) {
-        // Protect first 1.8s of speech from echo feedback
+        // While AI is speaking, allow user interruption with sustained voice
         const speechDuration = Date.now() - this.lastSpeechStartTime;
-        if (speechDuration > 1800 && rms > 0.16) {
+        if (speechDuration > 800 && rms > this.INTERRUPT_VAD_THRESHOLD) {
           this.interruptStreak++;
-          if (this.interruptStreak >= 6) {
+          if (this.interruptStreak >= 4) {
             this.silenceCount = 0;
             this.isSendingAudio = true;
             this.interrupt(false);
@@ -209,8 +209,11 @@ export class AICallService extends EventTarget {
           this.interruptStreak = 0;
           this.silenceCount++;
           if (this.silenceCount > this.SILENCE_CHUNKS_BEFORE_PAUSE) {
-            this.isSendingAudio = false;
-            this.dispatchEvent(new CustomEvent('userSpeaking', { detail: false }));
+            if (this.isSendingAudio) {
+              this.isSendingAudio = false;
+              this.dispatchEvent(new CustomEvent('userSpeaking', { detail: false }));
+              this.sendTurnComplete();
+            }
           }
         }
       } else {
@@ -222,15 +225,18 @@ export class AICallService extends EventTarget {
         } else {
           this.silenceCount++;
           if (this.silenceCount > this.SILENCE_CHUNKS_BEFORE_PAUSE) {
-            this.isSendingAudio = false;
-            this.dispatchEvent(new CustomEvent('userSpeaking', { detail: false }));
+            if (this.isSendingAudio) {
+              this.isSendingAudio = false;
+              this.dispatchEvent(new CustomEvent('userSpeaking', { detail: false }));
+              this.sendTurnComplete();
+            }
           }
         }
       }
 
       if (!this.isSendingAudio) return;
 
-      const sampleRate = this.audioContext?.sampleRate || 24000;
+      const sampleRate = this.audioContext?.sampleRate || 48000;
       const downsampled = downsampleBuffer(inputData, sampleRate, 16000);
       const pcm16 = floatTo16BitPCM(downsampled);
       const base64Data = arrayBufferToBase64(pcm16);
@@ -252,6 +258,22 @@ export class AICallService extends EventTarget {
         console.error('[AICallService] Send audio error:', err);
       }
     };
+  }
+
+  private sendTurnComplete() {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+    try {
+      this.ws.send(
+        JSON.stringify({
+          clientContent: {
+            turns: [],
+            turnComplete: true,
+          },
+        })
+      );
+    } catch (err) {
+      console.warn('[AICallService] Failed to send turnComplete:', err);
+    }
   }
 
   private playConnectionChime() {
@@ -294,7 +316,7 @@ export class AICallService extends EventTarget {
     }
 
     this.setState('connecting');
-    const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${key}`;
+    const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${key}`;
 
     try {
       this.ws = new WebSocket(url);

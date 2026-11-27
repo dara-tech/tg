@@ -18,6 +18,25 @@ export function getMTProto(): MTProto {
       );
     }
 
+    // Auto-heal defaultDcId if it was pointed to a DC without an authKey (e.g. from a past FILE_MIGRATE)
+    if (typeof window !== 'undefined') {
+      try {
+        const storedDc = window.localStorage.getItem('defaultDcId');
+        if (storedDc) {
+          const dcNum = Number(JSON.parse(storedDc));
+          if (dcNum && !window.localStorage.getItem(`${dcNum}authKey`)) {
+            for (const candidate of [2, 5, 1, 4, 3]) {
+              if (window.localStorage.getItem(`${candidate}authKey`)) {
+                console.warn(`[MTProto] Healing corrupted defaultDcId from DC${dcNum} to DC${candidate} with valid session`);
+                window.localStorage.setItem('defaultDcId', JSON.stringify(candidate));
+                break;
+              }
+            }
+          }
+        }
+      } catch {}
+    }
+
     instance = new MTProto({ api_id: apiId, api_hash: apiHash });
   }
   return instance;
@@ -65,8 +84,12 @@ export async function call<T = unknown>(
     const e = err as { error_code?: number; error_message?: string; message?: string };
     const errorMsg = String(e?.error_message ?? e?.message ?? err);
 
-    // Migrate to correct DC on PHONE_MIGRATE / NETWORK_MIGRATE / USER_MIGRATE
-    if (errorMsg.includes('_MIGRATE_')) {
+    // Migrate to correct DC on PHONE_MIGRATE / NETWORK_MIGRATE / USER_MIGRATE (Account DC)
+    if (
+      errorMsg.includes('PHONE_MIGRATE_') ||
+      errorMsg.includes('NETWORK_MIGRATE_') ||
+      errorMsg.includes('USER_MIGRATE_')
+    ) {
       const parts = errorMsg.split('_');
       const dcId = parseInt(parts.at(-1) || '2', 10);
       if (!isNaN(dcId)) {
@@ -75,10 +98,20 @@ export async function call<T = unknown>(
       }
     }
 
-    // Auto-recover from AUTH_KEY_DUPLICATED or corrupted session key
+    // For FILE_MIGRATE_X: query that specific file from the storage DC without changing the account's default DC!
+    if (errorMsg.includes('FILE_MIGRATE_')) {
+      const parts = errorMsg.split('_');
+      const dcId = parseInt(parts.at(-1) || '2', 10);
+      if (!isNaN(dcId) && _retryCount < 2) {
+        return call<T>(method, params, { ...options, dcId, _retryCount: _retryCount + 1 });
+      }
+    }
+
+    // Auto-recover from AUTH_KEY_DUPLICATED or corrupted primary session key
+    // (Never clear the primary session if an error happened on a secondary file DC)
     const isAuthKeyCorrupt =
       errorMsg.includes('AUTH_KEY_DUPLICATED') ||
-      errorMsg.includes('AUTH_KEY_UNREGISTERED') ||
+      (errorMsg.includes('AUTH_KEY_UNREGISTERED') && !options?.dcId) ||
       errorMsg.includes('SESSION_REVOKED') ||
       errorMsg.includes('SESSION_EXPIRED');
 

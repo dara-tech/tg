@@ -758,8 +758,7 @@ function MediaContent({
         ) : (
           <div
             className={clsx(
-              'bg-tg-surface flex flex-col items-center justify-center gap-1.5 text-tg-text-hint',
-              loading && 'animate-pulse',
+              'bg-tg-surface flex flex-col items-center justify-center gap-2 text-tg-text-hint select-none',
               isFullWidth
                 ? `w-full h-[200px] ${radiusClass}`
                 : isOut
@@ -767,8 +766,14 @@ function MediaContent({
                 : 'w-[260px] h-[180px] rounded-[18px] rounded-bl-[5px]'
             )}
           >
-            <ImageIcon className="w-7 h-7 opacity-60" />
-            <span className="text-xs">{loading ? 'Loading photo…' : 'Tap to load photo'}</span>
+            {loading ? (
+              <div className="w-6 h-6 border-2 border-tg-blue/30 border-t-tg-blue rounded-full animate-spin" />
+            ) : (
+              <ImageIcon className="w-7 h-7 opacity-60" />
+            )}
+            <span className="text-xs font-medium">
+              {loading ? 'Loading photo…' : 'Tap to load photo'}
+            </span>
           </div>
         )}
         {!hasCaption && (

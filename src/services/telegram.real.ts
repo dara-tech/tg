@@ -1237,11 +1237,23 @@ async function fetchFileBytes(
   let offset = 0;
 
   while (offset < maxBytes) {
-    const res = await call<{ bytes?: Uint8Array }>(
+    const callPromise = call<{ bytes?: Uint8Array }>(
       'upload.getFile',
       { location, offset, limit: chunkSize },
       dcId ? { dcId } : undefined
     );
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error('DOWNLOAD_CHUNK_TIMEOUT')), 12000);
+    });
+
+    let res: { bytes?: Uint8Array };
+    try {
+      res = await Promise.race([callPromise, timeoutPromise]);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+
     if (!res.bytes || res.bytes.byteLength === 0) break;
     const copy = new Uint8Array(res.bytes.byteLength);
     copy.set(res.bytes);
@@ -1262,16 +1274,18 @@ async function fetchFileBytes(
 }
 
 export async function downloadMediaUrl(media: MediaAttachment, thumbOnly = false): Promise<string | null> {
-  const cacheKey = `${media.kind}_${media.id}_${thumbOnly ? `thumb_${media.thumbSize ?? 's'}` : (media.thumbSize ?? '')}`;
+  const isPhotoLocation = media.kind === 'photo' && !media.mimeType;
+  const isDocThumb =
+    (media.kind === 'sticker' && (Boolean(media.thumbSize) || media.mimeType === 'application/x-tgsticker')) ||
+    (thumbOnly && media.kind === 'video' && Boolean(media.thumbSize));
+
+  const targetThumb = thumbOnly ? 's' : (media.thumbSize || 'x');
+  const cacheKey = `${media.kind}_${media.id}_${thumbOnly ? `thumb_${targetThumb}` : targetThumb}`;
   if (mediaBlobCache.has(cacheKey)) return mediaBlobCache.get(cacheKey)!;
   if (mediaPending.has(cacheKey)) return mediaPending.get(cacheKey)!;
 
   const p = (async () => {
     try {
-      const isPhotoLocation = media.kind === 'photo' && Boolean(media.thumbSize) && !media.mimeType;
-      const isDocThumb =
-        (media.kind === 'sticker' && (Boolean(media.thumbSize) || media.mimeType === 'application/x-tgsticker')) ||
-        (thumbOnly && media.kind === 'video' && Boolean(media.thumbSize));
       const makeLocation = (thumb?: string) =>
         isPhotoLocation
           ? {
@@ -1279,7 +1293,7 @@ export async function downloadMediaUrl(media: MediaAttachment, thumbOnly = false
               id: media.id,
               access_hash: media.accessHash,
               file_reference: media.fileReference ?? new Uint8Array(),
-              thumb_size: thumb || 'm',
+              thumb_size: thumb || media.thumbSize || 'x',
             }
           : {
               _: 'inputDocumentFileLocation',
@@ -1291,15 +1305,22 @@ export async function downloadMediaUrl(media: MediaAttachment, thumbOnly = false
 
       let bytes: Uint8Array | null = null;
       try {
-        bytes = await fetchFileBytes(makeLocation(thumbOnly && isPhotoLocation ? 's' : (isDocThumb ? (media.thumbSize || 'm') : '')), media.dcId);
+        bytes = await fetchFileBytes(makeLocation(targetThumb), media.dcId);
       } catch {
-        if ((isPhotoLocation || isDocThumb) && media.thumbSize !== 's') {
-          bytes = await fetchFileBytes(makeLocation('s'), media.dcId);
+        // Fallback size cascade: try other available thumbnail sizes
+        const fallbacks = isPhotoLocation ? ['m', 's', 'y'].filter((s) => s !== targetThumb) : isDocThumb ? ['s', 'm'] : [];
+        for (const fb of fallbacks) {
+          try {
+            bytes = await fetchFileBytes(makeLocation(fb), media.dcId);
+            if (bytes) break;
+          } catch {}
         }
       }
 
       if (!bytes) return null;
-      const mime = media.kind === 'photo' || isDocThumb
+      const mime = isPhotoLocation
+        ? 'image/jpeg'
+        : isDocThumb
         ? 'image/webp'
         : media.mimeType || 'application/octet-stream';
       const blob = new Blob([bytes.buffer as ArrayBuffer], { type: mime });

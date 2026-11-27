@@ -695,6 +695,7 @@ function MediaContent({
   const isDarkMap = BG_THEMES[theme]?.isDark ?? true;
 
   useEffect(() => {
+    let active = true;
     if (media.localUrl) {
       setBlobUrl(media.localUrl);
       return;
@@ -707,8 +708,17 @@ function MediaContent({
           media.mimeType === 'application/x-tgsticker'))
     ) {
       setLoading(true);
-      downloadMediaUrl(media).then(setBlobUrl).finally(() => setLoading(false));
+      downloadMediaUrl(media)
+        .then((url) => {
+          if (active && url) setBlobUrl(url);
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
     }
+    return () => {
+      active = false;
+    };
   }, [media]);
 
   const handleLoadAndOpen = async (type: 'image' | 'video') => {
@@ -1096,7 +1106,10 @@ export function MessageBubble({
     setLocalReactions(message.reactions ?? []);
   }, [message.reactions]);
 
-  const time = new Date(message.date * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const safeDate = (typeof message.date === 'number' && !isNaN(message.date) && message.date > 0)
+    ? message.date * 1000
+    : Date.now();
+  const time = new Date(safeDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const statusText = `${message.status === 'read' ? 'read' : 'sent'} today at ${time}`;
 
   const openMenu = useCallback((e: React.MouseEvent | React.TouchEvent) => {

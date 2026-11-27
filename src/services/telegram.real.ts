@@ -995,11 +995,35 @@ export function withTimeout<T>(promise: Promise<T>, ms = 12000, errorMsg = 'Oper
 }
 
 function buildInputPeer(id: string, accessHash = '0') {
+  if (id === 'me' || id === 'self') {
+    return { _: 'inputPeerSelf' };
+  }
   const [prefix, rawId] = id.split('_');
   const peerId = rawId || id;
-  const hash = (accessHash && String(accessHash) !== '0')
+
+  const myUserId = useAuthStore.getState().userId;
+  if (myUserId && (String(peerId) === String(myUserId) || id === `u_${myUserId}`)) {
+    return { _: 'inputPeerSelf' };
+  }
+
+  let hash = (accessHash && String(accessHash) !== '0')
     ? String(accessHash)
     : (peerAccessHashMap.get(String(peerId)) || '0');
+
+  // Fallback: resolve missing accessHash from loaded dialogs store
+  if (hash === '0') {
+    try {
+      const dialogs = useDialogsStore.getState().dialogs;
+      const found = dialogs.find(
+        (d) => d.id === id || String(d.peerId) === String(peerId)
+      );
+      if (found?.accessHash && String(found.accessHash) !== '0') {
+        hash = String(found.accessHash);
+        peerAccessHashMap.set(String(peerId), hash);
+      }
+    } catch {}
+  }
+
   if (prefix === 'u') return { _: 'inputPeerUser', user_id: peerId, access_hash: hash };
   if (prefix === 'c') return { _: 'inputPeerChannel', channel_id: peerId, access_hash: hash };
   return { _: 'inputPeerChat', chat_id: peerId };
@@ -1134,11 +1158,17 @@ export async function fetchRealHistory(
   return (res.messages ?? [])
     .slice()
     .reverse()
+    .filter((m): m is NonNullable<typeof m> & { id: number } => {
+      return Boolean(m && m._ !== 'messageEmpty' && typeof m.id === 'number');
+    })
     .map((m) => {
       const media = parseMedia(m.media);
       const isOut = Boolean(m.out);
       const isService = m._ === 'messageService' || Boolean(m.action);
       const serviceText = isService ? formatServiceAction(m.action) : '';
+      const safeDate = (typeof m.date === 'number' && !isNaN(m.date) && m.date > 0)
+        ? m.date
+        : Math.floor(Date.now() / 1000);
       let sender: MessageSenderInfo | undefined;
       if (m.from_id?.user_id !== undefined) {
         const uid = String(m.from_id.user_id);
@@ -1194,7 +1224,7 @@ export async function fetchRealHistory(
         id: m.id,
         text: m.message || serviceText || (media ? '' : 'Message'),
         out: isOut,
-        date: m.date,
+        date: safeDate,
         status: isOut ? (readOutboxMaxId && m.id <= readOutboxMaxId ? 'read' : 'sent') : 'read',
         replyTo: m.reply_to?.reply_to_msg_id,
         media,

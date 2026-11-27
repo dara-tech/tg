@@ -500,9 +500,14 @@ export default function ConversationScreen() {
           if ((u._ === 'updateNewMessage' || u._ === 'updateNewChannelMessage') && u.message) {
             const p = u.message.peer_id;
             const peerKey = p?.user_id ? `u_${p.user_id}` : p?.channel_id ? `c_${p.channel_id}` : p?.chat_id ? `g_${p.chat_id}` : '';
-            if (peerKey === id) {
+            const isSelfChat = Boolean(chatMeta.isSavedMessages || (myUserId && id === `u_${myUserId}`) || id === 'me');
+            const matchesChat = peerKey === id || (isSelfChat && p?.user_id && String(p.user_id) === String(myUserId));
+            if (matchesChat) {
               setPartnerAction(null);
               const media = parseMedia(u.message.media);
+              const safeUpdateDate = (typeof u.message.date === 'number' && !isNaN(u.message.date) && u.message.date > 0)
+                ? u.message.date
+                : Math.floor(Date.now() / 1000);
               setMessages((prev) =>
                 prev.some((m) => m.id === u.message!.id)
                   ? prev
@@ -512,7 +517,7 @@ export default function ConversationScreen() {
                         id: u.message!.id,
                         text: u.message!.message || '',
                         out: Boolean(u.message!.out),
-                        date: u.message!.date,
+                        date: safeUpdateDate,
                         status: 'read',
                         media,
                         groupedId: u.message!.grouped_id ? String(u.message!.grouped_id) : undefined,

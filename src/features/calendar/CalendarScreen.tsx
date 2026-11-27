@@ -150,7 +150,6 @@ export default function CalendarScreen() {
   });
 
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncSheetOpen, setSyncSheetOpen] = useState(false);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
 
   // New Event Form State
@@ -158,23 +157,26 @@ export default function CalendarScreen() {
   const [newTime, setNewTime] = useState('09:00');
   const [newCategory, setNewCategory] = useState<CalendarEvent['category']>('work');
 
-  // Sync Form State
-  const [editRepo, setEditRepo] = useState(syncConfig.githubRepo);
-  const [editToken, setEditToken] = useState(syncConfig.githubToken);
-  const [editErpUrl, setEditErpUrl] = useState(syncConfig.erpApiUrl);
-  const [editErpToken, setEditErpToken] = useState(syncConfig.erpToken);
+  // Reload sync config whenever user returns from Profile Settings
+  useEffect(() => {
+    const reloadConfig = () => {
+      try {
+        const stored = localStorage.getItem(SYNC_CONFIG_KEY);
+        if (stored) {
+          setSyncConfig({ ...DEFAULT_SYNC_CONFIG, ...JSON.parse(stored) });
+        }
+      } catch {}
+    };
+    reloadConfig();
+    window.addEventListener('focus', reloadConfig);
+    return () => window.removeEventListener('focus', reloadConfig);
+  }, []);
 
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
     } catch {}
   }, [events]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(syncConfig));
-    } catch {}
-  }, [syncConfig]);
 
   const selectedKey = format(selectedDate, 'yyyy-MM-dd');
 
@@ -219,10 +221,18 @@ export default function CalendarScreen() {
   /**
    * Syncs milestones, issues, and releases from GitHub & ERP
    */
-  const handleSyncGithubAndErp = useCallback(async (cfg = syncConfig) => {
+  const handleSyncGithubAndErp = useCallback(async (customCfg?: SyncConfig) => {
+    let cfg = customCfg || syncConfig;
+    try {
+      const stored = localStorage.getItem(SYNC_CONFIG_KEY);
+      if (stored) {
+        cfg = { ...DEFAULT_SYNC_CONFIG, ...JSON.parse(stored) };
+        setSyncConfig(cfg);
+      }
+    } catch {}
+
     if (!cfg.githubRepo.trim() && !cfg.erpApiUrl.trim()) {
-      toast('Please enter a GitHub repository or ERP API URL', 'error');
-      setSyncSheetOpen(true);
+      toast('Configure GitHub & ERP in Profile Settings', 'error');
       return;
     }
 
@@ -382,20 +392,6 @@ export default function CalendarScreen() {
     }
   }, [syncConfig]);
 
-  const handleSaveSyncConfig = (e: React.FormEvent) => {
-    e.preventDefault();
-    const updated: SyncConfig = {
-      ...syncConfig,
-      githubRepo: editRepo.trim(),
-      githubToken: editToken.trim(),
-      erpApiUrl: editErpUrl.trim(),
-      erpToken: editErpToken.trim(),
-    };
-    setSyncConfig(updated);
-    setSyncSheetOpen(false);
-    handleSyncGithubAndErp(updated);
-  };
-
   const handleAddEvent = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) {
@@ -436,20 +432,7 @@ export default function CalendarScreen() {
           <h1 className="text-tg-text text-[22px] font-bold tracking-tight">Calendar</h1>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {/* GitHub / ERP Sync Status Button */}
-          <button
-            onClick={() => setSyncSheetOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tg-bg-secondary text-xs font-semibold border border-tg-border/30 text-tg-text hover:bg-tg-surface active:scale-95 transition-all"
-            title="GitHub & ERP Sync Settings"
-          >
-            <GithubIcon className="w-3.5 h-3.5 text-purple-400" />
-            <span className="truncate max-w-[85px] sm:max-w-[120px]">
-              {syncConfig.githubRepo ? syncConfig.githubRepo.split('/')[1] || syncConfig.githubRepo : 'Connect'}
-            </span>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-          </button>
-
+        <div className="flex items-center gap-2">
           {/* Quick Refresh */}
           <button
             disabled={isSyncing}
@@ -458,7 +441,7 @@ export default function CalendarScreen() {
               'w-8 h-8 rounded-full bg-tg-bg-secondary border border-tg-border/30 flex items-center justify-center text-tg-text active:scale-95 transition-all',
               isSyncing && 'opacity-60 pointer-events-none'
             )}
-            title="Sync with GitHub & ERP"
+            title="Refresh events from GitHub & ERP"
           >
             <RefreshCw className={clsx('w-3.5 h-3.5', isSyncing && 'animate-spin text-tg-blue')} />
           </button>
@@ -698,77 +681,6 @@ export default function CalendarScreen() {
           )}
         </div>
       </div>
-
-      {/* GitHub & ERP Connection BottomSheet */}
-      <BottomSheet open={syncSheetOpen} onClose={() => setSyncSheetOpen(false)} title="GitHub & ERP System Connection">
-        <form onSubmit={handleSaveSyncConfig} className="p-4 space-y-4">
-          <div className="bg-tg-bg-secondary/60 rounded-xl p-3 border border-tg-border/20 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center shrink-0">
-              <GithubIcon className="w-5 h-5" />
-            </div>
-            <div className="min-w-0 flex-1 text-left">
-              <p className="text-sm font-semibold text-tg-text">ERP & GitHub Calendar Sync</p>
-              <p className="text-xs text-tg-text-hint">Sync milestones, issues, and ERP deadlines</p>
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-tg-text-hint block mb-1">
-              GitHub Repository (owner/repo)
-            </label>
-            <input
-              type="text"
-              value={editRepo}
-              onChange={(e) => setEditRepo(e.target.value)}
-              placeholder="e.g. dara-tech/tg"
-              className="w-full bg-tg-bg-secondary rounded-xl px-3.5 py-2.5 text-sm text-tg-text placeholder:text-tg-text-hint border border-tg-border/30 focus:outline-none focus:border-tg-blue"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-tg-text-hint block mb-1">
-              GitHub Personal Access Token (Optional for private repos)
-            </label>
-            <input
-              type="password"
-              value={editToken}
-              onChange={(e) => setEditToken(e.target.value)}
-              placeholder="ghp_xxxxxxxxxxxx"
-              className="w-full bg-tg-bg-secondary rounded-xl px-3.5 py-2.5 text-sm text-tg-text placeholder:text-tg-text-hint border border-tg-border/30 focus:outline-none focus:border-tg-blue"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-tg-text-hint block mb-1">
-              ERP System API / Calendar Endpoint (Optional)
-            </label>
-            <input
-              type="url"
-              value={editErpUrl}
-              onChange={(e) => setEditErpUrl(e.target.value)}
-              placeholder="https://erp.example.com/api/v1/calendar"
-              className="w-full bg-tg-bg-secondary rounded-xl px-3.5 py-2.5 text-sm text-tg-text placeholder:text-tg-text-hint border border-tg-border/30 focus:outline-none focus:border-tg-blue"
-            />
-          </div>
-
-          {syncConfig.lastSyncedAt && (
-            <p className="text-xs text-tg-text-hint text-center">
-              Last synced: {new Date(syncConfig.lastSyncedAt).toLocaleString()}
-            </p>
-          )}
-
-          <div className="flex gap-2 pt-1">
-            <button
-              type="submit"
-              disabled={isSyncing}
-              className="flex-1 py-3 rounded-xl bg-tg-blue text-white font-semibold text-sm active:scale-98 transition-transform shadow-md flex items-center justify-center gap-1.5"
-            >
-              <RefreshCw className={clsx('w-4 h-4', isSyncing && 'animate-spin')} />
-              <span>{isSyncing ? 'Syncing...' : 'Save & Sync Now'}</span>
-            </button>
-          </div>
-        </form>
-      </BottomSheet>
 
       {/* Add Event Bottom Sheet */}
       <BottomSheet open={addSheetOpen} onClose={() => setAddSheetOpen(false)} title="New Calendar Event">

@@ -94,14 +94,14 @@ export function BottomNav() {
   if (hide) return null;
 
   const safeStyle: React.CSSProperties = {
-    paddingBottom: 'max(8px, env(safe-area-inset-bottom, 8px))',
+    paddingBottom: 'max(14px, env(safe-area-inset-bottom, 14px))',
   };
 
   const renderNavContent = () => {
     /* ── PILL (default) ── */
     if (navStyle === 'pill') {
       return (
-        <div className="flex items-stretch justify-around p-1">
+        <div className="flex items-stretch justify-around p-1.5">
           {TABS.map((tab) => {
             const active = pathname.startsWith(tab.href);
             return (
@@ -128,7 +128,7 @@ export function BottomNav() {
     /* ── CLASSIC ── */
     if (navStyle === 'classic') {
       return (
-        <div className="flex items-stretch justify-around px-1 py-1">
+        <div className="flex items-stretch justify-around px-1.5 py-1.5">
           {TABS.map((tab) => {
             const active = pathname.startsWith(tab.href);
             return (
@@ -152,7 +152,7 @@ export function BottomNav() {
     /* ── CARD ── */
     if (navStyle === 'card') {
       return (
-        <div className="flex items-stretch justify-around gap-1 p-1">
+        <div className="flex items-stretch justify-around gap-1 p-1.5">
           {TABS.map((tab) => {
             const active = pathname.startsWith(tab.href);
             return (
@@ -178,7 +178,7 @@ export function BottomNav() {
 
     /* ── MINIMAL ── */
     return (
-      <div className="flex items-stretch justify-around px-2 py-1">
+      <div className="flex items-stretch justify-around px-2 py-2">
         {TABS.map((tab) => {
           const active = pathname.startsWith(tab.href);
           return (
@@ -205,10 +205,10 @@ export function BottomNav() {
 
   return (
     <div
-      className="shrink-0 w-full px-3.5 pt-1 select-none pointer-events-none z-30"
+      className="shrink-0 w-full px-4 pt-2 select-none pointer-events-none z-30"
       style={safeStyle}
     >
-      <nav className="pointer-events-auto mx-auto max-w-md w-full bg-tg-bg-secondary/90 backdrop-blur-2xl border border-tg-border/25 shadow-lg shadow-black/10 dark:shadow-black/40 rounded-[26px] overflow-hidden">
+      <nav className="pointer-events-auto mx-auto max-w-md w-full bg-tg-bg-secondary/90 backdrop-blur-2xl border border-tg-border/25 shadow-lg shadow-black/15 dark:shadow-black/40 rounded-[28px] overflow-hidden">
         {renderNavContent()}
       </nav>
     </div>

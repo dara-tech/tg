@@ -28,7 +28,62 @@ export function ActiveCallOverlay() {
   const [aiVol, setAiVol] = useState<number>(0);
   const [showPicker, setShowPicker] = useState<boolean>(false);
 
+  // Smooth Wire-Signal Animation (60FPS GPU lerp)
+  const ring1Ref = useRef<HTMLDivElement>(null);
+  const ring2Ref = useRef<HTMLDivElement>(null);
+  const ring3Ref = useRef<HTMLDivElement>(null);
+  const targetVolRef = useRef(0);
+  const currentVolRef = useRef(0);
+
   const personaConfig = getPersonaConfig(aiPersona);
+
+  // Sync target volume with smooth lerp target
+  useEffect(() => {
+    targetVolRef.current = aiState === 'speaking' ? aiVol : aiState === 'listening' ? userVol : 0;
+  }, [aiVol, userVol, aiState]);
+
+  // Buttery-smooth 60fps RAF loop with zero layout reflows
+  useEffect(() => {
+    let animId: number;
+    let t = 0;
+
+    const tick = () => {
+      t += 0.04;
+      // Exponential linear interpolation (lerp)
+      currentVolRef.current += (targetVolRef.current - currentVolRef.current) * 0.16;
+      const v = Math.max(0, currentVolRef.current);
+
+      const isTalking = v > 0.02;
+      const breath = Math.sin(t) * 0.012;
+      const active = isAiCall && (aiState === 'speaking' || aiState === 'listening' || aiState === 'connected');
+
+      if (ring1Ref.current) {
+        const s1 = 1 + v * 0.35 + (isTalking ? 0.03 : breath);
+        const op1 = active ? Math.min(0.85, 0.18 + v * 0.7) : 0;
+        ring1Ref.current.style.transform = `scale(${s1.toFixed(3)})`;
+        ring1Ref.current.style.opacity = op1.toFixed(3);
+      }
+
+      if (ring2Ref.current) {
+        const s2 = 1 + v * 0.62 + (isTalking ? 0.06 : breath * 1.6);
+        const op2 = active ? Math.min(0.6, 0.1 + v * 0.5) : 0;
+        ring2Ref.current.style.transform = `scale(${s2.toFixed(3)})`;
+        ring2Ref.current.style.opacity = op2.toFixed(3);
+      }
+
+      if (ring3Ref.current) {
+        const s3 = 1 + v * 0.95 + (isTalking ? 0.1 : breath * 2.2);
+        const op3 = active ? Math.min(0.4, v * 0.35) : 0;
+        ring3Ref.current.style.transform = `scale(${s3.toFixed(3)})`;
+        ring3Ref.current.style.opacity = op3.toFixed(3);
+      }
+
+      animId = requestAnimationFrame(tick);
+    };
+
+    animId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animId);
+  }, [isAiCall, aiState]);
 
   // Call duration timer
   useEffect(() => {
@@ -149,9 +204,6 @@ export function ActiveCallOverlay() {
     ? personaConfig?.gradient?.initial || 'AI'
     : displayName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || 'U';
 
-  const currentVolume = aiState === 'speaking' ? aiVol : userVol;
-  const pulseScale = 1 + Math.min(0.35, currentVolume * 0.45);
-
   return (
     <div
       onClick={() => {
@@ -180,31 +232,44 @@ export function ActiveCallOverlay() {
 
       {/* Hero Center */}
       <div className="flex flex-col items-center gap-5 my-auto z-10 w-full max-w-sm">
-        {/* Animated Avatar */}
-        <div className="relative flex items-center justify-center">
-          {/* Subtle audio ripple */}
-          {isAiCall && (aiState === 'speaking' || (aiState === 'listening' && userVol > 0.05)) && (
-            <>
-              <div
-                className="absolute rounded-full border border-tg-blue/30 pointer-events-none transition-transform duration-100"
-                style={{
-                  width: `${148 * pulseScale}px`,
-                  height: `${148 * pulseScale}px`,
-                }}
-              />
-              <div
-                className="absolute rounded-full bg-tg-blue/10 pointer-events-none transition-transform duration-150"
-                style={{
-                  width: `${176 * pulseScale}px`,
-                  height: `${176 * pulseScale}px`,
-                }}
-              />
-            </>
-          )}
+        {/* Animated Avatar with Hardware-Accelerated Smooth Wire-Signal Waves */}
+        <div className="relative flex items-center justify-center w-48 h-48">
+          {/* Wire-Signal Wave 3 (Outer ambient aura) */}
+          <div
+            ref={ring3Ref}
+            className={`absolute w-32 h-32 rounded-full border pointer-events-none transition-colors duration-500 ${
+              aiState === 'listening'
+                ? 'border-emerald-500/20 bg-emerald-500/[0.03]'
+                : 'border-tg-blue/20 bg-tg-blue/[0.03]'
+            }`}
+            style={{ willChange: 'transform, opacity' }}
+          />
+
+          {/* Wire-Signal Wave 2 (Middle harmonic wave) */}
+          <div
+            ref={ring2Ref}
+            className={`absolute w-32 h-32 rounded-full border pointer-events-none transition-colors duration-300 ${
+              aiState === 'listening'
+                ? 'border-emerald-500/35 bg-emerald-500/[0.06]'
+                : 'border-tg-blue/35 bg-tg-blue/[0.06]'
+            }`}
+            style={{ willChange: 'transform, opacity' }}
+          />
+
+          {/* Wire-Signal Wave 1 (Inner responsive wire) */}
+          <div
+            ref={ring1Ref}
+            className={`absolute w-32 h-32 rounded-full border-2 pointer-events-none transition-colors duration-200 ${
+              aiState === 'listening'
+                ? 'border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.25)]'
+                : 'border-tg-blue/60 shadow-[0_0_20px_rgba(59,130,246,0.25)]'
+            }`}
+            style={{ willChange: 'transform, opacity' }}
+          />
 
           <div
             onClick={isAiCall && aiState === 'speaking' ? handleInterrupt : undefined}
-            className="relative w-32 h-32 rounded-full overflow-hidden border border-tg-border/30 shadow-xl flex items-center justify-center cursor-pointer transition-transform active:scale-95 bg-tg-surface"
+            className="relative w-32 h-32 rounded-full overflow-hidden border border-tg-border/30 shadow-2xl flex items-center justify-center cursor-pointer transition-transform active:scale-95 bg-tg-surface z-10"
           >
             {isAiCall && personaConfig?.avatar ? (
               <img
@@ -227,22 +292,53 @@ export function ActiveCallOverlay() {
           </div>
         </div>
 
-        {/* Name & Clean Status */}
-        <div className="text-center space-y-1">
+        {/* Name & Clean Status with Live Wire-Signal Indicator */}
+        <div className="text-center space-y-1.5 flex flex-col items-center">
           <h2 className="text-2xl font-bold tracking-tight text-tg-text">{displayName}</h2>
-          <p className="text-xs text-tg-text-hint font-medium">
-            {isAiCall
-              ? aiState === 'connecting'
-                ? 'connecting...'
-                : aiState === 'speaking'
-                ? 'speaking...'
-                : aiState === 'listening'
-                ? 'listening...'
-                : aiState === 'error'
-                ? 'connection failed'
-                : 'connected'
-              : 'telegram call'}
-          </p>
+          <div className="flex items-center gap-2">
+            {/* Smooth live signal waveform bars */}
+            {isAiCall && (aiState === 'speaking' || aiState === 'listening') && (
+              <div className="flex items-center gap-0.5 h-3 px-1">
+                <span
+                  className={`w-0.5 rounded-full ${
+                    aiState === 'listening' ? 'bg-emerald-500' : 'bg-tg-blue'
+                  } animate-pulse`}
+                  style={{ height: '55%', animationDuration: '0.6s' }}
+                />
+                <span
+                  className={`w-0.5 rounded-full ${
+                    aiState === 'listening' ? 'bg-emerald-500' : 'bg-tg-blue'
+                  } animate-pulse`}
+                  style={{ height: '100%', animationDuration: '0.4s' }}
+                />
+                <span
+                  className={`w-0.5 rounded-full ${
+                    aiState === 'listening' ? 'bg-emerald-500' : 'bg-tg-blue'
+                  } animate-pulse`}
+                  style={{ height: '75%', animationDuration: '0.7s' }}
+                />
+                <span
+                  className={`w-0.5 rounded-full ${
+                    aiState === 'listening' ? 'bg-emerald-500' : 'bg-tg-blue'
+                  } animate-pulse`}
+                  style={{ height: '40%', animationDuration: '0.5s' }}
+                />
+              </div>
+            )}
+            <p className="text-xs text-tg-text-hint font-medium">
+              {isAiCall
+                ? aiState === 'connecting'
+                  ? 'connecting...'
+                  : aiState === 'speaking'
+                  ? 'speaking...'
+                  : aiState === 'listening'
+                  ? 'listening...'
+                  : aiState === 'error'
+                  ? 'connection failed'
+                  : 'connected'
+                : 'telegram call'}
+            </p>
+          </div>
         </div>
 
         {/* Error Notification */}

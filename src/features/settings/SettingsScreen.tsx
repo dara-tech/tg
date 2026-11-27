@@ -295,7 +295,7 @@ export default function SettingsScreen() {
 
   const safeTheme = BG_THEMES[ui.theme] ? ui.theme : 'black';
   const safeAccent = ACCENT_COLORS[ui.accent] ? ui.accent : 'purple';
-  const safeNavStyle = NAV_STYLES[ui.navStyle] ? ui.navStyle : 'pill';
+  const safeNavStyle = NAV_STYLES[ui.navStyle] ? ui.navStyle : 'minimal';
 
   return (
     <div className="flex flex-col h-full bg-tg-bg-tertiary">
@@ -485,7 +485,7 @@ export default function SettingsScreen() {
                       )}
                       {id === 'minimal' && (
                         <div className="w-full h-3 border-t border-tg-border/30 flex items-center justify-around px-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-tg-blue" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#ff3b30]" />
                           <span className="w-1 h-1 rounded-full bg-tg-text-hint/40" />
                           <span className="w-1 h-1 rounded-full bg-tg-text-hint/40" />
                         </div>

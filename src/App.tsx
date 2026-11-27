@@ -52,7 +52,7 @@ export default function App() {
     <Providers>
       <div
         id="app"
-        className="flex flex-col w-full h-[100lvh] min-h-0 overflow-hidden bg-tg-bg"
+        className="flex flex-col w-full h-[100lvh] min-h-0 overflow-hidden"
         style={{
           height: 'var(--app-height, 100lvh)',
           transform: 'translateY(var(--app-top, 0px))',

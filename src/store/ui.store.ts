@@ -177,7 +177,7 @@ export const useUIStore = create<UIState>()(
     (set) => ({
       theme: 'black',
       accent: 'purple',
-      navStyle: 'pill',
+      navStyle: 'minimal',
       khmerFont: 'hanuman',
       chatWallpaper: 'default',
       chatWallpaperImage: null,
@@ -230,6 +230,15 @@ export const useUIStore = create<UIState>()(
     }),
     {
       name: 'tg-ui',
+      version: 2,
+      migrate: (persistedState: any, version: number) => {
+        if (version < 2 && persistedState) {
+          if (persistedState.navStyle === 'pill') {
+            persistedState.navStyle = 'minimal';
+          }
+        }
+        return persistedState as UIState;
+      },
       partialize: (s) => ({
         theme: s.theme,
         accent: s.accent,

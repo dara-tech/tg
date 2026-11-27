@@ -61,7 +61,7 @@ export default function AiScreen() {
       <div className="px-4 pt-3 pb-3 safe-top border-b border-tg-border/20 sticky top-0 bg-tg-bg/90 backdrop-blur-xl z-20">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl overflow-hidden shrink-0 border border-tg-border/20 flex items-center justify-center bg-tg-surface p-0.5 shadow-sm">
+            <div className="w-11 h-11 rounded-2xl overflow-hidden shrink-0 border border-tg-border/20 flex items-center justify-center bg-tg-surface p-1 shadow-sm">
               <img src="/icons/ai-brain.png" alt="AI" className="w-full h-full object-contain" />
             </div>
             <div>

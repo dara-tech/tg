@@ -82,8 +82,8 @@ export default function CallsScreen() {
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-bold text-tg-text truncate">{currentPersona.name}</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-sky-500/20 text-sky-400 text-[10px] font-semibold flex items-center gap-1">
-                  <img src="/icons/ai-brain.png" alt="AI" className="w-3 h-3 object-contain" /> AI Live
+                <span className="px-1.5 py-0.5 rounded-full bg-sky-500/20 text-sky-400 text-[10px] font-semibold flex items-center gap-1">
+                  <img src="/icons/ai-brain.png" alt="AI" className="w-3.5 h-3.5 object-contain" /> AI Live
                 </span>
               </div>
               <p className="text-[11px] text-tg-text-hint truncate mt-0.5">{currentPersona.tagline}</p>

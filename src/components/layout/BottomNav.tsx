@@ -28,8 +28,10 @@ function renderTabIcon(
           src={tab.customIconSrc}
           alt={tab.label}
           className={clsx(
-            'w-6 h-6 rounded-full object-contain transition-all',
-            active ? 'scale-115 drop-shadow-sm brightness-110' : 'opacity-70 grayscale-[25%] hover:opacity-100 hover:grayscale-0'
+            'w-7 h-7 object-contain transition-transform',
+            active
+              ? 'scale-110 drop-shadow-md brightness-105'
+              : 'opacity-80 hover:opacity-100 hover:scale-105'
           )}
         />
         {badgeCount > 0 && (

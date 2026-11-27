@@ -94,12 +94,35 @@ export class AICallService extends EventTarget {
     if (apiKey) this.customApiKey = apiKey;
     this.isIntentionalDisconnect = false;
 
-    // 1. Initialize Web Audio API
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!this.audioContext || this.audioContext.state === 'closed') {
-      this.audioContext = new AudioContextClass({ sampleRate: 24000 });
-    } else if (this.audioContext.state === 'suspended') {
-      await this.audioContext.resume();
+    // 1. Initialize Web Audio API (with iOS Safari sampleRate fallback)
+    const AudioContextClass =
+      typeof window !== 'undefined'
+        ? window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+        : undefined;
+    if (!AudioContextClass) {
+      this.dispatchEvent(
+        new CustomEvent('error', { detail: { message: 'Audio playback is not supported in this browser.' } })
+      );
+      this.setState('error');
+      return;
+    }
+
+    try {
+      if (!this.audioContext || this.audioContext.state === 'closed') {
+        try {
+          this.audioContext = new AudioContextClass({ sampleRate: 24000 });
+        } catch {
+          this.audioContext = new AudioContextClass();
+        }
+      } else if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+      }
+    } catch {
+      this.dispatchEvent(
+        new CustomEvent('error', { detail: { message: 'Could not initialize audio device.' } })
+      );
+      this.setState('error');
+      return;
     }
 
     // Output compression chain
@@ -116,7 +139,17 @@ export class AICallService extends EventTarget {
     this.outputCompressor.connect(this.outputGain);
     this.outputGain.connect(this.audioContext.destination);
 
-    // 2. Request microphone stream
+    // 2. Request microphone stream (guard against missing mediaDevices on non-HTTPS / restricted WebViews)
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      this.dispatchEvent(
+        new CustomEvent('error', {
+          detail: { message: 'Microphone unavailable (requires localhost/HTTPS & mic permission).' },
+        })
+      );
+      this.setState('error');
+      return;
+    }
+
     try {
       this.mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -126,6 +159,11 @@ export class AICallService extends EventTarget {
           channelCount: 1,
         },
       });
+      if (this.isIntentionalDisconnect || !this.audioContext || this.audioContext.state === 'closed') {
+        this.mediaStream.getTracks().forEach((t) => t.stop());
+        this.mediaStream = null;
+        return;
+      }
       if (this.isMuted) {
         this.mediaStream.getAudioTracks().forEach((t) => (t.enabled = false));
       }
@@ -134,7 +172,7 @@ export class AICallService extends EventTarget {
       this.dispatchEvent(
         new CustomEvent('error', { detail: { message: 'Microphone permission denied or unavailable' } })
       );
-      this.setState('disconnected');
+      this.setState('error');
       return;
     }
 

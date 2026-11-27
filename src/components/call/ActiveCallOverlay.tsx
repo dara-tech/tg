@@ -57,18 +57,28 @@ export function ActiveCallOverlay() {
     };
 
     const handleTranscript = (e: Event) => {
-      const { text } = (e as CustomEvent<AiTranscriptEvent>).detail;
-      setTranscript(text);
+      const detail = (e as CustomEvent<Partial<AiTranscriptEvent> | string>).detail;
+      const text = typeof detail === 'string' ? detail : detail?.text ?? '';
+      if (text) setTranscript(text);
     };
 
     const handleVolume = (e: Event) => {
-      const { userVolume, aiVolume } = (e as CustomEvent<{ userVolume: number; aiVolume: number }>).detail;
-      setUserVol(userVolume);
-      setAiVol(aiVolume);
+      const detail = (e as CustomEvent<{ user?: number; ai?: number; userVolume?: number; aiVolume?: number }>).detail;
+      const uRaw = detail?.userVolume ?? detail?.user ?? 0;
+      const aRaw = detail?.aiVolume ?? detail?.ai ?? 0;
+      setUserVol(Math.min(1, (Number.isFinite(uRaw) ? uRaw : 0) / 100));
+      setAiVol(Math.min(1, (Number.isFinite(aRaw) ? aRaw : 0) / 100));
     };
 
     const handleError = (e: Event) => {
-      setErrorMessage((e as CustomEvent<string>).detail);
+      const detail = (e as CustomEvent<string | { message?: string }>).detail;
+      const msg =
+        typeof detail === 'string'
+          ? detail
+          : detail && typeof detail === 'object' && typeof detail.message === 'string'
+          ? detail.message
+          : 'Call connection failed';
+      setErrorMessage(msg);
       setAiState('error');
     };
 
@@ -77,7 +87,11 @@ export function ActiveCallOverlay() {
     service.addEventListener('volume', handleVolume);
     service.addEventListener('error', handleError);
 
-    service.startCall(aiPersona as AIPersona, aiApiKey);
+    Promise.resolve(service.startCall(aiPersona as AIPersona, aiApiKey)).catch((err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'Unable to start AI call';
+      setErrorMessage(msg);
+      setAiState('error');
+    });
 
     return () => {
       service.removeEventListener('statechange', handleStateChange);

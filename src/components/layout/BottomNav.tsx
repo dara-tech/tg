@@ -94,18 +94,15 @@ export function BottomNav() {
   if (hide) return null;
 
   const safeStyle: React.CSSProperties = {
-    paddingBottom: 'max(14px, env(safe-area-inset-bottom, 14px))',
+    paddingBottom: 'max(8px, env(safe-area-inset-bottom, 8px))',
   };
 
-  /* ── PILL (default) ── */
-  if (navStyle === 'pill') {
-    return (
-      <nav
-        className="shrink-0 w-full bg-tg-bg-secondary/90 backdrop-blur-2xl border-t border-tg-border/20 rounded-b-[36px] sm:rounded-b-[42px] overflow-hidden pt-1.5 [data-theme='manga']_&:border-t-0"
-        style={safeStyle}
-      >
-        <div className="flex items-stretch justify-around px-4">
-          {TABS.map(tab => {
+  const renderNavContent = () => {
+    /* ── PILL (default) ── */
+    if (navStyle === 'pill') {
+      return (
+        <div className="flex items-stretch justify-around p-1">
+          {TABS.map((tab) => {
             const active = pathname.startsWith(tab.href);
             return (
               <Link
@@ -113,7 +110,7 @@ export function BottomNav() {
                 href={tab.href}
                 prefetch
                 className={clsx(
-                  'flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-2xl transition-all mx-0.5',
+                  'flex-1 flex flex-col items-center justify-center gap-0.5 py-1 px-1 rounded-2xl transition-all mx-0.5',
                   active ? 'bg-tg-blue' : 'active:bg-tg-surface'
                 )}
               >
@@ -125,26 +122,21 @@ export function BottomNav() {
             );
           })}
         </div>
-      </nav>
-    );
-  }
+      );
+    }
 
-  /* ── CLASSIC ── */
-  if (navStyle === 'classic') {
-    return (
-      <nav
-        className="shrink-0 w-full bg-tg-bg-secondary/90 backdrop-blur-2xl border-t border-tg-border/20 rounded-b-[36px] sm:rounded-b-[42px] overflow-hidden pt-1.5 [data-theme='manga']_&:border-t-0"
-        style={safeStyle}
-      >
-        <div className="flex items-stretch justify-around px-4">
-          {TABS.map(tab => {
+    /* ── CLASSIC ── */
+    if (navStyle === 'classic') {
+      return (
+        <div className="flex items-stretch justify-around px-1 py-1">
+          {TABS.map((tab) => {
             const active = pathname.startsWith(tab.href);
             return (
               <Link
                 key={tab.href}
                 href={tab.href}
                 prefetch
-                className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-2 rounded-xl transition-colors active:bg-tg-surface"
+                className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-colors active:bg-tg-surface"
               >
                 {renderTabIcon(tab, active, 'text-tg-blue', tab.href === '/dialogs' ? totalUnread : 0)}
                 <span className={clsx('text-[10px] font-semibold', active ? 'text-tg-blue' : 'text-tg-text-hint')}>
@@ -154,19 +146,14 @@ export function BottomNav() {
             );
           })}
         </div>
-      </nav>
-    );
-  }
+      );
+    }
 
-  /* ── CARD ── */
-  if (navStyle === 'card') {
-    return (
-      <nav
-        className="shrink-0 w-full bg-tg-bg-secondary/90 backdrop-blur-2xl border-t border-tg-border/20 rounded-b-[36px] sm:rounded-b-[42px] overflow-hidden pt-1.5 [data-theme='manga']_&:border-t-0"
-        style={safeStyle}
-      >
-        <div className="flex items-stretch justify-around gap-1 px-4">
-          {TABS.map(tab => {
+    /* ── CARD ── */
+    if (navStyle === 'card') {
+      return (
+        <div className="flex items-stretch justify-around gap-1 p-1">
+          {TABS.map((tab) => {
             const active = pathname.startsWith(tab.href);
             return (
               <Link
@@ -174,7 +161,7 @@ export function BottomNav() {
                 href={tab.href}
                 prefetch
                 className={clsx(
-                  'flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-2 rounded-2xl transition-all',
+                  'flex-1 flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all',
                   active ? 'bg-tg-blue text-white' : 'active:bg-tg-surface'
                 )}
               >
@@ -186,18 +173,13 @@ export function BottomNav() {
             );
           })}
         </div>
-      </nav>
-    );
-  }
+      );
+    }
 
-  /* ── MINIMAL ── */
-  return (
-    <nav
-      className="shrink-0 w-full bg-tg-bg-secondary/90 backdrop-blur-2xl border-t border-tg-border/20 rounded-b-[36px] sm:rounded-b-[42px] overflow-hidden pt-1.5 [data-theme='manga']_&:border-t-0"
-      style={safeStyle}
-    >
-      <div className="flex items-stretch justify-around px-5">
-        {TABS.map(tab => {
+    /* ── MINIMAL ── */
+    return (
+      <div className="flex items-stretch justify-around px-2 py-1">
+        {TABS.map((tab) => {
           const active = pathname.startsWith(tab.href);
           return (
             <Link
@@ -205,7 +187,7 @@ export function BottomNav() {
               href={tab.href}
               prefetch
               aria-label={tab.label}
-              className="flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-2 rounded-2xl transition-all active:scale-95"
+              className="flex-1 flex flex-col items-center justify-center gap-1 py-1 px-2 rounded-2xl transition-all active:scale-95"
             >
               {renderTabIcon(tab, active, 'text-tg-blue', tab.href === '/dialogs' ? totalUnread : 0)}
               <span
@@ -218,6 +200,17 @@ export function BottomNav() {
           );
         })}
       </div>
-    </nav>
+    );
+  };
+
+  return (
+    <div
+      className="shrink-0 w-full px-3.5 pt-1 select-none pointer-events-none z-30"
+      style={safeStyle}
+    >
+      <nav className="pointer-events-auto mx-auto max-w-md w-full bg-tg-bg-secondary/90 backdrop-blur-2xl border border-tg-border/25 shadow-lg shadow-black/10 dark:shadow-black/40 rounded-[26px] overflow-hidden">
+        {renderNavContent()}
+      </nav>
+    </div>
   );
 }

@@ -10,7 +10,7 @@ import { ErrorBoundary } from './components/ui/ErrorBoundary';
 
 const AuthScreen = lazy(() => import('./features/authentication/AuthScreen'));
 const ContactsScreen = lazy(() => import('./features/contacts/ContactsScreen'));
-const CallsScreen = lazy(() => import('./features/calls/CallsScreen'));
+const CalendarScreen = lazy(() => import('./features/calendar/CalendarScreen'));
 const SettingsScreen = lazy(() => import('./features/settings/SettingsScreen'));
 const ConversationScreen = lazy(() => import('./features/conversations/ConversationScreen'));
 const ProfileScreen = lazy(() => import('./features/profile/ProfileScreen'));
@@ -65,7 +65,8 @@ export default function App() {
                 <Route path="/auth" element={<AuthScreen />} />
                 <Route path="/dialogs" element={<ChatListScreen />} />
                 <Route path="/contacts" element={<ContactsScreen />} />
-                <Route path="/calls" element={<CallsScreen />} />
+                <Route path="/calendar" element={<CalendarScreen />} />
+                <Route path="/calls" element={<Navigate to="/calendar" replace />} />
                 <Route path="/settings" element={<SettingsScreen />} />
                 <Route path="/chat/:id" element={<ChatRoute />} />
                 <Route path="/profile/:id" element={<ProfileRoute />} />

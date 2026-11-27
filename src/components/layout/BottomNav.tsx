@@ -3,15 +3,15 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import clsx from 'clsx';
-import { CircleUserRound, MessagesSquare, PhoneCall, UsersRound } from 'lucide-react';
+import { CircleUserRound, MessagesSquare, Calendar, UsersRound } from 'lucide-react';
 import { useDialogsStore } from '@/store/dialogs.store';
 import { NAV_STYLES, useUIStore } from '@/store/ui.store';
 
 const TABS = [
-  { href: '/dialogs',  label: 'Chats',   Icon: MessagesSquare  },
-  { href: '/contacts', label: 'People',  Icon: UsersRound      },
-  { href: '/calls',    label: 'Calls',   Icon: PhoneCall       },
-  { href: '/settings', label: 'Profile', Icon: CircleUserRound },
+  { href: '/dialogs',  label: 'Chats',    Icon: MessagesSquare  },
+  { href: '/contacts', label: 'People',   Icon: UsersRound      },
+  { href: '/calendar', label: 'Calendar', Icon: Calendar        },
+  { href: '/settings', label: 'Profile',  Icon: CircleUserRound },
 ];
 
 function renderTabIcon(

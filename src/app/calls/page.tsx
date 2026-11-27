@@ -1,2 +1,2 @@
 'use client';
-export { default } from '@/features/calls/CallsScreen';
+export { default } from '@/features/calendar/CalendarScreen';

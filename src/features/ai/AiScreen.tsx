@@ -164,8 +164,8 @@ export default function AiScreen() {
       <div className="px-4 pt-3 pb-3 safe-top border-b border-tg-border/20 [data-theme='manga']_&:border-b-0 sticky top-0 bg-tg-bg/85 backdrop-blur-xl z-20">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-black dark:bg-white text-white dark:text-black flex items-center justify-center shadow-md">
-              <Bot className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-2xl overflow-hidden shadow-md shrink-0 border border-tg-border/20 flex items-center justify-center bg-white/10 p-0.5">
+              <img src="/icons/ai-brain.png" alt="AI" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-tg-text text-[22px] font-black tracking-tight leading-none">

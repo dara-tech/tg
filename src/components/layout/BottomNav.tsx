@@ -10,17 +10,38 @@ import { NAV_STYLES, useUIStore } from '@/store/ui.store';
 const TABS = [
   { href: '/dialogs',  label: 'Chats',    Icon: MessagesSquare  },
   { href: '/contacts', label: 'People',   Icon: UsersRound      },
-  { href: '/ai',       label: 'AI Voice', Icon: Bot             },
+  { href: '/ai',       label: 'AI Voice', Icon: Bot, customIconSrc: '/icons/ai-brain.png' },
   { href: '/calendar', label: 'Calendar', Icon: Calendar        },
   { href: '/settings', label: 'Profile',  Icon: CircleUserRound },
 ];
 
 function renderTabIcon(
-  Icon: typeof MessagesSquare,
+  tab: (typeof TABS)[number],
   active: boolean,
   activeClass = 'text-tg-blue',
   badgeCount = 0
 ) {
+  if (tab.customIconSrc) {
+    return (
+      <div className="relative inline-flex items-center justify-center">
+        <img
+          src={tab.customIconSrc}
+          alt={tab.label}
+          className={clsx(
+            'w-6 h-6 rounded-full object-contain transition-all',
+            active ? 'scale-115 drop-shadow-sm brightness-110' : 'opacity-70 grayscale-[25%] hover:opacity-100 hover:grayscale-0'
+          )}
+        />
+        {badgeCount > 0 && (
+          <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold leading-none tabular-nums inline-flex items-center justify-center">
+            {badgeCount > 99 ? '99+' : badgeCount}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  const Icon = tab.Icon;
   return (
     <div className="relative inline-flex items-center justify-center">
       <Icon
@@ -91,7 +112,7 @@ export function BottomNav() {
                   active ? 'bg-tg-blue' : 'active:bg-tg-surface'
                 )}
               >
-                {renderTabIcon(tab.Icon, active, 'text-white', tab.href === '/dialogs' ? totalUnread : 0)}
+                {renderTabIcon(tab, active, 'text-white', tab.href === '/dialogs' ? totalUnread : 0)}
                 <span className={clsx('text-[10px] font-semibold', active ? 'text-white' : 'text-tg-text-hint')}>
                   {tab.label}
                 </span>
@@ -120,7 +141,7 @@ export function BottomNav() {
                 prefetch
                 className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-2 rounded-xl transition-colors active:bg-tg-surface"
               >
-                {renderTabIcon(tab.Icon, active, 'text-tg-blue', tab.href === '/dialogs' ? totalUnread : 0)}
+                {renderTabIcon(tab, active, 'text-tg-blue', tab.href === '/dialogs' ? totalUnread : 0)}
                 <span className={clsx('text-[10px] font-semibold', active ? 'text-tg-blue' : 'text-tg-text-hint')}>
                   {tab.label}
                 </span>
@@ -152,7 +173,7 @@ export function BottomNav() {
                   active ? 'bg-tg-blue text-white' : 'active:bg-tg-surface'
                 )}
               >
-                {renderTabIcon(tab.Icon, active, 'text-white', tab.href === '/dialogs' ? totalUnread : 0)}
+                {renderTabIcon(tab, active, 'text-white', tab.href === '/dialogs' ? totalUnread : 0)}
                 <span className={clsx('text-[10px] font-semibold', active ? 'text-white' : 'text-tg-text-hint')}>
                   {tab.label}
                 </span>
@@ -181,7 +202,7 @@ export function BottomNav() {
               aria-label={tab.label}
               className="flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-2 rounded-xl transition-all active:scale-95"
             >
-              {renderTabIcon(tab.Icon, active, 'text-tg-blue', tab.href === '/dialogs' ? totalUnread : 0)}
+              {renderTabIcon(tab, active, 'text-tg-blue', tab.href === '/dialogs' ? totalUnread : 0)}
               <span
                 className={clsx(
                   'w-1.5 h-1.5 rounded-full transition-all',

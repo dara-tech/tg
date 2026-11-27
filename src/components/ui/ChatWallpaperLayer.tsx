@@ -33,6 +33,32 @@ export function ChatWallpaperLayer({
     );
   }
 
+  // When default wallpaper is chosen with bento theme, display authentic Bento Grid mesh
+  if ((wallpaper === 'default' && theme === 'bento') || wallpaper === 'bento-mesh') {
+    return (
+      <div className="absolute inset-0 pointer-events-none overflow-hidden select-none bg-[#09090B]">
+        {/* Bento Grid micro-mesh */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px)
+            `,
+            backgroundSize: '24px 24px',
+          }}
+        />
+        {/* Soft radial ambient illumination */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'radial-gradient(circle at 50% 30%, rgba(59, 130, 246, 0.08) 0%, transparent 65%)',
+          }}
+        />
+      </div>
+    );
+  }
+
   if (wallpaper === 'default') return null;
 
   const isCustom = wallpaper === 'custom' && Boolean(customImage);

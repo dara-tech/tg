@@ -311,7 +311,7 @@ export default function SettingsScreen() {
               <p className="text-tg-text text-sm font-semibold">Background Theme</p>
               <p className="text-tg-text-hint text-xs">{BG_THEMES[safeTheme].name} · {BG_THEMES[safeTheme].subtitle}</p>
             </div>
-            <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
+            <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
               {(Object.keys(BG_THEMES) as BgThemeId[]).map((id) => {
                 const active = safeTheme === id;
                 const t = BG_THEMES[id];

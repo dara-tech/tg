@@ -159,7 +159,7 @@ export default function ConversationScreen() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const myUserId = useAuthStore((s) => s.userId);
   const { dialogs, updateUnread, updateLastMessage } = useDialogsStore();
-  const { setActiveCall, chatWallpaper, chatWallpaperImage, chatWallpaperDim, chatWallpaperBlur } = useUIStore();
+  const { setActiveCall, startAiCall, chatWallpaper, chatWallpaperImage, chatWallpaperDim, chatWallpaperBlur } = useUIStore();
 
   const chatMeta = useMemo(() => {
     const found = dialogs.find((d) => d.id === id);
@@ -956,6 +956,14 @@ export default function ConversationScreen() {
             </svg>
           </button>
           <button
+            onClick={() => startAiCall()}
+            className="w-[34px] h-[34px] rounded-full bg-tg-surface/70 border border-tg-border/20 flex items-center justify-center active:opacity-60 transition-opacity"
+            aria-label="AI Voice Call"
+            title="AI Voice Call"
+          >
+            <img src="/icons/ai-brain.png" alt="AI" className="w-5 h-5 object-contain" />
+          </button>
+          <button
             onClick={() => setActiveCall(chatMeta.peerId, chatMeta.title)}
             className="w-[34px] h-[34px] rounded-full bg-tg-surface/70 border border-tg-border/20 flex items-center justify-center text-tg-text-secondary active:opacity-60 transition-opacity"
             aria-label="Voice Call"
@@ -1281,6 +1289,13 @@ export default function ConversationScreen() {
 
       <BottomSheet open={menuOpen} onClose={() => setMenuOpen(false)} title={chatMeta.title}>
         <div className="px-4 pb-6 space-y-1">
+          <button
+            onClick={() => { setMenuOpen(false); startAiCall(); }}
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-tg-blue active:bg-tg-surface text-left font-medium"
+          >
+            <img src="/icons/ai-brain.png" alt="AI" className="w-5 h-5 object-contain" />
+            <span>AI Voice Call</span>
+          </button>
           <button
             onClick={() => { setMenuOpen(false); router.push(`/profile/${chatMeta.peerId}`); }}
             className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-tg-text active:bg-tg-surface text-left"

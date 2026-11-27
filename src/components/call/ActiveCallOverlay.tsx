@@ -1,6 +1,6 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, PhoneOff, Smartphone, Volume2, Bot, MessageSquare, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Mic, MicOff, PhoneOff, Smartphone, Volume2, Sparkles, X } from 'lucide-react';
 import { useUIStore } from '@/store/ui.store';
 import { createAiCall, stopAiCall, getActiveAiCall } from '@/services/aiCall/aiCallService';
 import { AI_PERSONAS, getPersonaConfig } from '@/services/aiCall/personas';
@@ -23,15 +23,13 @@ export function ActiveCallOverlay() {
   const [aiState, setAiState] = useState<AIState>('connecting');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [transcript, setTranscript] = useState<string>('');
-  const [transcriptSpeaker, setTranscriptSpeaker] = useState<'ai' | 'user'>('ai');
   const [userVol, setUserVol] = useState<number>(0);
   const [aiVol, setAiVol] = useState<number>(0);
-  const [showPersonaPicker, setShowPersonaPicker] = useState<boolean>(false);
-  const [showSubtitles, setShowSubtitles] = useState<boolean>(true);
+  const [showPicker, setShowPicker] = useState<boolean>(false);
 
-  const selectedPersonaConfig = getPersonaConfig(aiPersona as AIPersona);
+  const personaConfig = getPersonaConfig(aiPersona as AIPersona);
 
-  // Timer
+  // Call duration timer
   useEffect(() => {
     if (!activeCallId) {
       setDuration(0);
@@ -50,35 +48,27 @@ export function ActiveCallOverlay() {
 
     setAiState('connecting');
     setErrorMessage(null);
-    setTranscript(selectedPersonaConfig.greeting);
-    setTranscriptSpeaker('ai');
+    setTranscript('');
 
     const service = createAiCall(aiPersona as AIPersona, aiApiKey);
 
     const handleStateChange = (e: Event) => {
-      const state = (e as CustomEvent<AIState>).detail;
-      setAiState(state);
+      setAiState((e as CustomEvent<AIState>).detail);
     };
 
     const handleTranscript = (e: Event) => {
-      const detail = (e as CustomEvent<any>).detail;
-      if (detail && detail.text) {
-        setTranscript(detail.text);
-        setTranscriptSpeaker(detail.speaker || detail.sender || 'ai');
-      }
+      const { text } = (e as CustomEvent<AiTranscriptEvent>).detail;
+      setTranscript(text);
     };
 
     const handleVolume = (e: Event) => {
-      const d = (e as CustomEvent<any>).detail;
-      if (d) {
-        setUserVol(d.userVolume ?? (d.user ? d.user / 100 : 0));
-        setAiVol(d.aiVolume ?? (d.ai ? d.ai / 100 : 0));
-      }
+      const { userVolume, aiVolume } = (e as CustomEvent<{ userVolume: number; aiVolume: number }>).detail;
+      setUserVol(userVolume);
+      setAiVol(aiVolume);
     };
 
     const handleError = (e: Event) => {
-      const msg = (e as CustomEvent<string>).detail;
-      setErrorMessage(msg);
+      setErrorMessage((e as CustomEvent<string>).detail);
       setAiState('error');
     };
 
@@ -114,10 +104,10 @@ export function ActiveCallOverlay() {
 
   const handleSwitchPersona = (pId: AIPersona) => {
     setAiPersona(pId);
-    setShowPersonaPicker(false);
+    setShowPicker(false);
   };
 
-  const handleInterruptAi = () => {
+  const handleInterrupt = () => {
     const active = getActiveAiCall();
     if (active) active.interruptAudio();
   };
@@ -125,89 +115,65 @@ export function ActiveCallOverlay() {
   const fmt = (s: number) =>
     `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
-  const displayName = isAiCall ? selectedPersonaConfig.name : activeCallName || `User ${activeCallId}`;
+  const displayName = isAiCall ? personaConfig.name : activeCallName || `User ${activeCallId}`;
   const initials = isAiCall
-    ? selectedPersonaConfig.gradient.initial
+    ? personaConfig.gradient.initial
     : displayName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || 'U';
 
-  // Dynamic wave scale
   const currentVolume = aiState === 'speaking' ? aiVol : userVol;
-  const pulseScale = 1 + Math.min(0.4, currentVolume * 0.5);
+  const pulseScale = 1 + Math.min(0.35, currentVolume * 0.45);
 
   return (
-    <div className="fixed inset-0 z-[100] bg-gradient-to-b from-slate-950 via-slate-900 to-black text-white flex flex-col justify-between items-center px-6 py-12 safe-top safe-bottom select-none overflow-hidden backdrop-blur-2xl">
-      {/* Background Ambient Glow */}
-      <div
-        className="absolute -top-32 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full blur-[120px] pointer-events-none opacity-40 transition-colors duration-700"
-        style={{
-          backgroundColor: isAiCall
-            ? aiState === 'speaking'
-              ? '#06b6d4'
-              : aiState === 'listening'
-              ? '#10b981'
-              : '#6366f1'
-            : '#0284c7',
-        }}
-      />
-
-      {/* Top Header */}
-      <div className="w-full max-w-md flex items-center justify-between z-10">
-        <div className="flex items-center gap-2">
-          {isAiCall && (
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-xs font-semibold tracking-wide text-sky-300">
-              <Bot className="w-3.5 h-3.5 text-sky-400" />
-              AI Character Call
-            </span>
-          )}
+    <div className="fixed inset-0 z-[100] bg-tg-bg/95 text-tg-text backdrop-blur-3xl flex flex-col justify-between items-center px-6 py-10 safe-top safe-bottom select-none overflow-hidden transition-colors">
+      {/* Top subtle bar */}
+      <div className="w-full max-w-sm flex items-center justify-between z-10 pt-2">
+        <div className="flex items-center gap-1.5 text-xs text-tg-text-hint font-medium">
+          {isAiCall && <Sparkles className="w-3.5 h-3.5 text-tg-blue" />}
+          <span>{fmt(duration)}</span>
         </div>
 
         {isAiCall && (
           <button
-            onClick={() => setShowPersonaPicker((v) => !v)}
-            className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/15 active:scale-95 border border-white/15 text-xs font-medium text-white/90 transition-all flex items-center gap-1.5"
+            onClick={() => setShowPicker((v) => !v)}
+            className="w-8 h-8 rounded-full bg-tg-surface border border-tg-border/40 flex items-center justify-center text-tg-text-secondary active:scale-95 transition-transform"
+            aria-label="Switch Companion"
           >
-            <span>Change Companion</span>
-            <span className="text-[10px] opacity-60">▼</span>
+            <Sparkles className="w-4 h-4 text-tg-blue" />
           </button>
         )}
       </div>
 
-      {/* Main Center Avatar Area */}
-      <div className="flex flex-col items-center gap-6 my-auto z-10 w-full max-w-sm">
-        {/* Avatar with Soundwave Rings */}
+      {/* Hero Center */}
+      <div className="flex flex-col items-center gap-5 my-auto z-10 w-full max-w-sm">
+        {/* Animated Avatar */}
         <div className="relative flex items-center justify-center">
-          {/* Animated Wave Rings */}
+          {/* Subtle audio ripple */}
           {isAiCall && (aiState === 'speaking' || (aiState === 'listening' && userVol > 0.05)) && (
             <>
               <div
-                className="absolute rounded-full border-2 border-sky-400/30 animate-ping pointer-events-none"
+                className="absolute rounded-full border border-tg-blue/30 pointer-events-none transition-transform duration-100"
                 style={{
-                  width: `${140 * pulseScale}px`,
-                  height: `${140 * pulseScale}px`,
-                  animationDuration: '2s',
+                  width: `${148 * pulseScale}px`,
+                  height: `${148 * pulseScale}px`,
                 }}
               />
               <div
-                className="absolute rounded-full bg-sky-500/10 pointer-events-none transition-transform duration-75"
+                className="absolute rounded-full bg-tg-blue/10 pointer-events-none transition-transform duration-150"
                 style={{
-                  width: `${170 * pulseScale}px`,
-                  height: `${170 * pulseScale}px`,
+                  width: `${176 * pulseScale}px`,
+                  height: `${176 * pulseScale}px`,
                 }}
               />
             </>
           )}
 
-          {/* Avatar Container */}
           <div
-            onClick={isAiCall && aiState === 'speaking' ? handleInterruptAi : undefined}
-            className="relative w-32 h-32 md:w-36 md:h-36 rounded-full overflow-hidden border-2 border-white/20 shadow-2xl flex items-center justify-center cursor-pointer transition-transform active:scale-95"
-            style={{
-              background: `linear-gradient(135deg, ${selectedPersonaConfig.gradient.from}, ${selectedPersonaConfig.gradient.to})`,
-            }}
+            onClick={isAiCall && aiState === 'speaking' ? handleInterrupt : undefined}
+            className="relative w-32 h-32 rounded-full overflow-hidden border border-tg-border/30 shadow-xl flex items-center justify-center cursor-pointer transition-transform active:scale-95 bg-tg-surface"
           >
-            {isAiCall && selectedPersonaConfig.avatar ? (
+            {isAiCall && personaConfig.avatar ? (
               <img
-                src={selectedPersonaConfig.avatar}
+                src={personaConfig.avatar}
                 alt={displayName}
                 className="w-full h-full object-cover"
                 onError={(e) => {
@@ -215,101 +181,65 @@ export function ActiveCallOverlay() {
                 }}
               />
             ) : (
-              <span className="text-4xl font-bold tracking-tight text-white/90">{initials}</span>
+              <span className="text-3xl font-bold text-tg-text">{initials}</span>
             )}
 
-            {/* Muted overlay badge */}
             {muted && (
-              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                <MicOff className="w-8 h-8 text-rose-400" />
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center">
+                <MicOff className="w-7 h-7 text-tg-red" />
               </div>
             )}
           </div>
         </div>
 
-        {/* Name & Tagline */}
+        {/* Name & Clean Status */}
         <div className="text-center space-y-1">
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">{displayName}</h2>
-          <p className="text-xs text-white/60">
-            {isAiCall ? selectedPersonaConfig.tagline : 'Telegram Voice Call'}
+          <h2 className="text-2xl font-bold tracking-tight text-tg-text">{displayName}</h2>
+          <p className="text-xs text-tg-text-hint font-medium">
+            {isAiCall
+              ? aiState === 'connecting'
+                ? 'connecting...'
+                : aiState === 'speaking'
+                ? 'speaking...'
+                : aiState === 'listening'
+                ? 'listening...'
+                : aiState === 'error'
+                ? 'connection failed'
+                : 'connected'
+              : 'telegram call'}
           </p>
-
-          {/* State Indicator */}
-          <div className="pt-2 flex items-center justify-center gap-2">
-            {isAiCall ? (
-              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 border border-white/10 text-xs font-medium">
-                {aiState === 'connecting' && (
-                  <>
-                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                    <span className="text-amber-300">Connecting to AI...</span>
-                  </>
-                )}
-                {aiState === 'listening' && (
-                  <>
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-emerald-300">Listening to you</span>
-                  </>
-                )}
-                {aiState === 'speaking' && (
-                  <>
-                    <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping" />
-                    <span className="text-sky-300">Speaking...</span>
-                  </>
-                )}
-                {aiState === 'error' && (
-                  <>
-                    <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
-                    <span className="text-rose-300">Connection Failed</span>
-                  </>
-                )}
-                <span className="text-white/40">·</span>
-                <span className="text-white/70">{fmt(duration)}</span>
-              </div>
-            ) : (
-              <p className="text-white/70 text-sm font-medium">{fmt(duration)}</p>
-            )}
-          </div>
         </div>
 
-        {/* Error message */}
+        {/* Error Notification */}
         {errorMessage && (
-          <div className="px-4 py-2.5 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-200 text-xs text-center max-w-xs animate-shake">
+          <p className="text-xs text-tg-red px-3 py-1.5 rounded-lg bg-tg-red/10 border border-tg-red/20 text-center max-w-xs">
             {errorMessage}
-          </div>
+          </p>
         )}
 
-        {/* Live Real-time Transcript Bubble */}
-        {isAiCall && transcript && showSubtitles && (
+        {/* Minimal Floating Subtitles */}
+        {isAiCall && transcript && (
           <div
-            onClick={aiState === 'speaking' ? handleInterruptAi : undefined}
-            className="w-full max-h-28 overflow-y-auto px-4 py-3 rounded-2xl bg-white/[0.08] backdrop-blur-md border border-white/10 text-center shadow-lg transition-all cursor-pointer hover:bg-white/[0.12]"
+            onClick={aiState === 'speaking' ? handleInterrupt : undefined}
+            className="w-full max-h-24 overflow-y-auto px-4 py-2.5 rounded-2xl text-center cursor-pointer"
           >
-            <div className="flex items-center justify-center gap-1.5 mb-1 text-[10px] uppercase font-bold tracking-wider text-sky-300/80">
-              <MessageSquare className="w-3 h-3" />
-              <span>{transcriptSpeaker === 'ai' ? selectedPersonaConfig.name : 'You'}</span>
-            </div>
-            <p className="text-sm font-medium text-white/90 leading-relaxed break-words">
-              {transcript}
+            <p className="text-sm text-tg-text/90 leading-relaxed font-medium">
+              "{transcript}"
             </p>
-            {aiState === 'speaking' && (
-              <span className="text-[10px] text-white/40 mt-1 block">Tap avatar or text to interrupt</span>
-            )}
           </div>
         )}
       </div>
 
-      {/* Persona Quick Picker Drawer (when toggled) */}
-      {showPersonaPicker && isAiCall && (
-        <div className="w-full max-w-md p-4 rounded-3xl bg-slate-900/95 border border-white/15 backdrop-blur-xl mb-4 shadow-2xl z-30 animate-in fade-in slide-in-from-bottom duration-200">
+      {/* Companion Switcher Modal */}
+      {showPicker && isAiCall && (
+        <div className="w-full max-w-sm p-4 rounded-3xl bg-tg-bg-secondary border border-tg-border/30 shadow-2xl mb-4 z-30 animate-in fade-in duration-150">
           <div className="flex items-center justify-between mb-3 px-1">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-white/70">
-              Select AI Companion
-            </h3>
+            <span className="text-xs font-semibold text-tg-text-hint">Companions</span>
             <button
-              onClick={() => setShowPersonaPicker(false)}
-              className="text-xs text-white/50 hover:text-white"
+              onClick={() => setShowPicker(false)}
+              className="text-tg-text-hint hover:text-tg-text p-1"
             >
-              Close
+              <X className="w-4 h-4" />
             </button>
           </div>
           <div className="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
@@ -319,28 +249,20 @@ export function ActiveCallOverlay() {
                 <button
                   key={p.id}
                   onClick={() => handleSwitchPersona(p.id)}
-                  className={`flex items-center gap-2.5 p-2 rounded-xl text-left transition-all ${
+                  className={`flex items-center gap-2 p-2 rounded-xl text-left transition-all ${
                     isCurrent
-                      ? 'bg-sky-600/30 border border-sky-400/40 text-white shadow-sm'
-                      : 'bg-white/5 hover:bg-white/10 border border-white/5 text-white/80'
+                      ? 'bg-tg-blue/15 border border-tg-blue/40 text-tg-text'
+                      : 'bg-tg-surface border border-tg-border/20 text-tg-text hover:bg-tg-surface/80'
                   }`}
                 >
-                  <div
-                    className="w-9 h-9 rounded-full overflow-hidden shrink-0 flex items-center justify-center text-xs font-bold"
-                    style={{
-                      background: `linear-gradient(135deg, ${p.gradient.from}, ${p.gradient.to})`,
-                    }}
-                  >
+                  <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 bg-tg-bg border border-tg-border/20 flex items-center justify-center text-xs font-bold">
                     {p.avatar ? (
                       <img src={p.avatar} alt={p.name} className="w-full h-full object-cover" />
                     ) : (
                       p.gradient.initial
                     )}
                   </div>
-                  <div className="truncate min-w-0">
-                    <p className="text-xs font-semibold truncate leading-tight">{p.name}</p>
-                    <p className="text-[10px] text-white/50 truncate leading-tight">{p.tagline}</p>
-                  </div>
+                  <span className="text-xs font-medium truncate">{p.name}</span>
                 </button>
               );
             })}
@@ -348,74 +270,57 @@ export function ActiveCallOverlay() {
         </div>
       )}
 
-      {/* Bottom Call Controls */}
-      <div className="w-full max-w-md flex justify-around items-center pt-4 z-10">
-        {/* Mute Button */}
-        <CallControlBtn
-          icon={muted ? <MicOff className="w-6 h-6 text-rose-300" /> : <Mic className="w-6 h-6 text-white" />}
-          label={muted ? 'Unmute' : 'Mute'}
-          active={muted}
-          onClick={handleToggleMute}
-        />
-
-        {/* End Call Button */}
+      {/* Bottom Controls */}
+      <div className="w-full max-w-sm flex justify-around items-center pt-2 z-10 pb-4">
+        {/* Mute */}
         <button
-          onClick={handleEndCall}
-          className="w-20 h-20 rounded-full bg-rose-600 hover:bg-rose-500 active:scale-90 flex items-center justify-center shadow-2xl transition-all border-4 border-slate-900"
-          aria-label="End Call"
+          onClick={handleToggleMute}
+          className={`w-14 h-14 rounded-full flex items-center justify-center active:scale-90 transition-all border ${
+            muted
+              ? 'bg-tg-surface border-tg-red/40 text-tg-red'
+              : 'bg-tg-surface border-tg-border/30 text-tg-text'
+          }`}
+          aria-label={muted ? 'Unmute' : 'Mute'}
         >
-          <PhoneOff className="w-8 h-8 text-white fill-white" />
+          {muted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
         </button>
 
-        {/* Subtitles Toggle or Speaker Button */}
+        {/* End Call */}
+        <button
+          onClick={handleEndCall}
+          className="w-18 h-18 w-[68px] h-[68px] rounded-full bg-tg-red hover:opacity-90 active:scale-90 flex items-center justify-center shadow-xl transition-all"
+          aria-label="End Call"
+        >
+          <PhoneOff className="w-7 h-7 text-white" />
+        </button>
+
+        {/* Speaker or Companion Switch */}
         {isAiCall ? (
-          <CallControlBtn
-            icon={<MessageSquare className={`w-6 h-6 ${showSubtitles ? 'text-sky-300' : 'text-white/60'}`} />}
-            label={showSubtitles ? 'Captions' : 'Mute Captions'}
-            active={showSubtitles}
-            onClick={() => setShowSubtitles((v) => !v)}
-          />
+          <button
+            onClick={() => setShowPicker((v) => !v)}
+            className={`w-14 h-14 rounded-full flex items-center justify-center active:scale-90 transition-all border ${
+              showPicker
+                ? 'bg-tg-blue text-white border-tg-blue'
+                : 'bg-tg-surface border-tg-border/30 text-tg-text'
+            }`}
+            aria-label="Switch Companion"
+          >
+            <Sparkles className="w-5 h-5 text-tg-blue" />
+          </button>
         ) : (
-          <CallControlBtn
-            icon={speaker ? <Volume2 className="w-6 h-6 text-white" /> : <Smartphone className="w-6 h-6 text-white" />}
-            label={speaker ? 'Speaker' : 'Earpiece'}
-            active={speaker}
+          <button
             onClick={() => setSpeaker((v) => !v)}
-          />
+            className={`w-14 h-14 rounded-full flex items-center justify-center active:scale-90 transition-all border ${
+              speaker
+                ? 'bg-tg-surface border-tg-blue/40 text-tg-blue'
+                : 'bg-tg-surface border-tg-border/30 text-tg-text'
+            }`}
+            aria-label={speaker ? 'Speaker' : 'Earpiece'}
+          >
+            {speaker ? <Volume2 className="w-6 h-6" /> : <Smartphone className="w-6 h-6" />}
+          </button>
         )}
       </div>
     </div>
-  );
-}
-
-function CallControlBtn({
-  icon,
-  label,
-  active,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex flex-col items-center gap-2 group active:scale-95 transition-all"
-    >
-      <div
-        className={`w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-md transition-all ${
-          active
-            ? 'bg-white/25 border border-white/30 text-white shadow-lg'
-            : 'bg-white/10 hover:bg-white/15 border border-white/10 text-white/80'
-        }`}
-      >
-        {icon}
-      </div>
-      <span className="text-white/70 text-xs font-medium group-hover:text-white transition-colors">
-        {label}
-      </span>
-    </button>
   );
 }

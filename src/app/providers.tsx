@@ -44,9 +44,45 @@ export function Providers({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     const root = document.documentElement;
     const fontMeta = KHMER_FONTS[khmerFont] ?? KHMER_FONTS.hanuman;
-    const familyStack = `"ActiveKhmerFont", "BattambangKhmer", "Google Sans", "Google Sans Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    const familyStack = `"ActiveKhmerFont", "Google Sans", "Google Sans Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Krasar", "Kantumruy Pro", sans-serif`;
     root.style.setProperty('--tg-khmer-font', '"ActiveKhmerFont"');
     document.body.style.fontFamily = familyStack;
+
+    const styleId = 'tg-khmer-font-style';
+    let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = styleId;
+      document.head.appendChild(styleEl);
+    }
+
+    if (khmerFont === 'krasar') {
+      styleEl.textContent = `
+        @font-face {
+          font-family: 'ActiveKhmerFont';
+          font-style: normal;
+          font-weight: 400;
+          font-display: swap;
+          src: url('/fonts/Krasar-Regular.ttf') format('truetype');
+          unicode-range: U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC;
+          ascent-override: 125%;
+          descent-override: 50%;
+          line-gap-override: 15%;
+        }
+        @font-face {
+          font-family: 'ActiveKhmerFont';
+          font-style: normal;
+          font-weight: 700;
+          font-display: swap;
+          src: url('/fonts/Krasar-Bold.ttf') format('truetype');
+          unicode-range: U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC;
+          ascent-override: 125%;
+          descent-override: 50%;
+          line-gap-override: 15%;
+        }
+      `;
+      return;
+    }
 
     const url = `https://fonts.googleapis.com/css2?family=${fontMeta.query}&display=swap`;
     fetch(url)
@@ -54,23 +90,24 @@ export function Providers({ children }: { children: React.ReactNode }) {
       .then((css) => {
         if (cancelled) return;
         // Rewrite Google Fonts @font-face to ActiveKhmerFont strictly scoped to Khmer Unicode blocks
-        // so Google Sans never overrides Khmer and the Khmer font never overrides English.
+        // Filter out non-Khmer subset blocks so they don't overwrite the Khmer font file
         const scopedCss = css.replace(/@font-face\s*\{([^}]*)\}/g, (_match, body: string) => {
+          const urMatch = body.match(/unicode-range:\s*([^;]+);/);
+          if (urMatch && !urMatch[1].includes('1780') && !urMatch[1].includes('17FF')) {
+            return '';
+          }
           const cleaned = body
             .replace(/font-family:\s*['"][^'"]+['"]\s*;/g, "font-family: 'ActiveKhmerFont';")
             .replace(/unicode-range:\s*[^;]+;/g, '');
           return `@font-face {${cleaned}\n  unicode-range: U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC;\n  ascent-override: 125%;\n  descent-override: 50%;\n  line-gap-override: 15%;\n}`;
         });
-        const styleId = 'tg-khmer-font-style';
-        let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;
-        if (!styleEl) {
-          styleEl = document.createElement('style');
-          styleEl.id = styleId;
-          document.head.appendChild(styleEl);
+        if (styleEl) {
+          styleEl.textContent = scopedCss;
         }
-        styleEl.textContent = scopedCss;
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error('Failed to load Khmer font:', err);
+      });
 
     return () => {
       cancelled = true;

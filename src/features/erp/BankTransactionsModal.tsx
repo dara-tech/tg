@@ -46,6 +46,360 @@ export interface BankTransaction {
 const STORAGE_KEY = 'tg_bank_transactions_v1';
 const SYNC_CONFIG_KEY = 'tg_calendar_sync_config_v2';
 
+export const KHMER_MONTH_INDEX_MAP: Record<string, number> = {
+  'មករា': 0, 'កុម្ភៈ': 1, 'មីនា': 2, 'មេសា': 3, 'ឧសភា': 4, 'មិថុនា': 5,
+  'កក្កដា': 6, 'សីហា': 7, 'កញ្ញា': 8, 'តុលា': 9, 'វិច្ឆិកា': 10, 'ធ្នូ': 11,
+};
+
+export function parseKhmerDate(str: string): string {
+  if (!str) return format(new Date(), 'yyyy-MM-dd');
+  const clean = str.trim();
+  const parts = clean.split(/\s+/);
+  if (parts.length === 3 && KHMER_MONTH_INDEX_MAP[parts[1]] !== undefined) {
+    const day = parts[0].padStart(2, '0');
+    const month = String(KHMER_MONTH_INDEX_MAP[parts[1]] + 1).padStart(2, '0');
+    const year = parts[2];
+    return `${year}-${month}-${day}`;
+  }
+  if (clean.includes('-')) {
+    const p = clean.split('-');
+    if (p.length === 3 && p[0].length === 4) return clean;
+    if (p.length === 3 && p[2].length === 4) return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+  }
+  if (clean.includes('/')) {
+    const p = clean.split('/');
+    if (p.length === 3 && p[2].length === 4) return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+    if (p.length === 3 && p[0].length === 4) return `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}`;
+  }
+  return clean;
+}
+
+export function parseTransactionNote(rawNote: string) {
+  if (!rawNote) return { title: 'Transaction', sub: '', ref: '', time: '12:00', rawBank: '' };
+
+  const cleanPrefixAndTid = (text: string): string => {
+    let t = text;
+    // Strip redundant bank prefixes like "Paid To", "Transfer To", "Payment To", "Received From", "Deposit To", "TRFR TO"
+    t = t.replace(/^(?:Paid|Payment|Transfer(?:red)?|Funds Transfer|TRFR|BNK TRF|FAST TRF|Deposit|Received)\s*(?:To|From)?\s*/i, '').trim();
+    // Strip TID tags like (TID ), (TID0000737779), (TID...)
+    t = t.replace(/\(TID[^\)]*\)/gi, '').trim();
+    t = t.replace(/\(REF[^\)]*\)/gi, '').trim();
+    t = t.replace(/\(INV[^\)]*\)/gi, '').trim();
+    // Strip trailing parenthesis or stray symbols
+    t = t.replace(/[|\-,;:]+$/, '').trim();
+    return t;
+  };
+
+  if (rawNote.includes('|')) {
+    const parts = rawNote.split('|').map((p) => p.trim());
+    let title = cleanPrefixAndTid(parts[0]);
+
+    let ref = '';
+    let time = '';
+    let rawBank = '';
+    const otherMeta: string[] = [];
+
+    parts.slice(1).forEach((p) => {
+      if (p.startsWith('Ref.') || p.startsWith('Ref:')) {
+        ref = p.replace(/^Ref\.?\s*/i, 'Ref: ');
+      } else if (/\d{1,2}:\d{2}\s*(?:AM|PM)/i.test(p)) {
+        const timeMatch = p.match(/\d{1,2}:\d{2}\s*(?:AM|PM)/i);
+        if (timeMatch) time = timeMatch[0];
+      } else if (/^(?:ACLEDA|ABA|KHQR|Wing|Canadia|Bakong)/i.test(p)) {
+        rawBank = p;
+      } else if (!p.startsWith('USD') && !p.startsWith('KHR')) {
+        const cleanP = p.replace(/^(?:ACLEDA QR|ABA Bank|KHQR)\s*$/i, '').trim();
+        if (cleanP) otherMeta.push(cleanP);
+      }
+    });
+
+    const sub = ref || (otherMeta.length > 0 ? otherMeta[0] : '');
+    return {
+      title: title || cleanPrefixAndTid(parts[0]) || 'Transaction',
+      sub,
+      ref,
+      time: time || '12:00',
+      rawBank,
+    };
+  }
+
+  const cleanTitle = cleanPrefixAndTid(rawNote);
+  return {
+    title: cleanTitle || rawNote || 'Transaction',
+    sub: '',
+    ref: '',
+    time: '12:00',
+    rawBank: '',
+  };
+}
+
+export function detectBankBrand(note: string, desc = ''): BankTransaction['bank'] {
+  const text = `${note} ${desc}`.toUpperCase();
+  if (text.includes('ACLEDA')) return 'ACLEDA';
+  if (text.includes('ABA') || text.includes('PAYWAY')) return 'ABA';
+  if (text.includes('KHQR') || text.includes('BAKONG')) return 'Bakong';
+  if (text.includes('WING')) return 'Wing';
+  if (text.includes('CANADIA')) return 'Canadia';
+  return 'Other';
+}
+
+export function detectCategory(desc: string, isDebit: boolean): BankTransaction['category'] {
+  if (!isDebit) return 'income';
+  const u = desc.toUpperCase();
+  if (['SALARY', 'PAYROLL', 'INCOME', 'DEPOSIT', 'TOPUP', 'INTEREST'].some((k) => u.includes(k))) return 'income';
+  if (['BILL', 'ELECTRIC', 'WATER', 'INTERNET', 'WIFI', 'MOBILE', 'PHONE', 'CELLCARD', 'SMART'].some((k) => u.includes(k))) return 'invoice';
+  if (['KHQR', 'TRANSFER', 'PAID TO', 'SEND TO', 'ABA', 'ACLEDA', 'WING', 'CANADIA', 'PAYMENT'].some((k) => u.includes(k))) return 'transfer';
+  return 'expense';
+}
+
+export function generateDeduplicationId(date: string, type: string, amount: number, note: string): string {
+  const refMatch = note.match(/Ref\.([0-9a-zA-Z]+)/i);
+  const hashMatch = note.match(/Txn\.\s*Hash\s*([0-9a-zA-Z]+)/i);
+  if (refMatch && refMatch[1]) {
+    return `fin-ref-${refMatch[1]}`;
+  }
+  if (hashMatch && hashMatch[1]) {
+    return `fin-hash-${hashMatch[1]}`;
+  }
+  const sig = `${date}_${type}_${amount}_${note || ''}`;
+  let hash = 0;
+  for (let i = 0; i < sig.length; i++) {
+    hash = (hash << 5) - hash + sig.charCodeAt(i);
+    hash |= 0;
+  }
+  return `fin-sig-${Math.abs(hash).toString(36)}`;
+}
+
+export interface StatementMetadata {
+  accountName: string;
+  accountNumber: string;
+  currency: 'USD' | 'KHR';
+  statementPeriod: string;
+  initialBalance: number;
+  endingBalance: number;
+  statedInflow: number;
+  statedOutflow: number;
+  totalCount: number;
+}
+
+export interface ParsedStatementResult {
+  metadata: StatementMetadata;
+  transactions: BankTransaction[];
+}
+
+export function parseBankStatementExcel(arrayBuffer: ArrayBuffer, fileName = ''): ParsedStatementResult {
+  const data = new Uint8Array(arrayBuffer);
+  const workbook = XLSX.read(data, { type: 'array' });
+  const sheetName = workbook.SheetNames[0];
+  if (!sheetName) throw new Error('No worksheets found in Excel file');
+  const worksheet = workbook.Sheets[sheetName];
+  const rows: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+  let headerIdx = -1;
+  let accountName = '';
+  let accountNumber = '';
+  let currency: 'USD' | 'KHR' = 'USD';
+  let initialBalance = 0;
+  let endingBalance = 0;
+  let statedInflow = 0;
+  let statedOutflow = 0;
+  let statementPeriod = '';
+
+  rows.forEach((r, idx) => {
+    const line = r.join(' ');
+    if (line.includes('ឈ្មោះគណនី') || line.includes('Account Name')) {
+      accountName = String(r[1] || '').replace(/^:\s*/, '').trim();
+    }
+    if (line.includes('លេខគណនី') || line.includes('Account Number')) {
+      accountNumber = String(r[1] || '').replace(/^:\s*/, '').trim();
+    }
+    if (line.includes('រូបិយប័ណ្ណ') || line.includes('Currency')) {
+      const c = String(r[1] || 'USD').replace(/^:\s*/, '').trim().toUpperCase();
+      if (c.includes('KHR') || c.includes('៛')) currency = 'KHR';
+      else currency = 'USD';
+    }
+    if ((line.includes('ប្រតិបត្តិការចាប់ពីថ្ងៃទី') || line.includes('Statement Period')) && !statementPeriod) {
+      statementPeriod = line.replace(/^(?:ប្រតិបត្តិការចាប់ពីថ្ងៃទី|Statement Period)\s*/i, '').trim();
+    }
+    if ((line.includes('សមតុល្យដើមគ្រា') || line.includes('Opening Balance')) && r[4]) {
+      const m = String(r[4]).match(/[\d,.]+/);
+      if (m) initialBalance = parseFloat(m[0].replace(/,/g, ''));
+    }
+    if ((line.includes('សមតុល្យចុងគ្រា') || line.includes('Closing Balance')) && r[4]) {
+      const m = String(r[4]).match(/[\d,.]+/);
+      if (m) endingBalance = parseFloat(m[0].replace(/,/g, ''));
+    }
+    if ((line.includes('ចំនួនទឹកប្រាក់ចូលសរុប') || line.includes('Total Inflow') || line.includes('Total Credit')) && r[4]) {
+      const m = String(r[4]).match(/[\d,.]+/);
+      if (m) statedInflow = parseFloat(m[0].replace(/,/g, ''));
+    }
+    if ((line.includes('ចំនួនទឹកប្រាក់ចេញសរុប') || line.includes('Total Outflow') || line.includes('Total Debit')) && r[4]) {
+      const m = String(r[4]).match(/[\d,.]+/);
+      if (m) statedOutflow = parseFloat(m[0].replace(/,/g, ''));
+    }
+    if (
+      headerIdx === -1 &&
+      (line.includes('កាលបរិច្ឆេទ') || line.toLowerCase().includes('date')) &&
+      (line.includes('បរិយាយ') || line.includes('ចំនួនទឹកប្រាក់ចេញ') || line.toLowerCase().includes('description') || line.toLowerCase().includes('debit') || line.toLowerCase().includes('amount'))
+    ) {
+      headerIdx = idx;
+    }
+  });
+
+  const transactions: BankTransaction[] = [];
+  if (headerIdx !== -1) {
+    for (let i = headerIdx + 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r || r.length < 2) continue;
+      const rawDate = String(r[0] || '').trim();
+      const rawDesc = String(r[1] || '').trim();
+      const expClean = String(r[2] || '').replace(/[^\d.]/g, '');
+      const incClean = String(r[3] || '').replace(/[^\d.]/g, '');
+      const expVal = parseFloat(expClean) || 0;
+      const incVal = parseFloat(incClean) || 0;
+
+      if (expVal === 0 && incVal === 0) continue;
+
+      const isDebit = expVal > 0;
+      const amount = isDebit ? expVal : incVal;
+      const date = parseKhmerDate(rawDate);
+      const { title, sub, ref, time } = parseTransactionNote(rawDesc);
+      const bank = detectBankBrand(rawDesc, rawDesc);
+      const category = detectCategory(rawDesc, isDebit);
+      const id = generateDeduplicationId(date, isDebit ? 'debit' : 'credit', amount, rawDesc);
+
+      transactions.push({
+        id,
+        date,
+        time,
+        amount,
+        currency,
+        type: isDebit ? 'debit' : 'credit',
+        bank,
+        description: title,
+        counterparty: sub || undefined,
+        reference: ref || id,
+        category,
+        source: 'erp',
+      });
+    }
+  }
+
+  return {
+    metadata: {
+      accountName: accountName || 'Cheol Sovandara',
+      accountNumber: accountNumber || '0800-04200715-16',
+      currency,
+      statementPeriod: statementPeriod || `${transactions.length} transactions imported`,
+      initialBalance,
+      endingBalance,
+      statedInflow,
+      statedOutflow,
+      totalCount: transactions.length,
+    },
+    transactions,
+  };
+}
+
+export function calculateCashflowAnalytics(
+  transactions: BankTransaction[],
+  statementBalance?: number
+) {
+  let totalInflow = 0;
+  let totalOutflow = 0;
+  let inflowTxCount = 0;
+  let outflowTxCount = 0;
+
+  const monthlyMap = new Map<string, { month: string; inflow: number; outflow: number; net: number; count: number }>();
+  const merchantMap = new Map<string, { name: string; count: number; totalOutflow: number; brand: BankTransaction['bank'] }>();
+  const categoryMap = new Map<string, { category: string; count: number; totalAmount: number }>();
+
+  transactions.forEach((tx) => {
+    const amt = tx.amount || 0;
+    const isOut = tx.type === 'debit';
+    const isIn = tx.type === 'credit';
+
+    if (isOut) {
+      totalOutflow += amt;
+      outflowTxCount++;
+    }
+    if (isIn) {
+      totalInflow += amt;
+      inflowTxCount++;
+    }
+
+    let monthKey = 'Recent';
+    if (tx.date) {
+      monthKey = tx.date.slice(0, 7);
+    }
+    if (!monthlyMap.has(monthKey)) {
+      monthlyMap.set(monthKey, { month: monthKey, inflow: 0, outflow: 0, net: 0, count: 0 });
+    }
+    const m = monthlyMap.get(monthKey)!;
+    m.count++;
+    if (isIn) m.inflow += amt;
+    if (isOut) m.outflow += amt;
+    m.net = m.inflow - m.outflow;
+
+    const mName = tx.description || 'General';
+    if (!merchantMap.has(mName)) {
+      merchantMap.set(mName, { name: mName, count: 0, totalOutflow: 0, brand: tx.bank });
+    }
+    const mer = merchantMap.get(mName)!;
+    mer.count++;
+    if (isOut) mer.totalOutflow += amt;
+
+    const cat = tx.category || 'expense';
+    if (!categoryMap.has(cat)) {
+      categoryMap.set(cat, { category: cat, count: 0, totalAmount: 0 });
+    }
+    const c = categoryMap.get(cat)!;
+    c.count++;
+    c.totalAmount += amt;
+  });
+
+  const netVelocity = totalInflow - totalOutflow;
+  const savingsRate = totalInflow > 0 ? (netVelocity / totalInflow) * 100 : 0;
+  const safeDailySpend = Math.max(15, (totalInflow - totalOutflow) > 0 ? (totalInflow - totalOutflow) / 30 : 25);
+  const runwayMonths = totalOutflow > 0 && totalInflow > totalOutflow ? (totalInflow / (totalOutflow / 6)).toFixed(1) : '12+';
+
+  const monthlyList = Array.from(monthlyMap.values()).slice(-6);
+  const topCountMerchants = Array.from(merchantMap.values()).sort((a, b) => b.count - a.count).slice(0, 5);
+  const topAmountMerchants = Array.from(merchantMap.values()).sort((a, b) => b.totalOutflow - a.totalOutflow).slice(0, 5);
+  const topCategories = Array.from(categoryMap.values()).sort((a, b) => b.count - a.count).slice(0, 5);
+
+  const isOverWeeklyBudget = totalOutflow > safeDailySpend * 7;
+  const budgetAlert = {
+    isBreached: isOverWeeklyBudget,
+    isWarning: totalOutflow > safeDailySpend * 5 && !isOverWeeklyBudget,
+    severity: isOverWeeklyBudget ? ('critical' as const) : ('healthy' as const),
+    title: isOverWeeklyBudget ? 'លើសកម្រិតចំណាយសុវត្ថិភាព' : 'ចរន្តសាច់ប្រាក់មានស្ថិរភាពល្អ',
+    message: isOverWeeklyBudget
+      ? `ការចំណាយសរុប $${totalOutflow.toFixed(2)} បានលើសពីកម្រិតកំណត់សុវត្ថិភាព។`
+      : `សមតុល្យចរន្តសាច់ប្រាក់ស្ថិតក្នុងស្ថានភាពសុវត្ថិភាព ដោយមានអត្រាសន្សំ ${savingsRate.toFixed(1)}%។`,
+    accentColor: isOverWeeklyBudget ? '#F87171' : '#34D399',
+  };
+
+  return {
+    totalInflow,
+    totalOutflow,
+    netVelocity,
+    totalBalance: statementBalance !== undefined ? statementBalance : netVelocity,
+    savingsRate,
+    avgDailyBurn: totalOutflow / 30,
+    safeDailySpend,
+    runwayMonths,
+    inflowTxCount,
+    outflowTxCount,
+    totalTxCount: transactions.length,
+    budgetAlert,
+    monthlyList,
+    topCountMerchants,
+    topAmountMerchants,
+    topCategories,
+  };
+}
+
 export function parseErpTransactions(rawText: string): BankTransaction[] {
   const text = rawText.trim();
   if (!text) return [];
@@ -71,14 +425,17 @@ export function parseErpTransactions(rawText: string): BankTransaction[] {
               'Canadia',
             ].includes(item.bank)
               ? item.bank
-              : 'Other') as BankTransaction['bank'];
+              : detectBankBrand(item.description || item.memo || '')) as BankTransaction['bank'];
+
+            const rawDesc = item.description || item.memo || item.name || 'ERP Transaction';
+            const { title, sub, ref, time } = parseTransactionNote(rawDesc);
+            const date = parseKhmerDate(item.date || format(new Date(), 'yyyy-MM-dd'));
+            const id = generateDeduplicationId(date, isDebit ? 'debit' : 'credit', Math.abs(rawAmt), rawDesc);
 
             return {
-              id: `erp-import-${Date.now()}-${i}`,
-              date: item.date
-                ? String(item.date).slice(0, 10)
-                : format(new Date(), 'yyyy-MM-dd'),
-              time: item.time || '12:00',
+              id: item.id || id,
+              date,
+              time: item.time || time || '12:00',
               amount: Math.abs(rawAmt),
               currency: (item.currency === 'KHR' ||
               String(item.amount).includes('៛')
@@ -86,14 +443,10 @@ export function parseErpTransactions(rawText: string): BankTransaction[] {
                 : 'USD') as 'USD' | 'KHR',
               type: (isDebit ? 'debit' : 'credit') as 'credit' | 'debit',
               bank: detectedBank,
-              description:
-                item.description || item.memo || item.name || 'ERP Transaction',
-              counterparty:
-                item.counterparty || item.partner || item.vendor || item.customer || '',
-              reference:
-                item.reference || item.ref || item.invoice_no || `ERP-${i + 1}`,
-              category:
-                item.category || (isDebit ? 'expense' : 'income'),
+              description: title,
+              counterparty: item.counterparty || sub || undefined,
+              reference: item.reference || ref || `ERP-${i + 1}`,
+              category: item.category || detectCategory(rawDesc, isDebit),
               source: 'erp' as const,
             };
           })
@@ -114,7 +467,7 @@ export function parseErpTransactions(rawText: string): BankTransaction[] {
   let delimiter = ',';
   if (firstLine.includes('\t')) delimiter = '\t';
   else if (firstLine.includes(';') && !firstLine.includes(',')) delimiter = ';';
-  else if (firstLine.includes('|')) delimiter = '|';
+  else if (firstLine.includes('|') && !firstLine.includes(',')) delimiter = '|';
 
   const parseLine = (line: string): string[] => {
     if (delimiter === ',') {
@@ -144,7 +497,10 @@ export function parseErpTransactions(rawText: string): BankTransaction[] {
       h.includes('amount') ||
       h.includes('credit') ||
       h.includes('desc') ||
-      h.includes('type')
+      h.includes('type') ||
+      h.includes('កាលបរិច្ឆេទ') ||
+      h.includes('បរិយាយ') ||
+      h.includes('ចំនួនទឹកប្រាក់')
   );
 
   let dateIdx = -1;
@@ -161,14 +517,14 @@ export function parseErpTransactions(rawText: string): BankTransaction[] {
   let startRow = 0;
   if (hasHeader) {
     startRow = 1;
-    dateIdx = headerCols.findIndex((h) => h.includes('date') || h.includes('time'));
+    dateIdx = headerCols.findIndex((h) => h.includes('date') || h.includes('time') || h.includes('កាលបរិច្ឆេទ'));
     typeIdx = headerCols.findIndex(
       (h) => h === 'type' || h.includes('direction') || h.includes('status')
     );
     amountIdx = headerCols.findIndex(
       (h) => h === 'amount' || h.includes('value') || h.includes('total')
     );
-    currIdx = headerCols.findIndex((h) => h.includes('curr') || h.includes('ccy'));
+    currIdx = headerCols.findIndex((h) => h.includes('curr') || h.includes('ccy') || h.includes('រូបិយប័ណ្ណ'));
     bankIdx = headerCols.findIndex(
       (h) => h.includes('bank') || h.includes('channel') || h.includes('account')
     );
@@ -178,7 +534,8 @@ export function parseErpTransactions(rawText: string): BankTransaction[] {
         h.includes('memo') ||
         h.includes('detail') ||
         h.includes('narr') ||
-        h.includes('particular')
+        h.includes('particular') ||
+        h.includes('បរិយាយ')
     );
     counterpartyIdx = headerCols.findIndex(
       (h) =>
@@ -193,10 +550,10 @@ export function parseErpTransactions(rawText: string): BankTransaction[] {
       (h) => h.includes('ref') || h.includes('id') || h.includes('trx') || h.includes('inv')
     );
     creditIdx = headerCols.findIndex(
-      (h) => h.includes('credit') || h.includes('inflow') || h.includes('deposit')
+      (h) => h.includes('credit') || h.includes('inflow') || h.includes('deposit') || h.includes('ចូល')
     );
     debitIdx = headerCols.findIndex(
-      (h) => h.includes('debit') || h.includes('outflow') || h.includes('withdraw')
+      (h) => h.includes('debit') || h.includes('outflow') || h.includes('withdraw') || h.includes('ចេញ')
     );
   }
 
@@ -210,20 +567,11 @@ export function parseErpTransactions(rawText: string): BankTransaction[] {
     let rawDate = dateIdx >= 0 ? rawCols[dateIdx] : '';
     if (!rawDate) {
       const foundDate = rawCols.find((c) =>
-        /\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b|\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/.test(c)
+        /\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b|\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b|[0-9]{1,2}\s+[^\s]+\s+[0-9]{4}/.test(c)
       );
       rawDate = foundDate || format(new Date(), 'yyyy-MM-dd');
     }
-    if (rawDate.includes('/')) {
-      const parts = rawDate.split('/');
-      if (parts.length === 3) {
-        if (parts[2].length === 4) {
-          rawDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-        } else if (parts[0].length === 4) {
-          rawDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
-        }
-      }
-    }
+    const normalizedDate = parseKhmerDate(rawDate);
 
     // Determine amount and type
     let amt = 0;
@@ -257,6 +605,7 @@ export function parseErpTransactions(rawText: string): BankTransaction[] {
         t.includes('out') ||
         t.includes('exp') ||
         t.includes('with') ||
+        t.includes('ចេញ') ||
         t.includes('-')
       ) {
         isCredit = false;
@@ -264,6 +613,7 @@ export function parseErpTransactions(rawText: string): BankTransaction[] {
         t.includes('cred') ||
         t.includes('in') ||
         t.includes('dep') ||
+        t.includes('ចូល') ||
         t.includes('+')
       ) {
         isCredit = true;
@@ -280,49 +630,47 @@ export function parseErpTransactions(rawText: string): BankTransaction[] {
       lineJoined.includes('៛') ||
       (amt > 10000 && !lineJoined.includes('$') && !lineJoined.includes('USD'));
 
-    // Detect Bank
-    let detectedBank: BankTransaction['bank'] = 'ABA';
-    if (bankIdx >= 0 && rawCols[bankIdx]) {
-      const b = rawCols[bankIdx].toUpperCase();
-      if (b.includes('BAKONG') || b.includes('KHQR')) detectedBank = 'Bakong';
-      else if (b.includes('ABA')) detectedBank = 'ABA';
-      else if (b.includes('ACLEDA')) detectedBank = 'ACLEDA';
-      else if (b.includes('WING')) detectedBank = 'Wing';
-      else if (b.includes('CANADIA')) detectedBank = 'Canadia';
-      else detectedBank = 'Other';
-    } else {
-      if (lineJoined.includes('Bakong') || lineJoined.includes('KHQR'))
-        detectedBank = 'Bakong';
-      else if (lineJoined.includes('ABA')) detectedBank = 'ABA';
-      else if (lineJoined.includes('ACLEDA')) detectedBank = 'ACLEDA';
-      else if (lineJoined.includes('Wing')) detectedBank = 'Wing';
-      else if (lineJoined.includes('Canadia')) detectedBank = 'Canadia';
-      else detectedBank = isKhr ? 'Bakong' : 'ABA';
-    }
-
-    const desc =
+    const rawDesc =
       descIdx >= 0 && rawCols[descIdx]
         ? rawCols[descIdx]
         : rawCols[1] || 'ERP Transaction Record';
-    const counterparty =
-      counterpartyIdx >= 0 ? rawCols[counterpartyIdx] : undefined;
-    const ref =
-      refIdx >= 0 && rawCols[refIdx]
-        ? rawCols[refIdx]
-        : `ERP-${Date.now().toString().slice(-6)}-${i}`;
+    const descLower = rawDesc.toLowerCase();
+    if (
+      descLower.includes('paid to') ||
+      descLower.includes('payment to') ||
+      descLower.includes('transfer to') ||
+      descLower.includes('send to') ||
+      descLower.includes('trfr to') ||
+      descLower.includes('bill payment')
+    ) {
+      isCredit = false;
+    } else if (
+      descLower.includes('received from') ||
+      descLower.includes('deposit from') ||
+      descLower.includes('salary') ||
+      descLower.includes('payroll')
+    ) {
+      isCredit = true;
+    }
+
+    const { title, sub, ref, time } = parseTransactionNote(rawDesc);
+    const detectedBank = detectBankBrand(rawDesc, bankIdx >= 0 ? rawCols[bankIdx] : '');
+    const counterparty = counterpartyIdx >= 0 ? rawCols[counterpartyIdx] : sub || undefined;
+    const finalRef = refIdx >= 0 && rawCols[refIdx] ? rawCols[refIdx] : ref;
+    const id = generateDeduplicationId(normalizedDate, isCredit ? 'credit' : 'debit', amt, rawDesc);
 
     results.push({
-      id: `erp-import-${Date.now()}-${i}`,
-      date: rawDate.slice(0, 10),
-      time: '12:00',
+      id,
+      date: normalizedDate.slice(0, 10),
+      time: time || '12:00',
       amount: amt,
       currency: isKhr ? 'KHR' : 'USD',
       type: isCredit ? 'credit' : 'debit',
       bank: detectedBank,
-      description: desc,
+      description: title,
       counterparty,
-      reference: ref,
-      category: isCredit ? 'income' : 'expense',
+      reference: finalRef || id,
+      category: detectCategory(rawDesc, !isCredit),
       source: 'erp',
     });
   }

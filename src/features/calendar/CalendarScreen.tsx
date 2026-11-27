@@ -20,6 +20,10 @@ import {
   LayoutGrid,
   ListOrdered,
   Landmark,
+  Sparkles,
+  TrendingUp,
+  TrendingDown,
+  Activity,
 } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { BankTransactionsModal, type BankTransaction } from '@/features/erp/BankTransactionsModal';
@@ -193,6 +197,28 @@ export default function CalendarScreen() {
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [bankModalOpen, setBankModalOpen] = useState(false);
 
+  // Bank ERP transactions for financial cashflow insights
+  const [bankTxs, setBankTxs] = useState<any[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const stored = localStorage.getItem('tg_bank_transactions_v1');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    const loadBankTxs = () => {
+      try {
+        const stored = localStorage.getItem('tg_bank_transactions_v1');
+        if (stored) setBankTxs(JSON.parse(stored));
+      } catch {}
+    };
+    window.addEventListener('focus', loadBankTxs);
+    return () => window.removeEventListener('focus', loadBankTxs);
+  }, []);
+
   // New Event Form State
   const [newTitle, setNewTitle] = useState('');
   const [newTime, setNewTime] = useState('09:00');
@@ -256,8 +282,63 @@ export default function CalendarScreen() {
       if (!list.includes(e.category)) list.push(e.category);
       map.set(e.date, list);
     });
+    bankTxs.forEach((t: any) => {
+      if (!t.date) return;
+      const list = map.get(t.date) || [];
+      if (!list.includes('erp')) list.push('erp');
+      map.set(t.date, list);
+    });
     return map;
-  }, [events]);
+  }, [events, bankTxs]);
+
+  // Executive Insights for Selected Date
+  const dayInsights = useMemo(() => {
+    const dayKey = selectedKey;
+    const dayEvts = events.filter((e) => e.date === dayKey);
+    const total = dayEvts.length;
+    const completed = dayEvts.filter((e) => e.completed).length;
+    const githubEvts = dayEvts.filter((e) => e.category === 'github');
+    const erpEvts = dayEvts.filter((e) => e.category === 'erp');
+    const reminderEvts = dayEvts.filter((e) => e.category === 'reminder' || e.category === 'urgent');
+
+    const matchingBankTxs = bankTxs.filter((t: any) => t.date === dayKey);
+    let incomeUSD = 0;
+    let expenseUSD = 0;
+    matchingBankTxs.forEach((t: any) => {
+      const rawLower = (t.description || '').toLowerCase();
+      const isPaid = rawLower.includes('paid to') || rawLower.includes('payment to') || rawLower.includes('transfer to');
+      const isReceived = rawLower.includes('received from') || rawLower.includes('deposit from');
+      const isCredit = isPaid ? false : isReceived ? true : t.type === 'credit';
+      if (isCredit) incomeUSD += t.amount;
+      else expenseUSD += t.amount;
+    });
+
+    return {
+      total,
+      completed,
+      rate: total > 0 ? Math.round((completed / total) * 100) : 0,
+      githubCount: githubEvts.length,
+      erpCount: erpEvts.length + matchingBankTxs.length,
+      reminderCount: reminderEvts.length,
+      incomeUSD,
+      expenseUSD,
+      netUSD: incomeUSD - expenseUSD,
+      hasBankData: matchingBankTxs.length > 0,
+    };
+  }, [selectedKey, events, bankTxs]);
+
+  // Monthly Overview Insights
+  const monthInsights = useMemo(() => {
+    const monthPrefix = format(currentMonth, 'yyyy-MM');
+    const monthEvts = events.filter((e) => e.date.startsWith(monthPrefix));
+    const monthBank = bankTxs.filter((t: any) => t.date && t.date.startsWith(monthPrefix));
+    const activeDates = new Set([...monthEvts.map((e) => e.date), ...monthBank.map((t: any) => t.date)]);
+    return {
+      totalActivities: monthEvts.length + monthBank.length,
+      activeDays: activeDates.size,
+      githubCount: monthEvts.filter((e) => e.category === 'github').length,
+    };
+  }, [currentMonth, events, bankTxs]);
 
   // Events for Today
   const todayEvents = useMemo(() => {
@@ -710,6 +791,12 @@ export default function CalendarScreen() {
             {/* Date Hero + Dual World Clocks (Screenshot Left) */}
             <div className="flex items-start justify-between px-2 pt-1 pb-1">
               <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#2481cc]/20 text-[#2481cc] border border-[#2481cc]/30 shadow-2xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#2481cc] animate-pulse" />
+                    Today
+                  </span>
+                </div>
                 <p className="text-tg-text-secondary text-sm font-bold tracking-wide">
                   {format(new Date(), 'EEEE')}
                 </p>
@@ -905,9 +992,9 @@ export default function CalendarScreen() {
         {/* ========================================================================= */}
         {activeView === 'calendar' && (
           <div className="space-y-4 pt-1">
-            {/* Month Timeline Navigation: NOV < DEC > JAN */}
+            {/* Month Timeline Navigation: OCT < NOV 2026 > DEC */}
             <div className="flex items-center justify-between px-3 pt-1">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-tg-text-hint tracking-wider uppercase">
                   {format(subMonths(currentMonth, 1), 'MMM')}
                 </span>
@@ -1004,7 +1091,7 @@ export default function CalendarScreen() {
                         </div>
 
                         {isTodayDay && (
-                          <span className="inline-block mt-2 text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-black/20 dark:bg-white/20 tracking-wider">
+                          <span className="inline-block mt-2 text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-[#2481cc] text-white shadow-xs tracking-wider">
                             Today
                           </span>
                         )}
@@ -1096,7 +1183,7 @@ export default function CalendarScreen() {
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-7 gap-y-1.5 text-center">
+                  <div className="grid grid-cols-7 gap-y-1 text-center">
                     {calendarDays.map((d, i) => {
                       const dateStr = format(d, 'yyyy-MM-dd');
                       const isCurrMonth = isSameMonth(d, currentMonth);
@@ -1104,36 +1191,44 @@ export default function CalendarScreen() {
                       const isTod = isToday(d);
                       const dayCategories = eventDatesMap.get(dateStr);
                       const hasEvents = Boolean(dayCategories && dayCategories.length > 0);
-                      const hasGithub = dayCategories?.includes('github') || dayCategories?.includes('erp');
 
                       return (
                         <button
                           key={i}
                           onClick={() => setSelectedDate(d)}
-                          className="flex flex-col items-center justify-center h-10 relative active:scale-95 transition-transform"
+                          className="flex flex-col items-center justify-center py-0.5 h-10 active:scale-95 transition-transform"
                         >
                           <div
                             className={clsx(
-                              'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all',
+                              'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all',
                               isSel
-                                ? 'bg-tg-blue text-white shadow-sm'
+                                ? 'bg-[#2481cc] text-white shadow-sm'
                                 : isTod
-                                ? 'bg-tg-blue/20 text-tg-blue font-extrabold'
+                                ? 'bg-[#2481cc]/20 text-[#2481cc] font-black'
                                 : isCurrMonth
                                 ? 'text-tg-text hover:bg-tg-surface'
-                                : 'text-tg-text-hint/40'
+                                : 'text-tg-text-hint/30'
                             )}
                           >
                             {format(d, 'd')}
                           </div>
-                          {hasEvents && !isSel && (
-                            <span
-                              className={clsx(
-                                'w-1.5 h-1.5 rounded-full absolute bottom-0.5',
-                                hasGithub ? 'bg-purple-400' : 'bg-tg-blue'
-                              )}
-                            />
-                          )}
+                          <div className="h-1.5 flex items-center justify-center gap-0.5 mt-0.5">
+                            {hasEvents && !isSel ? (
+                              <>
+                                {dayCategories?.includes('github') && (
+                                  <span className="w-1 h-1 rounded-full bg-purple-400" />
+                                )}
+                                {dayCategories?.includes('erp') && (
+                                  <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                                )}
+                                {dayCategories?.some((c) => c !== 'github' && c !== 'erp') && (
+                                  <span className="w-1 h-1 rounded-full bg-[#2481cc]" />
+                                )}
+                              </>
+                            ) : (
+                              <span className="w-1 h-1" />
+                            )}
+                          </div>
                         </button>
                       );
                     })}
@@ -1141,12 +1236,12 @@ export default function CalendarScreen() {
                 </div>
 
                 {/* Selected Day Agenda in Grid Mode */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between px-2">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between px-2 pt-1">
                     <h3 className="text-tg-text font-bold text-sm">
-                      {format(selectedDate, 'EEEE, MMMM d')}
+                      {isToday(selectedDate) ? 'Today' : format(selectedDate, 'EEEE, MMMM d')}
                     </h3>
-                    <span className="text-xs font-semibold text-tg-text-hint">
+                    <span className="text-xs font-medium text-tg-text-hint">
                       {selectedEvents.length} {selectedEvents.length === 1 ? 'task' : 'tasks'}
                     </span>
                   </div>
@@ -1160,32 +1255,49 @@ export default function CalendarScreen() {
                       {selectedEvents.map((evt) => (
                         <div
                           key={evt.id}
-                          className="bg-tg-bg-secondary rounded-2xl border border-tg-border/30 p-3.5 flex items-center justify-between gap-3"
+                          className="bg-tg-bg-secondary rounded-2xl border border-tg-border/25 p-3.5 flex items-center justify-between gap-3 shadow-2xs hover:border-tg-border/50 transition-all"
                         >
                           <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <button onClick={() => handleToggleComplete(evt.id)}>
+                            <button
+                              onClick={() => handleToggleComplete(evt.id)}
+                              className="shrink-0 active:scale-90 transition-transform"
+                            >
                               <CheckCircle2
                                 className={clsx(
-                                  'w-5 h-5',
-                                  evt.completed ? 'text-emerald-500 fill-emerald-500/20' : 'text-tg-border'
+                                  'w-5 h-5 transition-colors',
+                                  evt.completed ? 'text-emerald-500 fill-emerald-500/20' : 'text-tg-border hover:text-tg-text'
                                 )}
                               />
                             </button>
                             <div className="min-w-0 flex-1">
-                              <p className={clsx('text-sm font-bold text-tg-text truncate', evt.completed && 'line-through text-tg-text-hint')}>
+                              <p className={clsx('text-xs font-bold text-tg-text truncate', evt.completed && 'line-through text-tg-text-hint')}>
                                 {evt.title}
                               </p>
-                              <p className="text-xs text-tg-text-hint mt-0.5">{evt.time}</p>
+                              <p className="text-[11px] font-mono text-tg-text-hint mt-0.5">{evt.time}</p>
                             </div>
                           </div>
-                          {(evt.source === 'local' || !evt.source) && (
-                            <button
-                              onClick={() => handleDeleteEvent(evt.id)}
-                              className="text-tg-text-hint hover:text-rose-500 p-1"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
+                          <div className="flex items-center gap-1 shrink-0">
+                            {evt.sourceUrl && (
+                              <a
+                                href={evt.sourceUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-tg-text-hint hover:text-tg-blue p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+                                title="Open Source"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                            {(evt.source === 'local' || !evt.source) && (
+                              <button
+                                onClick={() => handleDeleteEvent(evt.id)}
+                                className="text-tg-text-hint hover:text-rose-500 p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+                                title="Delete Event"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>

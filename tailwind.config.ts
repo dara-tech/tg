@@ -25,16 +25,17 @@ const config: Config = {
       fontFamily: {
         sans: [
           '"ActiveKhmerFont"',
-          '"BattambangKhmer"',
           '"Google Sans"',
           '"Google Sans Text"',
           '-apple-system',
           'BlinkMacSystemFont',
           'Segoe UI',
           'Roboto',
+          '"Krasar"',
+          '"Kantumruy Pro"',
           'sans-serif',
         ],
-        khmer: ['"ActiveKhmerFont"', '"BattambangKhmer"', 'sans-serif'],
+        khmer: ['"ActiveKhmerFont"', '"Krasar"', '"Kantumruy Pro"', '"BattambangKhmer"', 'sans-serif'],
         modern: ['"Google Sans"', '"Google Sans Text"', 'sans-serif'],
       },
       animation: {

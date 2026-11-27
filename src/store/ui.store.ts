@@ -29,8 +29,9 @@ export const CHAT_WALLPAPERS: Record<
   'midnight-aurora':  { name: 'Midnight Aurora',  gradient: 'linear-gradient(160deg, #09090b 0%, #312e81 50%, #581c87 100%)', pattern: true },
 };
 export type KhmerFontId =
-  | 'hanuman'
+  | 'krasar'
   | 'kantumruy-pro'
+  | 'hanuman'
   | 'noto-sans-khmer'
   | 'noto-serif-khmer'
   | 'battambang'
@@ -64,8 +65,9 @@ export interface KhmerFontMeta {
 }
 
 export const KHMER_FONTS: Record<KhmerFontId, KhmerFontMeta> = {
-  'hanuman':             { name: 'Hanuman',             googleFamily: 'Hanuman',             query: 'Hanuman:wght@400;700',             category: 'Serif' },
+  'krasar':              { name: 'Krasar (EPR Custom)', googleFamily: 'Krasar',              query: 'Kantumruy+Pro:wght@400;700',       category: 'Sans' },
   'kantumruy-pro':       { name: 'Kantumruy Pro',       googleFamily: 'Kantumruy Pro',       query: 'Kantumruy+Pro:wght@400;700',       category: 'Sans' },
+  'hanuman':             { name: 'Hanuman',             googleFamily: 'Hanuman',             query: 'Hanuman:wght@400;700',             category: 'Serif' },
   'noto-sans-khmer':     { name: 'Noto Sans Khmer',     googleFamily: 'Noto Sans Khmer',     query: 'Noto+Sans+Khmer:wght@400;700',     category: 'Sans' },
   'noto-serif-khmer':    { name: 'Noto Serif Khmer',    googleFamily: 'Noto Serif Khmer',    query: 'Noto+Serif+Khmer:wght@400;700',    category: 'Serif' },
   'battambang':          { name: 'Battambang',          googleFamily: 'Battambang',          query: 'Battambang:wght@400;700',          category: 'Sans' },

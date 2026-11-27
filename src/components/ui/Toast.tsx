@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
+import { Check, AlertCircle, Info } from 'lucide-react';
 import clsx from 'clsx';
 
 export interface ToastItem {
@@ -22,10 +22,11 @@ export function ToastContainer() {
 
   useEffect(() => {
     const cb = (t: ToastItem) => {
-      setToasts((prev) => [...prev.slice(-2), t]);
+      // Keep only the most recent toast for a clean, short, professional presentation
+      setToasts([t]);
       setTimeout(() => {
         setToasts((prev) => prev.filter((x) => x.id !== t.id));
-      }, 2800);
+      }, 2200);
     };
     listeners.add(cb);
     return () => {
@@ -41,9 +42,9 @@ export function ToastContainer() {
 
   return (
     <div
-      className="fixed left-1/2 -translate-x-1/2 z-[9999] flex flex-col items-center gap-2 pointer-events-none w-full max-w-[92vw] sm:max-w-md px-4 transition-all"
+      className="fixed left-1/2 -translate-x-1/2 z-[9999] pointer-events-none flex flex-col items-center gap-1.5 w-auto max-w-[90vw] transition-all"
       style={{
-        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 76px)',
+        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 74px)',
       }}
     >
       {toasts.map((t) => (
@@ -51,21 +52,31 @@ export function ToastContainer() {
           key={t.id}
           onClick={() => dismissToast(t.id)}
           className={clsx(
-            'pointer-events-auto cursor-pointer flex items-center gap-2.5 px-4 py-2.5 rounded-2xl shadow-2xl backdrop-blur-2xl border transition-all active:scale-95 duration-200 animate-slide-up select-none w-auto max-w-full',
-            t.type === 'success' && 'bg-[#1C1C1E]/95 border-emerald-500/40 text-white shadow-emerald-950/20',
-            t.type === 'error' && 'bg-[#1C1C1E]/95 border-rose-500/40 text-white shadow-rose-950/20',
-            t.type === 'info' && 'bg-[#1C1C1E]/95 border-white/15 text-white shadow-black/40'
+            'pointer-events-auto cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-full shadow-lg backdrop-blur-xl bg-tg-bg-secondary/95 text-tg-text border transition-all active:scale-95 duration-150 select-none max-w-full animate-toast-enter',
+            t.type === 'success' && 'border-emerald-500/40',
+            t.type === 'error' && 'border-tg-red/40',
+            t.type === 'info' && 'border-tg-border/60'
           )}
         >
-          {t.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
-          {t.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />}
-          {t.type === 'info' && <Info className="w-4 h-4 text-tg-blue shrink-0" />}
+          {t.type === 'success' && (
+            <span className="w-4 h-4 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center shrink-0">
+              <Check className="w-2.5 h-2.5 stroke-[3]" />
+            </span>
+          )}
+          {t.type === 'error' && (
+            <span className="w-4 h-4 rounded-full bg-tg-red/15 text-tg-red flex items-center justify-center shrink-0">
+              <AlertCircle className="w-2.5 h-2.5 stroke-[2.5]" />
+            </span>
+          )}
+          {t.type === 'info' && (
+            <span className="w-4 h-4 rounded-full bg-tg-blue/15 text-tg-blue flex items-center justify-center shrink-0">
+              <Info className="w-2.5 h-2.5 stroke-[2.5]" />
+            </span>
+          )}
 
-          <span className="text-xs font-semibold leading-normal pb-0.5 break-words line-clamp-2">
+          <span className="text-[12px] font-medium tracking-tight text-tg-text truncate max-w-[280px]">
             {t.message}
           </span>
-
-          <X className="w-3.5 h-3.5 text-white/50 hover:text-white shrink-0 ml-1" />
         </div>
       ))}
     </div>

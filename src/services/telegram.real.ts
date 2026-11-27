@@ -58,6 +58,7 @@ export interface RealDialogItem {
 }
 
 export interface MediaAttachment {
+  [x: string]: null;
   kind: 'photo' | 'voice' | 'video' | 'sticker' | 'document' | 'geo' | 'contact' | 'poll' | 'webpage';
   id: string;
   accessHash: string;

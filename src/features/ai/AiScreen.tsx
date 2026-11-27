@@ -15,6 +15,8 @@ import { unlockAudioPlayback } from '@/services/aiCall/sharedAudio';
 import type { PersonaConfig } from '@/services/aiCall/types';
 import { toast } from '@/components/ui/Toast';
 import { useRouter } from 'next/navigation';
+import { useDialogsStore } from '@/store/dialogs.store';
+import { getCachedMessages, setCachedMessages } from '@/core/storage/messages';
 
 const CATEGORIES = [
   { id: 'all', label: 'All' },
@@ -51,9 +53,45 @@ export default function AiScreen() {
   };
 
   const handleStartChat = (persona: PersonaConfig) => {
+    const dialogId = `ai_${persona.id}`;
     setAiPersona(persona.id);
-    toast(`${persona.name} selected`, 'info');
-    router.push('/dialogs');
+
+    useDialogsStore.getState().upsertDialog({
+      id: dialogId,
+      title: persona.name,
+      avatarColor: persona.gradient.from || '#0A84FF',
+      avatarLetters: persona.gradient.initial || persona.name[0] || 'AI',
+      avatarUrl: persona.avatar,
+      lastMessage: persona.greeting || persona.tagline || 'Start a conversation',
+      lastMessageDate: Math.floor(Date.now() / 1000),
+      unreadCount: 0,
+      isPinned: false,
+      isMuted: false,
+      isOnline: true,
+      peerType: 'user',
+      peerId: -1,
+      isAiChat: true,
+      aiPersonaId: persona.id,
+    });
+
+    const cached = getCachedMessages(dialogId);
+    if (cached.length === 0 && persona.greeting) {
+      setCachedMessages(dialogId, [
+        {
+          id: Date.now(),
+          text: persona.greeting,
+          out: false,
+          date: Date.now() / 1000,
+          status: 'sent',
+          sender: {
+            peerId: 0,
+            firstName: persona.name,
+          },
+        },
+      ]);
+    }
+
+    router.push(`/chat/${dialogId}`);
   };
 
   return (

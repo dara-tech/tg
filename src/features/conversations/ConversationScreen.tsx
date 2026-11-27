@@ -15,6 +15,10 @@ import { MessageInput }  from './MessageInput';
 import { useAuthStore } from '@/store/auth.store';
 import { useDialogsStore, getAvatarColor, getInitials } from '@/store/dialogs.store';
 import { useUIStore }    from '@/store/ui.store';
+import { usePersonaStore } from '@/store/persona.store';
+import { getPersonaConfig } from '@/services/aiCall/personas';
+import { cfChat, type ChatMessage } from '@/services/cloudflare';
+import type { AIPersona } from '@/services/aiCall/types';
 import { unlockAudioPlayback } from '@/services/aiCall/sharedAudio';
 import {
   deleteRealMessages,
@@ -160,9 +164,34 @@ export default function ConversationScreen() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const myUserId = useAuthStore((s) => s.userId);
   const { dialogs, updateUnread, updateLastMessage } = useDialogsStore();
-  const { setActiveCall, startAiCall, chatWallpaper, chatWallpaperImage, chatWallpaperDim, chatWallpaperBlur } = useUIStore();
+  const { setActiveCall, startAiCall, setAiPersona, chatWallpaper, chatWallpaperImage, chatWallpaperDim, chatWallpaperBlur } = useUIStore();
+  const { customs: customPersonas } = usePersonaStore();
 
   const chatMeta = useMemo(() => {
+    const isAi = id?.startsWith('ai_');
+    if (isAi) {
+      const pId = id.replace('ai_', '');
+      const persona = getPersonaConfig(pId as AIPersona) || customPersonas.find((c) => c.id === pId);
+      const title = persona?.name || 'AI Assistant';
+      return {
+        id,
+        title,
+        avatarLetters: persona?.gradient?.initial || persona?.name?.[0] || 'AI',
+        avatarColor: persona?.gradient?.from || '#0A84FF',
+        isOnline: true,
+        isMuted: false,
+        peerType: 'user' as const,
+        peerId: -1,
+        accessHash: '0',
+        readOutboxMaxId: 0,
+        hasPhoto: Boolean(persona?.avatar || (persona as any)?.avatarImage),
+        avatarUrl: persona?.avatar || (persona as any)?.avatarImage,
+        isSavedMessages: false,
+        isAiChat: true,
+        aiPersonaId: pId,
+      };
+    }
+
     const found = dialogs.find((d) => d.id === id);
     if (found) {
       const isSaved = Boolean(found.isSavedMessages || (myUserId && found.peerId === myUserId));
@@ -187,7 +216,7 @@ export default function ConversationScreen() {
       photoId: undefined,
       isSavedMessages: isSaved,
     };
-  }, [dialogs, id, myUserId]);
+  }, [dialogs, id, myUserId, customPersonas]);
 
   const [messages, setMessages] = useState<Msg[]>(() => (id ? getCachedMessages(id) : []));
   const messagesRef = useRef<Msg[]>(messages);
@@ -292,7 +321,38 @@ export default function ConversationScreen() {
   }, [id]);
 
   useEffect(() => {
-    if (!isMTProtoConfigured() || !id) {
+    if (!id) return;
+
+    if (id.startsWith('ai_')) {
+      const cached = getCachedMessages(id);
+      if (cached.length > 0) {
+        setMessages(cached);
+      } else {
+        const pId = id.replace('ai_', '');
+        const persona = getPersonaConfig(pId as AIPersona) || customPersonas.find((c) => c.id === pId);
+        if (persona?.greeting) {
+          const welcomeMsg: Msg = {
+            id: Date.now(),
+            text: persona.greeting,
+            out: false,
+            date: Date.now() / 1000,
+            status: 'sent',
+            sender: {
+              peerId: 0,
+              firstName: persona.name,
+            },
+          };
+          setMessages([welcomeMsg]);
+          setCachedMessages(id, [welcomeMsg]);
+        } else {
+          setMessages([]);
+        }
+      }
+      setLoading(false);
+      return;
+    }
+
+    if (!isMTProtoConfigured()) {
       setLoading(false);
       return;
     }
@@ -632,6 +692,57 @@ export default function ConversationScreen() {
     setReplyTo(null);
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
 
+    // AI Companion Chat via Cloudflare Workers AI (Llama 3.3 70B Fast)
+    if (id?.startsWith('ai_') || (chatMeta as any).isAiChat) {
+      setMessages((m) => m.map((x) => (x.id === msg.id ? { ...x, status: 'sent' } : x)));
+      updateLastMessage(id, text, Math.floor(Date.now() / 1000), true, true);
+      setPartnerAction('typing');
+
+      try {
+        const pId = (chatMeta as any).aiPersonaId || id.replace('ai_', '');
+        const persona = getPersonaConfig(pId as AIPersona) || customPersonas.find((c) => c.id === pId);
+        const systemPrompt =
+          persona?.systemPrompt ||
+          `You are ${chatMeta.title}, a helpful, friendly, natural conversational Telegram AI companion. Respond in the user's language (natively supporting Khmer and English), with a lively, expressive, friendly tone. Keep answers conversational, authentic, and clear.`;
+
+        // Build history with all current messages
+        const history: ChatMessage[] = messagesRef.current
+          .concat(msg)
+          .filter((m) => m.text && !m.media)
+          .slice(-14)
+          .map((m) => ({
+            role: m.out ? ('user' as const) : ('assistant' as const),
+            content: m.text,
+          }));
+
+        const reply = await cfChat(history, systemPrompt);
+
+        if (reply) {
+          const aiMsg: Msg = {
+            id: Date.now() + 1,
+            text: reply,
+            out: false,
+            date: Date.now() / 1000,
+            status: 'sent',
+            sender: {
+              peerId: 0,
+              firstName: chatMeta.title,
+            },
+          };
+          setMessages((prev) => [...prev, aiMsg]);
+          updateLastMessage(id, reply, Math.floor(Date.now() / 1000), false, true);
+          setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+        }
+      } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : 'Cloudflare AI error';
+        console.error('[AI Chat Error]', err);
+        toast(`AI response failed: ${errMsg}`, 'error');
+      } finally {
+        setPartnerAction(null);
+      }
+      return;
+    }
+
     if (!isMTProtoConfigured() || !id) {
       toast('Configure MTProto API keys in .env.local to send messages', 'error');
       return;
@@ -913,9 +1024,19 @@ export default function ConversationScreen() {
           </svg>
         </button>
 
-        <button className="flex items-center gap-2.5 flex-1 min-w-0 text-left" onClick={() => router.push(`/profile/${chatMeta.isSavedMessages ? 'me' : chatMeta.peerId}`)}>
+        <button
+          className="flex items-center gap-2.5 flex-1 min-w-0 text-left"
+          onClick={() => {
+            if ((chatMeta as any).isAiChat) {
+              router.push('/ai');
+            } else {
+              router.push(`/profile/${chatMeta.isSavedMessages ? 'me' : chatMeta.peerId}`);
+            }
+          }}
+        >
           <Avatar
             chatId={chatMeta.id}
+            src={(chatMeta as any).avatarUrl}
             letters={chatMeta.avatarLetters}
             color={chatMeta.avatarColor}
             size="sm"
@@ -933,6 +1054,8 @@ export default function ConversationScreen() {
             <p className={`text-[12px] font-normal leading-normal ${partnerAction || chatMeta.isOnline ? 'text-emerald-400' : 'text-tg-text-hint'}`}>
               {partnerAction
                 ? `• ${partnerAction}…`
+                : (chatMeta as any).isAiChat
+                ? '• AI Companion'
                 : chatMeta.isSavedMessages
                 ? '• Cloud Storage'
                 : chatMeta.isOnline
@@ -959,7 +1082,13 @@ export default function ConversationScreen() {
           <button
             onClick={() => {
               unlockAudioPlayback();
-              startAiCall();
+              if ((chatMeta as any).isAiChat) {
+                const pId = (chatMeta as any).aiPersonaId || id.replace('ai_', '');
+                setAiPersona(pId);
+                startAiCall(pId);
+              } else {
+                startAiCall();
+              }
             }}
             className="w-[34px] h-[34px] rounded-full bg-tg-surface/70 border border-tg-border/20 flex items-center justify-center text-tg-blue hover:opacity-80 active:scale-95 transition-all shadow-sm"
             aria-label="AI Voice Call"
@@ -968,7 +1097,16 @@ export default function ConversationScreen() {
             <Bot className="w-4 h-4" />
           </button>
           <button
-            onClick={() => setActiveCall(chatMeta.peerId, chatMeta.title)}
+            onClick={() => {
+              if ((chatMeta as any).isAiChat) {
+                unlockAudioPlayback();
+                const pId = (chatMeta as any).aiPersonaId || id.replace('ai_', '');
+                setAiPersona(pId);
+                startAiCall(pId);
+              } else {
+                setActiveCall(chatMeta.peerId, chatMeta.title);
+              }
+            }}
             className="w-[34px] h-[34px] rounded-full bg-tg-surface/70 border border-tg-border/20 flex items-center justify-center text-tg-text-secondary active:opacity-60 transition-opacity"
             aria-label="Voice Call"
           >

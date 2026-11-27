@@ -940,6 +940,7 @@ export default function ChatListScreen() {
               >
                 <Avatar
                   chatId={previewDialog.id}
+                  src={previewDialog.avatarUrl}
                   letters={previewDialog.avatarLetters}
                   color={previewDialog.avatarColor}
                   online={previewDialog.isOnline}
@@ -1314,6 +1315,7 @@ function DialogRow({
 
       <Avatar
         chatId={dialog.id}
+        src={dialog.avatarUrl}
         letters={dialog.avatarLetters}
         color={dialog.avatarColor}
         online={dialog.isOnline}

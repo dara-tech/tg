@@ -82,6 +82,37 @@ async function callCloudflare(model: string, payload: any): Promise<any> {
   return data;
 }
 
+export interface ChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+/** Multi-turn chat generation with Llama 3.3 70B via Cloudflare Workers AI */
+export async function cfChat(messages: ChatMessage[], systemPrompt?: string): Promise<string> {
+  const model = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+  const fullMessages = [
+    ...(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : []),
+    ...messages,
+  ];
+
+  const data = await callCloudflare(model, {
+    messages: fullMessages,
+    max_tokens: 1024,
+    temperature: 0.82,
+  });
+
+  const result = data?.result;
+  if (!result) return '';
+
+  if (Array.isArray(result.choices) && result.choices[0]?.message?.content) {
+    return result.choices[0].message.content.trim();
+  }
+  if (typeof result.response === 'string') return result.response.trim();
+  if (typeof result.text === 'string') return result.text.trim();
+
+  return String(result || '').trim();
+}
+
 /** Generate text with Llama 3.3 via Cloudflare Workers AI */
 export async function cfGenText(prompt: string, systemPrompt?: string): Promise<string> {
   const model = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';

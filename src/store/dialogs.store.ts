@@ -59,6 +59,9 @@ export interface NormalizedDialog {
   isAdmin?: boolean;
   isLeft?: boolean;
   permissions?: ChatPermissions;
+  avatarUrl?: string;
+  isAiChat?: boolean;
+  aiPersonaId?: string;
 }
 
 interface DialogsState {
@@ -79,6 +82,7 @@ interface DialogsState {
   updateUnread: (id: string, count: number) => void;
   updateLastMessage: (id: string, msg: string, date: number, out?: boolean, read?: boolean, media?: DialogMediaMeta) => void;
   updateDialogMeta: (id: string, patch: Partial<NormalizedDialog>) => void;
+  upsertDialog: (dialog: NormalizedDialog) => void;
 }
 
 const AVATAR_COLORS = ['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFEAA7','#DDA0DD','#98D8C8','#F7DC6F','#BB8FCE','#85C1E9'];
@@ -146,6 +150,18 @@ export const useDialogsStore = create<DialogsState>()(
       updateDialogMeta: (id, patch) => set(s => ({
         dialogs: s.dialogs.map(d => d.id === id ? { ...d, ...patch } : d),
       })),
+
+      upsertDialog: (dialog) => set(s => {
+        const idx = s.dialogs.findIndex(d => d.id === dialog.id);
+        let updated: NormalizedDialog[];
+        if (idx >= 0) {
+          updated = [...s.dialogs];
+          updated[idx] = { ...updated[idx], ...dialog };
+        } else {
+          updated = [dialog, ...s.dialogs];
+        }
+        return { dialogs: sortDialogs(updated) };
+      }),
     }),
     {
       name: 'tg-dialogs-v2',

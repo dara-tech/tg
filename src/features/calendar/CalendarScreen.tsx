@@ -268,7 +268,60 @@ export default function CalendarScreen() {
     }
 
     try {
-      // 1. Fetch GitHub Issues / PRs involving the user across GitHub
+      // 1. Fetch GitHub User Activity Stream (Pushes, Commits, Activity)
+      if (username) {
+        try {
+          const evRes = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}/events?per_page=40`, {
+            headers,
+          });
+          if (evRes.ok) {
+            const evData = await evRes.json();
+            if (Array.isArray(evData)) {
+              evData.forEach((ev: {
+                id: string;
+                type: string;
+                created_at: string;
+                repo: { name: string };
+                payload?: { ref?: string; action?: string; issue?: { title?: string; number?: number }; pull_request?: { title?: string; number?: number } };
+              }) => {
+                const targetDate = format(new Date(ev.created_at), 'yyyy-MM-dd');
+                const time = ev.created_at.slice(11, 16) || '12:00';
+                const repoShort = ev.repo?.name?.split('/')[1] || ev.repo?.name || 'repo';
+
+                let title = `[${ev.type.replace('Event', '')} · ${repoShort}]`;
+                if (ev.type === 'PushEvent') {
+                  const branch = ev.payload?.ref?.replace('refs/heads/', '') || 'main';
+                  title = `[Push · ${repoShort}] Pushed to ${branch}`;
+                } else if (ev.type === 'PullRequestEvent') {
+                  title = `[PR · ${repoShort}] ${ev.payload?.action || 'updated'} #${ev.payload?.pull_request?.number || ''}`;
+                } else if (ev.type === 'IssuesEvent') {
+                  title = `[Issue · ${repoShort}] ${ev.payload?.action || 'activity'} #${ev.payload?.issue?.number || ''}`;
+                } else if (ev.type === 'CreateEvent') {
+                  title = `[Branch · ${repoShort}] Created ${ev.payload?.ref || 'ref'}`;
+                } else if (ev.type === 'ReleaseEvent') {
+                  title = `[Release · ${repoShort}] Published release`;
+                }
+
+                newSyncedEvents.push({
+                  id: `gh-ev-${ev.id}`,
+                  title,
+                  date: targetDate,
+                  time,
+                  category: 'github',
+                  source: 'github',
+                  sourceUrl: `https://github.com/${ev.repo.name}`,
+                  completed: true,
+                  sourceMeta: { repo: ev.repo.name, type: 'issue' },
+                });
+              });
+            }
+          }
+        } catch (err) {
+          console.warn('[Calendar] GitHub user events stream failed:', err);
+        }
+      }
+
+      // 2. Fetch GitHub Issues / PRs involving the user across GitHub
       if (username && cfg.syncIssues) {
         try {
           const query = encodeURIComponent(`involves:${username}`);
@@ -279,6 +332,7 @@ export default function CalendarScreen() {
             const data = await res.json();
             const items = data.items || [];
             if (Array.isArray(items)) {
+              const todayStr = format(new Date(), 'yyyy-MM-dd');
               items.forEach((iss: {
                 id: number;
                 number: number;
@@ -293,8 +347,14 @@ export default function CalendarScreen() {
               }) => {
                 const isPr = Boolean(iss.pull_request);
                 const repoName = iss.repository_url ? iss.repository_url.split('/').slice(-2).join('/') : '';
-                const rawDate = iss.milestone?.due_on || iss.closed_at || iss.created_at;
-                const targetDate = format(new Date(rawDate), 'yyyy-MM-dd');
+                const isOpen = iss.state === 'open';
+                // Active/open issues with no due date are scheduled on today so they are visible and actionable
+                const targetDate = iss.milestone?.due_on
+                  ? format(new Date(iss.milestone.due_on), 'yyyy-MM-dd')
+                  : isOpen
+                  ? todayStr
+                  : format(new Date(iss.closed_at || iss.created_at), 'yyyy-MM-dd');
+
                 newSyncedEvents.push({
                   id: `gh-i-${iss.id}`,
                   title: `${isPr ? '[PR' : '[Issue'} #${iss.number}${repoName ? ` · ${repoName.split('/')[1] || repoName}` : ''}] ${iss.title}`,
@@ -303,7 +363,7 @@ export default function CalendarScreen() {
                   category: 'github',
                   source: 'github',
                   sourceUrl: iss.html_url,
-                  completed: iss.state === 'closed',
+                  completed: !isOpen,
                   sourceMeta: { repo: repoName, number: iss.number, type: isPr ? 'pr' : 'issue' },
                 });
               });
@@ -314,7 +374,7 @@ export default function CalendarScreen() {
         }
       }
 
-      // 2. Fetch User Repositories to extract Milestones & Releases
+      // 3. Fetch User Repositories to extract Milestones & Releases
       if (username && (cfg.syncMilestones || cfg.syncReleases)) {
         try {
           const reposRes = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=pushed&per_page=6`, {
@@ -429,6 +489,15 @@ export default function CalendarScreen() {
       setIsSyncing(false);
     }
   }, [syncConfig]);
+
+  useEffect(() => {
+    // Auto-sync on first mount if last synced > 15 minutes ago
+    const lastSync = syncConfig.lastSyncedAt || 0;
+    if (Date.now() - lastSync > 15 * 60 * 1000) {
+      handleSyncGithubAndErp();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleAddEvent = (e: React.FormEvent) => {
     e.preventDefault();

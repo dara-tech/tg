@@ -241,19 +241,20 @@ export default function SettingsScreen() {
     setTestingToken(true);
     setTokenStatus(null);
     try {
+      const userToTest = githubUsername.trim().replace(/^@/, '') || 'dara-tech';
       const headers: Record<string, string> = { Accept: 'application/vnd.github.v3+json' };
       if (githubToken.trim()) {
-        headers.Authorization = `token ${githubToken.trim()}`;
+        const t = githubToken.trim();
+        headers.Authorization = t.startsWith('github_pat_') || t.startsWith('ghp_') ? `Bearer ${t}` : `token ${t}`;
       }
-      const userToTest = githubUsername.trim().replace(/^@/, '') || 'dara-tech';
-      const url = githubToken.trim()
-        ? 'https://api.github.com/user'
-        : `https://api.github.com/users/${encodeURIComponent(userToTest)}`;
-      const res = await fetch(url, { headers });
+      const res = await fetch(`https://api.github.com/users/${encodeURIComponent(userToTest)}`, { headers });
       if (res.ok) {
         const data = await res.json();
-        const login = data.login || userToTest;
-        setTokenStatus({ ok: true, message: `Connected to @${login} (${data.public_repos ?? 0} repos)` });
+        const displayName = data.name ? ` (${data.name})` : '';
+        setTokenStatus({
+          ok: true,
+          message: `Connected to @${data.login}${displayName} with ${data.public_repos ?? 0} repositories!`,
+        });
       } else {
         const err = await res.json().catch(() => ({}));
         setTokenStatus({ ok: false, message: `GitHub error: ${err.message || res.statusText}` });

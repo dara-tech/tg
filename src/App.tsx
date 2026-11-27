@@ -17,6 +17,7 @@ const ConversationScreen = lazy(() => import('./features/conversations/Conversat
 const ProfileScreen = lazy(() => import('./features/profile/ProfileScreen'));
 const QrScannerScreen = lazy(() => import('./features/qr-scanner/QrScannerScreen'));
 const SearchScreen = lazy(() => import('./features/search/SearchScreen'));
+const ErpScreen = lazy(() => import('./features/erp/ErpScreen'));
 
 function RouteLoadingFallback() {
   return (
@@ -74,6 +75,8 @@ export default function App() {
                 <Route path="/profile/:id" element={<ProfileRoute />} />
                 <Route path="/qr-scan" element={<QrScannerScreen />} />
                 <Route path="/search" element={<SearchScreen />} />
+                <Route path="/erp" element={<ErpScreen />} />
+                <Route path="/bank" element={<Navigate to="/erp" replace />} />
                 <Route path="*" element={<Navigate to="/dialogs" replace />} />
               </Routes>
             </Suspense>

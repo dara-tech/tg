@@ -1,5 +1,6 @@
 'use client';
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   ChevronLeft,
   ChevronRight,
@@ -149,6 +150,7 @@ const CARD_THEMES = [
 ];
 
 export default function CalendarScreen() {
+  const router = useRouter();
   const [activeView, setActiveView] = useState<'today' | 'calendar'>('today');
   const [calendarMode, setCalendarMode] = useState<'timeline' | 'grid'>('timeline');
   const [taskFilter, setTaskFilter] = useState<'all' | 'github' | 'erp' | 'reminders'>('all');
@@ -668,7 +670,7 @@ export default function CalendarScreen() {
         {/* Action Buttons: ERP Bank + Refresh Sync + Add (+) */}
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setBankModalOpen(true)}
+            onClick={() => router.push('/erp')}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 text-xs font-bold hover:bg-emerald-500/20 active:scale-95 transition-all shadow-xs"
             title="ERP Bank & Transactions Ledger"
           >

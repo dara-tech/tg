@@ -80,12 +80,15 @@ export function BottomNav() {
     pathname.startsWith('/chat/') ||
     pathname.startsWith('/profile/') ||
     pathname === '/auth' ||
-    pathname === '/';
+    pathname === '/' ||
+    pathname === '/erp' ||
+    pathname === '/bank';
 
   useEffect(() => {
     if (hide) return;
     TABS.forEach((t) => router.prefetch(t.href));
     router.prefetch('/search');
+    router.prefetch('/erp');
   }, [hide, router]);
 
   if (hide) return null;

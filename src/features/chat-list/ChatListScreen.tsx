@@ -21,6 +21,7 @@ import {
   SquarePen,
   Trash2,
   User as UserIcon,
+  UsersRound,
   VolumeX,
   X,
 } from 'lucide-react';
@@ -619,12 +620,21 @@ export default function ChatListScreen() {
 
           <div className="flex items-center gap-2">
             <button
+              onClick={() => router.push('/contacts')}
+              className="w-9 h-9 rounded-full bg-tg-bg-secondary border border-tg-border/40 flex items-center justify-center text-tg-text active:scale-95 transition-transform"
+              aria-label="Contacts"
+              title="Contacts"
+            >
+              <UsersRound className="w-4 h-4" />
+            </button>
+            <button
               onClick={() => {
                 setStoriesExpanded(true);
                 setStoryComposerOpen(true);
               }}
               className="w-9 h-9 rounded-full bg-tg-bg-secondary border border-tg-border/40 flex items-center justify-center text-tg-text active:scale-95 transition-transform"
               aria-label="Add story"
+              title="Add Story"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <circle cx="12" cy="12" r="9" strokeDasharray="3.2 2.6" strokeLinecap="round" />
@@ -635,6 +645,7 @@ export default function ChatListScreen() {
               onClick={() => setNewChatOpen(true)}
               className="w-9 h-9 rounded-full bg-tg-blue flex items-center justify-center text-white active:scale-95 transition-transform"
               aria-label="New Chat"
+              title="New Chat"
             >
               <SquarePen className="w-4 h-4" />
             </button>

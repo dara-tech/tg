@@ -28,7 +28,6 @@ import {
   ExternalLink,
   AlertCircle,
   Bot,
-  Sparkles,
 } from 'lucide-react';
 import { AI_PERSONAS, getPersonaConfig } from '@/services/aiCall/personas';
 import type { AIPersona } from '@/services/aiCall/types';
@@ -818,7 +817,7 @@ export default function SettingsScreen() {
             />
             <div className="relative z-10 flex justify-start">
               <div className="bg-tg-bg-secondary/95 border border-tg-border/35 rounded-2xl rounded-bl-[4px] px-3 py-1.5 text-xs text-tg-text shadow-sm">
-                Look at this wallpaper! ✨
+                Look at this wallpaper!
               </div>
             </div>
             <div className="relative z-10 flex justify-end">
@@ -1241,16 +1240,16 @@ export default function SettingsScreen() {
             <button
               type="button"
               onClick={() => setShowCustomPersonas(true)}
-              className="w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl bg-gradient-to-r from-purple-500/10 via-indigo-500/5 to-transparent border border-purple-500/30 hover:border-purple-500/50 transition-all active:scale-[0.99]"
+              className="w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl bg-tg-surface border border-tg-border/30 hover:border-tg-blue/40 transition-all active:scale-[0.99]"
             >
-              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-md shadow-purple-500/20 text-white">
-                <Sparkles className="w-4 h-4 fill-white/20" />
+              <div className="w-9 h-9 rounded-full bg-tg-blue/15 flex items-center justify-center shrink-0 text-tg-blue">
+                <Bot className="w-4 h-4" />
               </div>
               <div className="text-left flex-1 min-w-0">
                 <p className="text-sm font-bold text-tg-text flex items-center gap-1.5">
                   <span>My AI Characters</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-400 font-semibold">
-                    Auto-Gen ✨
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-tg-blue/10 text-tg-blue font-semibold">
+                    Custom AI
                   </span>
                 </p>
                 <p className="text-xs text-tg-text-hint truncate mt-0.5">

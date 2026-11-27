@@ -194,7 +194,7 @@ Rules:
     voice: matchedVoice || 'Aoede',
     prompt: parsed.prompt || `You are ${parsed.name || 'AI Companion'}, a friendly conversational companion.`,
     greeting: parsed.greeting || `Hello! I am ${parsed.name || 'ready to talk'}. How are you today?`,
-    avatarEmoji: parsed.avatarEmoji || '✨',
+    avatarEmoji: parsed.avatarEmoji || '🤖',
     imagePrompt: parsed.imagePrompt || `portrait avatar of ${parsed.name || 'an AI character'}, digital art, clean background, sharp focus`,
   };
 }

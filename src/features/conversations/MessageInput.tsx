@@ -4,7 +4,7 @@ import { EmojiPanel }      from '@/components/ui/EmojiPanel';
 import { AttachmentSheet } from '@/components/ui/AttachmentSheet';
 import { toast }           from '@/components/ui/Toast';
 import { Spinner }         from '@/components/ui/Spinner';
-import { Check, ChevronUp, Copy, Keyboard, Mic, Paperclip, RefreshCw, Send, Smile, Sparkles, X } from 'lucide-react';
+import { Check, ChevronUp, Copy, Keyboard, Mic, Paperclip, RefreshCw, Send, Smile, X } from 'lucide-react';
 import type { RealContactItem, StickerItem, TypingActionType } from '@/services/telegram.real';
 import clsx from 'clsx';
 

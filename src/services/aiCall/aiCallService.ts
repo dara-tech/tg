@@ -33,7 +33,7 @@ function resolvePersonaConfig(personaId: string) {
           voice: (custom.voice || 'Aoede') as 'Aoede' | 'Kore' | 'Puck' | 'Charon' | 'Fenrir',
           prompt: custom.prompt,
           greeting: custom.greeting,
-          gradient: { from: custom.gradientFrom || '#3b82f6', to: custom.gradientTo || '#1d4ed8', initial: custom.avatarEmoji || '✨' },
+          gradient: { from: custom.gradientFrom || '#3b82f6', to: custom.gradientTo || '#1d4ed8', initial: custom.avatarEmoji || '🤖' },
           category: 'general' as const,
           tags: ['Custom'],
         };

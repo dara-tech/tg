@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowDownLeft, ArrowUpRight, Phone, Plus, Bot, Sparkles } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Phone, Plus, Bot } from 'lucide-react';
 import { Avatar }      from '@/components/ui/Avatar';
 import { DialogSkeletonList } from '@/components/ui/Skeleton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
@@ -83,8 +83,8 @@ export default function CallsScreen() {
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-bold text-tg-text truncate">{currentPersona.name}</span>
-                <span className="px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-400 text-[10px] font-semibold flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 fill-purple-400/20" /> AI Live
+                <span className="px-1.5 py-0.5 rounded-full bg-tg-surface text-tg-blue text-[10px] font-semibold flex items-center gap-1 border border-tg-border/30">
+                  <Bot className="w-3 h-3" /> AI Live
                 </span>
               </div>
               <p className="text-[11px] text-tg-text-hint truncate mt-0.5">{currentPersona.tagline}</p>
@@ -96,9 +96,8 @@ export default function CallsScreen() {
                 unlockAudioPlayback();
                 startAiCall();
               }}
-              className="px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-xs font-semibold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1 shadow-md shadow-purple-500/20"
+              className="px-3.5 py-1.5 rounded-full bg-tg-blue text-white text-xs font-semibold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1 shadow-sm"
             >
-              <Sparkles className="w-3 h-3" />
               <span>Call</span>
             </button>
             <button

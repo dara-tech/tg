@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, PhoneOff, Smartphone, Volume2, Users, X, Sparkles } from 'lucide-react';
+import { Mic, MicOff, PhoneOff, Smartphone, Volume2, Users, X } from 'lucide-react';
 import { useUIStore } from '@/store/ui.store';
 import { usePersonaStore } from '@/store/persona.store';
 import { createAiCall, stopAiCall, getActiveAiCall } from '@/services/aiCall/aiCallService';
@@ -318,14 +318,7 @@ export function ActiveCallOverlay() {
 
         {/* Name & Clean Status with Live Wire-Signal Indicator */}
         <div className="text-center space-y-1.5 flex flex-col items-center">
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold tracking-tight text-tg-text">{displayName}</h2>
-            {isAiCall && (
-              <span className="p-1 rounded-full bg-gradient-to-tr from-purple-500/20 to-sky-500/20 border border-purple-500/40 text-purple-400">
-                <Sparkles className="w-3.5 h-3.5 fill-purple-400/20" />
-              </span>
-            )}
-          </div>
+          <h2 className="text-2xl font-bold tracking-tight text-tg-text">{displayName}</h2>
           <div className="flex items-center gap-2">
             {/* Smooth live signal waveform bars */}
             {isAiCall && (aiState === 'speaking' || aiState === 'listening') && (

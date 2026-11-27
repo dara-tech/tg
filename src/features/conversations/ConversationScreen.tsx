@@ -15,6 +15,7 @@ import { MessageInput }  from './MessageInput';
 import { useAuthStore } from '@/store/auth.store';
 import { useDialogsStore, getAvatarColor, getInitials } from '@/store/dialogs.store';
 import { useUIStore }    from '@/store/ui.store';
+import { unlockAudioPlayback } from '@/services/aiCall/sharedAudio';
 import {
   deleteRealMessages,
   editRealMessage,
@@ -956,7 +957,10 @@ export default function ConversationScreen() {
             </svg>
           </button>
           <button
-            onClick={() => startAiCall()}
+            onClick={() => {
+              unlockAudioPlayback();
+              startAiCall();
+            }}
             className="w-[34px] h-[34px] rounded-full bg-tg-surface/70 border border-tg-border/20 flex items-center justify-center active:opacity-60 transition-opacity"
             aria-label="AI Voice Call"
             title="AI Voice Call"

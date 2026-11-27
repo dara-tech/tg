@@ -254,6 +254,29 @@ export class AICallService extends EventTarget {
     };
   }
 
+  private playConnectionChime() {
+    if (!this.audioContext) return;
+    try {
+      if (this.audioContext.state === 'suspended') {
+        this.audioContext.resume().catch(() => {});
+      }
+      const now = this.audioContext.currentTime;
+      const osc = this.audioContext.createOscillator();
+      const gain = this.audioContext.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, now); // C5
+      osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+      osc.connect(gain);
+      gain.connect(this.audioContext.destination);
+      osc.start(now);
+      osc.stop(now + 0.22);
+    } catch (e) {
+      console.warn('[AICallService] Chime error:', e);
+    }
+  }
+
   private connectWebSocket() {
     const key =
       this.customApiKey ||
@@ -282,7 +305,7 @@ export class AICallService extends EventTarget {
     }
 
     this.ws.onopen = () => {
-      console.log('[AICallService] Connected to Gemini Live');
+      console.log('[AICallService] Connected to Gemini Live WebSocket');
       this.setState('connected');
       this.nextPlayTime = this.audioContext?.currentTime || 0;
 
@@ -311,18 +334,6 @@ export class AICallService extends EventTarget {
       }
 
       this.ws?.send(JSON.stringify({ setup: setupPayload }));
-
-      setTimeout(() => {
-        if (this.ws?.readyState === WebSocket.OPEN && !this.sessionHandle) {
-          this.ws.send(
-            JSON.stringify({
-              realtimeInput: {
-                text: personaConfig.greeting,
-              },
-            })
-          );
-        }
-      }, 500);
     };
 
     this.ws.onmessage = async (event) => {
@@ -336,6 +347,35 @@ export class AICallService extends EventTarget {
         if (msg.error) {
           console.error('[AICallService] Gemini error response:', msg.error);
           this.dispatchEvent(new CustomEvent('error', { detail: { message: msg.error.message || 'Gemini Error' } }));
+        }
+
+        // Handle successful handshake from Gemini
+        if (msg.setupComplete) {
+          console.log('[AICallService] Setup complete received from Gemini Live');
+          this.playConnectionChime();
+
+          if (this.audioContext && this.audioContext.state === 'suspended') {
+            await this.audioContext.resume().catch(() => {});
+          }
+
+          // Trigger initial greeting voice response via clientContent
+          if (!this.sessionHandle && this.ws?.readyState === WebSocket.OPEN) {
+            const personaConfig = getPersonaConfig(this.personaId);
+            const greetingPrompt = `The voice call is now connected. Speak aloud to the user right now and introduce yourself: "${personaConfig.greeting}"`;
+            this.ws.send(
+              JSON.stringify({
+                clientContent: {
+                  turns: [
+                    {
+                      role: 'user',
+                      parts: [{ text: greetingPrompt }],
+                    },
+                  ],
+                  turnComplete: true,
+                },
+              })
+            );
+          }
         }
 
         if (msg.sessionResumptionUpdate?.newHandle) {
@@ -558,9 +598,7 @@ export class AICallService extends EventTarget {
       this.sourceNode?.disconnect();
       this.outputCompressor?.disconnect();
       this.outputGain?.disconnect();
-      if (this.audioContext && this.audioContext.state !== 'closed') {
-        this.audioContext.close().catch(() => {});
-      }
+      // Keep shared AudioContext alive and ready for future calls
     } catch {}
 
     this.isPlayingAudio = false;

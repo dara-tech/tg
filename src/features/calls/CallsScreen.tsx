@@ -11,6 +11,7 @@ import { toast }       from '@/components/ui/Toast';
 import { fetchRealCallHistory, fetchRealContacts, isMTProtoConfigured } from '@/services/telegram.real';
 import { format, isToday } from 'date-fns';
 import { getPersonaConfig } from '@/services/aiCall/personas';
+import { unlockAudioPlayback } from '@/services/aiCall/sharedAudio';
 import type { AIPersona } from '@/services/aiCall/types';
 
 function formatCallTime(ts: number) {
@@ -91,7 +92,10 @@ export default function CallsScreen() {
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <button
-              onClick={() => startAiCall()}
+              onClick={() => {
+                unlockAudioPlayback();
+                startAiCall();
+              }}
               className="px-3 py-1.5 rounded-full bg-gradient-to-r from-sky-500 to-indigo-600 text-white text-xs font-semibold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1 shadow-md shadow-sky-500/20"
             >
               <span>Call</span>

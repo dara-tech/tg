@@ -19,7 +19,8 @@ export function getSharedAudioContext(): AudioContext {
 
   if (!sharedAudioCtx || sharedAudioCtx.state === 'closed') {
     try {
-      sharedAudioCtx = new AudioCtxClass();
+      // 24kHz matches Gemini Live native audio output
+      sharedAudioCtx = new AudioCtxClass({ sampleRate: 24000 });
     } catch {
       sharedAudioCtx = new AudioCtxClass();
     }
@@ -41,6 +42,12 @@ export function unlockAudioPlayback(): void {
     if (ctx.state === 'suspended') {
       ctx.resume().catch(() => {});
     }
+    // Play a tiny silent buffer to force mobile browser / Safari audio unlock
+    const silent = ctx.createBuffer(1, 1, 24000);
+    const src = ctx.createBufferSource();
+    src.buffer = silent;
+    src.connect(ctx.destination);
+    src.start();
   } catch (err) {
     console.warn('[sharedAudio] Unlock error:', err);
   }

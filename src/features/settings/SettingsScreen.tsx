@@ -288,17 +288,25 @@ export default function SettingsScreen() {
                 <button
                   key={id}
                   onClick={() => ui.setAccent(id)}
-                  className="flex flex-col items-center gap-1"
+                  className="flex flex-col items-center gap-1 focus:outline-none"
                 >
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-transform ${
-                      active ? 'ring-2 ring-tg-blue ring-offset-2 ring-offset-tg-bg-secondary scale-105' : ''
+                    className={`w-10 h-10 rounded-full p-[2px] flex items-center justify-center transition-all ${
+                      active ? 'border-2 border-[#2A82DA] scale-105 shadow-sm' : 'border border-transparent'
                     }`}
-                    style={{ backgroundColor: ACCENT_COLORS[id].primary }}
                   >
-                    {active && <Check className="w-4 h-4 text-white" />}
+                    <div
+                      className="w-full h-full rounded-full overflow-hidden flex items-center justify-center relative shadow-inner"
+                      style={{ backgroundColor: ACCENT_COLORS[id].primary }}
+                    >
+                      {active && (
+                        <div className="w-4 h-4 rounded-full bg-white/30 backdrop-blur-sm text-white flex items-center justify-center shadow-sm">
+                          <Check className="w-2.5 h-2.5 stroke-[3]" />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <span className={`text-[10px] ${active ? 'text-tg-blue font-semibold' : 'text-tg-text-hint'}`}>
+                  <span className={`text-[10px] ${active ? 'text-[#2A82DA] font-semibold' : 'text-tg-text-hint'}`}>
                     {ACCENT_COLORS[id].short}
                   </span>
                 </button>
@@ -319,29 +327,27 @@ export default function SettingsScreen() {
                   <button
                     key={id}
                     onClick={() => ui.setTheme(id)}
-                    className="flex flex-col items-center gap-1.5"
+                    className="flex flex-col items-center gap-1.5 focus:outline-none"
                   >
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                      className={`w-10 h-10 rounded-full p-[2px] flex items-center justify-center transition-all ${
                         active
-                          ? 'ring-2 ring-tg-blue ring-offset-2 ring-offset-tg-bg-secondary scale-105'
-                          : 'border border-tg-border/30'
+                          ? 'border-2 border-[#2A82DA] scale-105 shadow-sm'
+                          : 'border border-tg-border/30 hover:border-tg-border/60'
                       }`}
-                      style={{ background: t.preview }}
                     >
-                      {active && (
-                        <Check
-                          className={`w-4 h-4 ${
-                            id === 'manga'
-                              ? 'text-tg-blue drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]'
-                              : t.isDark
-                              ? 'text-white'
-                              : 'text-slate-900'
-                          }`}
-                        />
-                      )}
+                      <div
+                        className="w-full h-full rounded-full overflow-hidden flex items-center justify-center relative shadow-inner"
+                        style={{ background: t.preview }}
+                      >
+                        {active && (
+                          <div className="w-4 h-4 rounded-full bg-[#2A82DA] text-white flex items-center justify-center shadow-md">
+                            <Check className="w-2.5 h-2.5 stroke-[3]" />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <span className={`text-[10px] ${active ? 'text-tg-blue font-semibold' : 'text-tg-text-hint'}`}>
+                    <span className={`text-[10px] ${active ? 'text-[#2A82DA] font-semibold' : 'text-tg-text-hint'}`}>
                       {t.short}
                     </span>
                   </button>
@@ -363,13 +369,13 @@ export default function SettingsScreen() {
                   <button
                     key={id}
                     onClick={() => ui.setNavStyle(id)}
-                    className="flex flex-col items-center gap-1.5"
+                    className="flex flex-col items-center gap-1.5 focus:outline-none"
                   >
                     <div
                       className={`w-full h-10 rounded-xl bg-tg-bg-tertiary flex items-end justify-center p-1.5 transition-all ${
                         active
-                          ? 'ring-2 ring-tg-blue ring-offset-2 ring-offset-tg-bg-secondary'
-                          : 'border border-tg-border/30'
+                          ? 'border-2 border-[#2A82DA] shadow-sm'
+                          : 'border border-tg-border/30 hover:border-tg-border/60'
                       }`}
                     >
                       {id === 'pill' && (
@@ -787,8 +793,8 @@ export default function SettingsScreen() {
                   <div
                     className={`w-full h-16 rounded-xl relative overflow-hidden flex items-center justify-center transition-all ${
                       active
-                        ? 'ring-2 ring-tg-blue ring-offset-2 ring-offset-tg-bg-secondary'
-                        : 'border border-tg-border/40'
+                        ? 'border-2 border-[#2A82DA] shadow-sm'
+                        : 'border border-tg-border/40 hover:border-tg-border/70'
                     }`}
                     style={{
                       backgroundImage: w.gradient,
@@ -797,12 +803,12 @@ export default function SettingsScreen() {
                   >
                     {!w.gradient && <span className="text-[11px] text-tg-text-hint">Default</span>}
                     {active && (
-                      <div className="w-6 h-6 rounded-full bg-tg-blue text-white flex items-center justify-center shadow">
-                        <Check className="w-3.5 h-3.5" />
+                      <div className="w-6 h-6 rounded-full bg-[#2A82DA] text-white flex items-center justify-center shadow">
+                        <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                       </div>
                     )}
                   </div>
-                  <span className={`text-[11px] truncate w-full text-center ${active ? 'text-tg-blue font-semibold' : 'text-tg-text-hint'}`}>
+                  <span className={`text-[11px] truncate w-full text-center ${active ? 'text-[#2A82DA] font-semibold' : 'text-tg-text-hint'}`}>
                     {w.name}
                   </span>
                 </button>

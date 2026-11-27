@@ -221,6 +221,16 @@
    MANGA UI AESTHETICS (NATIVE & ULTRA-CLEAN)
    ========================================= */
 
+/* Authentic Japanese comic book halftone screentone applied across Manga UI backgrounds */
+[data-theme='manga'] body,
+[data-theme='manga'] #app,
+[data-theme='manga'] main,
+[data-theme='manga'] .bg-tg-bg {
+  background-color: #FFFFFF !important;
+  background-image: radial-gradient(circle at 7px 7px, rgba(0, 0, 0, 0.055) 1.1px, transparent 1.1px) !important;
+  background-size: 14px 14px !important;
+}
+
 /* Top app headers & safe-top navigation bars: seamless borderless header */
 [data-theme='manga'] header,
 [data-theme='manga'] .safe-top,

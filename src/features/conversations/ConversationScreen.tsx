@@ -274,6 +274,8 @@ export default function ConversationScreen() {
   const initialScrolledRef = useRef(false);
   const loadingOlderRef = useRef(false);
   const hasMoreOlderRef = useRef(true);
+  const anchorRef = useRef<{ id: number; top: number } | null>(null);
+  const PAGE_SIZE = 30;
 
   // Load / refresh permissions for group and channel chats
   useEffect(() => {
@@ -345,13 +347,13 @@ export default function ConversationScreen() {
       ? accessHashRef.current
       : '0';
 
-    // Fetch latest 35 messages first for fast initial render (older messages load on scroll up)
-    fetchRealHistory(id, hash, 35, 0)
+    // Fetch latest 30 messages first for fast initial render (older messages load on scroll up)
+    fetchRealHistory(id, hash, PAGE_SIZE, 0)
       .then((real) => {
         if (cancelled) return;
         setCachedMessages(id, real);
         setMessages(real);
-        setHasMoreOlder(real.length >= 35);
+        setHasMoreOlder(real.length >= PAGE_SIZE);
         const latestId = real.at(-1)?.id;
         if (latestId) {
           markHistoryRead(id, latestId, hash).catch(() => {});
@@ -405,33 +407,38 @@ export default function ConversationScreen() {
     const el = scrollRef.current;
     if (!el) return;
 
-    const prevScrollHeight = el.scrollHeight;
-    const prevScrollTop = el.scrollTop;
     const oldestId = messagesRef.current[0].id;
     const hash = accessHashRef.current && accessHashRef.current !== '0' ? accessHashRef.current : '0';
 
     loadingOlderRef.current = true;
     setLoadingOlder(true);
     try {
-      const older = await fetchRealHistory(id, hash, 35, 0, oldestId);
-      if (older.length < 35) {
+      const older = await fetchRealHistory(id, hash, PAGE_SIZE, 0, oldestId);
+      const existingIds = new Set(messagesRef.current.map((m) => m.id));
+      const newOlder = older.filter((m) => !existingIds.has(m.id));
+
+      if (older.length < PAGE_SIZE || newOlder.length === 0) {
         hasMoreOlderRef.current = false;
         setHasMoreOlder(false);
       }
-      if (older.length > 0) {
+
+      if (newOlder.length > 0) {
+        // Record scroll anchor before prepending DOM elements
+        const anchorEl = document.getElementById(`msg-${oldestId}`);
+        if (anchorEl) {
+          anchorRef.current = {
+            id: oldestId,
+            top: anchorEl.getBoundingClientRect().top,
+          };
+        }
+
         setMessages((prev) => {
           const existing = new Set(prev.map((m) => m.id));
-          const updated = [...older.filter((m) => !existing.has(m.id)), ...prev];
+          const toPrepend = older.filter((m) => !existing.has(m.id));
+          if (toPrepend.length === 0) return prev;
+          const updated = [...toPrepend, ...prev].sort((a, b) => a.id - b.id);
           conversationMessagesCache.set(id, updated);
           return updated;
-        });
-
-        // Retain scroll position so the view doesn't jump or slide up
-        requestAnimationFrame(() => {
-          if (scrollRef.current) {
-            const newScrollHeight = scrollRef.current.scrollHeight;
-            scrollRef.current.scrollTop = prevScrollTop + (newScrollHeight - prevScrollHeight);
-          }
         });
       }
     } catch {
@@ -441,6 +448,22 @@ export default function ConversationScreen() {
       setLoadingOlder(false);
     }
   }, [id]);
+
+  // Seamless scroll anchoring: maintain exact visible position when older messages are prepended
+  useLayoutEffect(() => {
+    if (!anchorRef.current || !scrollRef.current) return;
+    const { id: anchorId, top: prevTop } = anchorRef.current;
+    anchorRef.current = null;
+
+    const anchorEl = document.getElementById(`msg-${anchorId}`);
+    if (anchorEl && scrollRef.current) {
+      const currentTop = anchorEl.getBoundingClientRect().top;
+      const delta = currentTop - prevTop;
+      if (Math.abs(delta) > 0.5) {
+        scrollRef.current.scrollTop += delta;
+      }
+    }
+  }, [messages]);
 
   // If initial batch doesn't fill the screen, load older messages automatically
   useEffect(() => {
@@ -458,7 +481,7 @@ export default function ConversationScreen() {
     setShowScrollBottom(distFromBottom > 240);
 
     // Only allow older message loading AFTER initial scroll to bottom has completed!
-    if (initialScrolledRef.current && el.scrollTop < 80 && hasMoreOlder && !loadingOlder) {
+    if (initialScrolledRef.current && el.scrollTop < 120 && hasMoreOlder && !loadingOlderRef.current) {
       loadOlderMessages();
     }
   };

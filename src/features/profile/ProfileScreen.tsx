@@ -835,6 +835,7 @@ export default function ProfileScreen() {
         <MediaViewer
           src={mediaViewer.src}
           type={mediaViewer.type}
+          senderName={display.name}
           onClose={() => setMediaViewer(null)}
         />
       )}

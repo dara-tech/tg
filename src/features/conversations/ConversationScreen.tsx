@@ -254,7 +254,17 @@ export default function ConversationScreen() {
   const [deleteTargetIds, setDeleteTargetIds] = useState<number[] | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [mediaViewer, setMediaViewer] = useState<{ src: string; type: 'image' | 'video' } | null>(null);
+  const [mediaViewer, setMediaViewer] = useState<{
+    src: string;
+    type: 'image' | 'video';
+    senderName?: string;
+    date?: number;
+    caption?: string;
+    onForward?: () => void;
+    onReply?: () => void;
+    onDelete?: () => void;
+    isOut?: boolean;
+  } | null>(null);
   const [locationPreview, setLocationPreview] = useState<LocationPreviewData | null>(null);
   const [searchOpen, setSearchOpen] = useState(() =>
     typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('search') === '1'
@@ -1106,7 +1116,19 @@ export default function ConversationScreen() {
                     onDelete={(msgId) => setDeleteTargetIds([msgId])}
                     onForward={msgId => setForwardMsgIds([msgId])}
                     onReact={handleReact}
-                    onOpenMedia={(src, type) => setMediaViewer({ src, type })}
+                    onOpenMedia={(src, type) =>
+                      setMediaViewer({
+                        src,
+                        type,
+                        senderName: msg.out ? 'You' : (msg.sender?.name || chatMeta.title),
+                        date: msg.date,
+                        caption: msg.text,
+                        onForward: () => setForwardMsgIds([msg.id]),
+                        onReply: () => { setEditingId(null); setReplyTo(msg.id); },
+                        onDelete: () => setDeleteTargetIds([msg.id]),
+                        isOut: msg.out,
+                      })
+                    }
                     onOpenForwarded={(chatId) => router.push(`/chat/${chatId}`)}
                     onOpenLocation={(loc) =>
                       setLocationPreview({
@@ -1280,6 +1302,13 @@ export default function ConversationScreen() {
         <MediaViewer
           src={mediaViewer.src}
           type={mediaViewer.type}
+          senderName={mediaViewer.senderName}
+          date={mediaViewer.date}
+          caption={mediaViewer.caption}
+          onForward={mediaViewer.onForward}
+          onReply={mediaViewer.onReply}
+          onDelete={mediaViewer.onDelete}
+          isOut={mediaViewer.isOut}
           onClose={() => setMediaViewer(null)}
         />
       )}

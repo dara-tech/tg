@@ -49,11 +49,9 @@ function renderTabIcon(
       <Icon
         className={clsx('w-6 h-6 transition-transform', active ? `${activeClass} scale-105` : 'text-tg-text-hint')}
         strokeWidth={active ? 2.2 : 1.75}
-        fill={active ? 'currentColor' : 'none'}
-        fillOpacity={active ? 0.15 : 0}
       />
       {badgeCount > 0 && (
-        <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold leading-none tabular-nums inline-flex items-center justify-center">
+        <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-[#ff3b30] text-white text-[9px] font-bold leading-none tabular-nums inline-flex items-center justify-center shadow-sm">
           {badgeCount > 99 ? '99+' : badgeCount}
         </span>
       )}
@@ -193,7 +191,7 @@ export function BottomNav() {
   /* ── MINIMAL ── */
   return (
     <nav
-      className="shrink-0 w-full bg-tg-bg-secondary/85 backdrop-blur-2xl border-t border-tg-border/15 [data-theme='manga']_&:border-t-0 pt-1"
+      className="shrink-0 w-full bg-white/95 dark:bg-tg-bg-secondary/90 backdrop-blur-2xl border-t border-tg-border/15 [data-theme='manga']_&:border-t-0 pt-1.5"
       style={safeStyle}
     >
       <div className="flex items-stretch justify-around px-4 pb-1">
@@ -205,12 +203,12 @@ export function BottomNav() {
               href={tab.href}
               prefetch
               aria-label={tab.label}
-              className="flex-1 flex flex-col items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl transition-all active:scale-95"
+              className="flex-1 flex flex-col items-center justify-center gap-1.5 py-1 px-2 rounded-xl transition-all active:scale-95"
             >
               {renderTabIcon(tab, active, 'text-tg-text', tab.href === '/dialogs' ? totalUnread : 0)}
               <span
                 className={clsx(
-                  'w-1.5 h-1.5 rounded-full transition-all duration-200',
+                  'w-2 h-2 rounded-full transition-all duration-200',
                   active ? 'bg-[#ff3b30] scale-100 opacity-100' : 'bg-transparent scale-0 opacity-0'
                 )}
               />

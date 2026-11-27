@@ -131,6 +131,7 @@ export default function ErpScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isFetchingErp, setIsFetchingErp] = useState(false);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
+  const [selectedTx, setSelectedTx] = useState<BankTransaction | null>(null);
 
   // ERP Import States
   const [importSheetOpen, setImportSheetOpen] = useState(false);
@@ -446,25 +447,25 @@ export default function ErpScreen() {
   return (
     <div className="flex-1 flex flex-col h-full bg-tg-bg overflow-hidden select-none">
       {/* ── Top Header (iOS Telegram Navigation Bar) ── */}
-      <header className="sticky top-0 z-20 shrink-0 bg-tg-bg/90 backdrop-blur-2xl border-b border-tg-border/15 safe-top">
+      <header className="sticky top-0 z-20 shrink-0 bg-tg-bg/95 backdrop-blur-2xl border-b border-tg-border/15 safe-top">
         <div className="relative flex items-center justify-between px-3 h-11">
-          {/* Left: Back button with iOS chevron and label */}
+          {/* Left: Back button */}
           <button
             onClick={() => router.push('/calendar')}
-            className="flex items-center gap-0.5 text-tg-blue font-normal text-[17px] active:opacity-60 transition-opacity -ml-1 py-1 z-10"
+            className="flex items-center gap-1 text-tg-blue font-normal text-[16px] active:opacity-60 transition-opacity z-10"
           >
-            <ChevronLeft className="w-6 h-6 -mr-0.5 stroke-[2.5]" />
-            <span className="text-[17px]">Calendar</span>
+            <ChevronLeft className="w-5 h-5 stroke-[2.5] -mr-1" />
+            <span>Calendar</span>
           </button>
 
-          {/* Center: Title cleanly centered */}
-          <div className="absolute inset-x-0 flex flex-col items-center justify-center pointer-events-none px-24">
-            <h1 className="text-[17px] font-semibold text-tg-text tracking-tight truncate leading-tight">
-              ERP Bank Ledger
+          {/* Center: Title */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <h1 className="text-[16px] font-bold text-tg-text tracking-tight truncate">
+              Bank Ledger
             </h1>
           </div>
 
-          {/* Right: Manual Input '+' button in header */}
+          {/* Right: Manual Input '+' button */}
           <div className="flex items-center gap-1.5 z-10">
             <button
               onClick={() => setAddSheetOpen(true)}
@@ -479,25 +480,20 @@ export default function ErpScreen() {
       </header>
 
       {/* ── Scrollable Body Content ── */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 max-w-2xl mx-auto w-full">
-        {/* Cashflow Balance Hero */}
-        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#2C2C2E] rounded-3xl p-5 text-white shadow-xl border border-white/10 relative overflow-hidden">
-          <div className="flex items-center justify-between pb-3 border-b border-white/10">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                <Landmark className="w-4 h-4" />
-              </div>
-              <span className="text-xs font-bold uppercase tracking-wider text-white/80">
-                ERP Cashflow Ledger
-              </span>
-            </div>
+      <div className="flex-1 overflow-y-auto px-4 py-3.5 space-y-3.5 max-w-2xl mx-auto w-full">
+        {/* Balance Hero Card */}
+        <div className="bg-[#1C1C1E] rounded-3xl p-4.5 text-white shadow-sm border border-white/8 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-white/60">
+              Total Balance
+            </span>
 
             {/* Currency toggle */}
             <div className="flex bg-black/40 p-0.5 rounded-full border border-white/10">
               <button
                 onClick={() => setSelectedCurrency('USD')}
                 className={clsx(
-                  'px-3 py-1 rounded-full text-xs font-bold transition-all',
+                  'px-2.5 py-0.5 rounded-full text-[11px] font-bold transition-all',
                   selectedCurrency === 'USD'
                     ? 'bg-white text-black shadow-sm'
                     : 'text-white/60 hover:text-white'
@@ -508,7 +504,7 @@ export default function ErpScreen() {
               <button
                 onClick={() => setSelectedCurrency('KHR')}
                 className={clsx(
-                  'px-3 py-1 rounded-full text-xs font-bold transition-all',
+                  'px-2.5 py-0.5 rounded-full text-[11px] font-bold transition-all',
                   selectedCurrency === 'KHR'
                     ? 'bg-white text-black shadow-sm'
                     : 'text-white/60 hover:text-white'
@@ -519,49 +515,48 @@ export default function ErpScreen() {
             </div>
           </div>
 
-          <div className="pt-4 flex items-end justify-between">
-            <div>
-              <p className="text-[11px] font-semibold text-white/60 uppercase tracking-wider">
-                Net Cash Position
-              </p>
-              <h2 className="text-[32px] sm:text-[38px] font-black tracking-tighter leading-none mt-1 font-mono">
-                {selectedCurrency === 'USD'
-                  ? totals.netUSD >= 0
-                    ? `+$${totals.netUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                    : `-$${Math.abs(totals.netUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                  : totals.netKHR >= 0
-                  ? `+៛${totals.netKHR.toLocaleString()}`
-                  : `-៛${Math.abs(totals.netKHR).toLocaleString()}`}
-              </h2>
+          <div>
+            <h2 className="text-[32px] font-black tracking-tight font-mono">
+              {selectedCurrency === 'USD'
+                ? totals.netUSD >= 0
+                  ? `+$${totals.netUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                  : `-$${Math.abs(totals.netUSD).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                : totals.netKHR >= 0
+                ? `+៛${totals.netKHR.toLocaleString()}`
+                : `-៛${Math.abs(totals.netKHR).toLocaleString()}`}
+            </h2>
+          </div>
+
+          {/* Clean Inflow & Outflow Chips */}
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/10">
+            <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-1.5">
+              <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <div className="min-w-0">
+                <span className="text-[10px] text-white/50 block">Inflow</span>
+                <span className="text-xs font-bold font-mono text-emerald-400 truncate block">
+                  {selectedCurrency === 'USD'
+                    ? `+$${totals.incomeUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                    : `+៛${totals.incomeKHR.toLocaleString()}`}
+                </span>
+              </div>
             </div>
 
-            <div className="flex gap-4 text-right">
-              <div>
-                <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1 justify-end">
-                  <ArrowDownLeft className="w-3 h-3" /> Inflow
-                </p>
-                <p className="text-sm font-bold mt-0.5 font-mono">
+            <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-1.5">
+              <ArrowUpRight className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+              <div className="min-w-0">
+                <span className="text-[10px] text-white/50 block">Outflow</span>
+                <span className="text-xs font-bold font-mono text-rose-400 truncate block">
                   {selectedCurrency === 'USD'
-                    ? `$${totals.incomeUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                    : `៛${totals.incomeKHR.toLocaleString()}`}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1 justify-end">
-                  <ArrowUpRight className="w-3 h-3" /> Outflow
-                </p>
-                <p className="text-sm font-bold mt-0.5 font-mono">
-                  {selectedCurrency === 'USD'
-                    ? `$${totals.expenseUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                    : `៛${totals.expenseKHR.toLocaleString()}`}
-                </p>
+                    ? `-$${totals.expenseUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                    : `-៛${totals.expenseKHR.toLocaleString()}`}
+                </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Quick Actions: Import Excel (.xlsx) + Quick Add Button */}
-        <div className="flex items-center gap-2">
+        {/* Action Widgets */}
+        <div className="grid grid-cols-2 gap-2">
           {/* File Upload Input - Excel only */}
           <input
             ref={fileInputRef}
@@ -573,39 +568,18 @@ export default function ErpScreen() {
 
           <button
             onClick={() => setImportSheetOpen(true)}
-            className="flex-1 min-w-0 flex items-center justify-between p-3 rounded-2xl bg-tg-bg-secondary border border-tg-border/30 hover:border-emerald-500/50 hover:bg-tg-surface active:scale-[0.99] transition-all shadow-xs group"
+            className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-tg-bg-secondary border border-tg-border/25 hover:bg-tg-surface active:scale-[0.98] transition-all text-tg-text"
           >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                <FileSpreadsheet className="w-5 h-5" />
-              </div>
-              <div className="text-left min-w-0">
-                <p className="text-[13px] font-bold text-tg-text truncate flex items-center gap-1.5">
-                  <span>Import Excel</span>
-                  <span className="px-1.5 py-0.2 rounded text-[8px] font-black uppercase bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
-                    .XLSX
-                  </span>
-                </p>
-                <p className="text-[10px] text-tg-text-hint font-medium truncate">
-                  Bank statement spreadsheet
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-bold shadow-xs shrink-0 ml-1.5 active:scale-95 transition-all">
-              <Upload className="w-3 h-3" />
-              <span>Import</span>
-            </div>
+            <FileSpreadsheet className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="text-xs font-bold">Import Excel</span>
           </button>
 
           <button
             onClick={() => setAddSheetOpen(true)}
-            className="w-13 h-[54px] rounded-2xl bg-tg-blue hover:bg-tg-blue/90 text-white flex flex-col items-center justify-center gap-0.5 shrink-0 shadow-sm active:scale-95 transition-all px-2.5"
-            title="Manual Input"
-            aria-label="Add Transaction"
+            className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-tg-bg-secondary border border-tg-border/25 hover:bg-tg-surface active:scale-[0.98] transition-all text-tg-text"
           >
-            <Plus className="w-5 h-5 stroke-[2.5]" />
-            <span className="text-[9px] font-bold tracking-tight">Add</span>
+            <Plus className="w-4 h-4 text-tg-blue shrink-0 stroke-[2.5]" />
+            <span className="text-xs font-bold">New Transaction</span>
           </button>
         </div>
 
@@ -616,20 +590,20 @@ export default function ErpScreen() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by description, bank, counterparty, ref..."
-            className="w-full bg-tg-bg-secondary border border-tg-border/30 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-tg-text placeholder:text-tg-text-hint focus:outline-none focus:border-tg-blue"
+            placeholder="Search transactions..."
+            className="w-full bg-tg-bg-secondary border border-tg-border/25 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-tg-text placeholder:text-tg-text-hint focus:outline-none focus:border-tg-blue"
           />
         </div>
 
         {/* Filter Pills */}
-        <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-1.5 bg-tg-bg-secondary p-1 rounded-full border border-tg-border/30">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 bg-tg-bg-secondary p-1 rounded-full border border-tg-border/25">
             <button
               onClick={() => setActiveTab('all')}
               className={clsx(
                 'px-3 py-1 rounded-full text-xs font-bold transition-all',
                 activeTab === 'all'
-                  ? 'bg-tg-text text-tg-bg shadow-sm'
+                  ? 'bg-tg-text text-tg-bg shadow-xs'
                   : 'text-tg-text-secondary hover:text-tg-text'
               )}
             >
@@ -640,49 +614,47 @@ export default function ErpScreen() {
               className={clsx(
                 'px-3 py-1 rounded-full text-xs font-bold transition-all',
                 activeTab === 'credit'
-                  ? 'bg-emerald-500 text-white shadow-sm'
+                  ? 'bg-emerald-500 text-white shadow-xs'
                   : 'text-tg-text-secondary hover:text-tg-text'
               )}
             >
-              Income (+)
+              Income
             </button>
             <button
               onClick={() => setActiveTab('debit')}
               className={clsx(
                 'px-3 py-1 rounded-full text-xs font-bold transition-all',
                 activeTab === 'debit'
-                  ? 'bg-rose-500 text-white shadow-sm'
+                  ? 'bg-rose-500 text-white shadow-xs'
                   : 'text-tg-text-secondary hover:text-tg-text'
               )}
             >
-              Expense (-)
+              Expense
             </button>
           </div>
 
-          <span className="text-[11px] font-semibold text-tg-text-hint">
-            {filteredList.length} items
+          <span className="text-[11px] font-medium text-tg-text-hint">
+            {filteredList.length} total
           </span>
         </div>
 
-        {/* Transaction Cards List */}
+        {/* Transaction Cards List - Clean Revolut / iOS Style */}
         {filteredList.length === 0 ? (
-          <div className="py-12 text-center text-tg-text-hint text-xs bg-tg-bg-secondary/40 rounded-3xl border border-tg-border/20 p-8 space-y-3">
-            <Receipt className="w-10 h-10 mx-auto opacity-40" />
-            <div>
-              <p className="font-bold text-tg-text text-sm">No transactions found</p>
-              <p className="mt-1 text-tg-text-hint max-w-xs mx-auto">
-                Tap &ldquo;Import Excel&rdquo; or &ldquo;+ Add&rdquo; to record bank transactions.
-              </p>
-            </div>
+          <div className="py-10 text-center text-tg-text-hint text-xs bg-tg-bg-secondary/40 rounded-3xl border border-tg-border/20 p-6 space-y-2.5">
+            <Receipt className="w-8 h-8 mx-auto opacity-30" />
+            <p className="font-semibold text-tg-text text-sm">No transactions found</p>
+            <p className="text-tg-text-hint text-[11px]">
+              Tap &ldquo;Import Excel&rdquo; or &ldquo;New Transaction&rdquo; to add records.
+            </p>
             <button
               onClick={() => setTransactions(DEFAULT_REAL_TRANSACTIONS)}
-              className="px-3.5 py-1.5 rounded-xl bg-tg-bg border border-tg-border/40 text-tg-blue hover:text-white hover:bg-tg-blue text-xs font-bold transition-all shadow-2xs"
+              className="px-3 py-1.5 rounded-xl bg-tg-bg border border-tg-border/30 text-tg-blue text-xs font-bold hover:bg-tg-surface transition-all"
             >
-              Load Demo Bank Transactions
+              Load Demo Data
             </button>
           </div>
         ) : (
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {filteredList.map((tx) => {
               const meta = BANK_META[tx.bank] || BANK_META.Other;
               const isCredit = tx.type === 'credit';
@@ -695,10 +667,11 @@ export default function ErpScreen() {
               return (
                 <div
                   key={tx.id}
-                  className="bg-tg-bg-secondary rounded-2xl border border-tg-border/25 hover:border-tg-border/50 p-3.5 shadow-xs transition-all flex items-start gap-3.5 group"
+                  onClick={() => setSelectedTx(tx)}
+                  className="p-3 rounded-2xl bg-tg-bg-secondary border border-tg-border/20 hover:border-tg-border/40 active:scale-[0.99] transition-all flex items-center justify-between gap-3 cursor-pointer group"
                 >
-                  {/* Real Bank Logo */}
-                  <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shrink-0 p-1.5 shadow-xs border border-black/5 overflow-hidden mt-0.5">
+                  {/* Official Bank Logo */}
+                  <div className="w-10 h-10 rounded-xl bg-white p-1.5 flex items-center justify-center shrink-0 shadow-2xs border border-black/5 overflow-hidden">
                     {meta.logo ? (
                       <img
                         src={meta.logo}
@@ -707,72 +680,30 @@ export default function ErpScreen() {
                         loading="lazy"
                       />
                     ) : (
-                      <div className="w-full h-full rounded-xl bg-indigo-600 flex items-center justify-center text-white">
-                        <Landmark className="w-5 h-5" />
-                      </div>
+                      <Landmark className="w-5 h-5 text-gray-700" />
                     )}
                   </div>
 
-                  {/* Transaction Details */}
+                  {/* Description & Subtitle */}
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <h3 className="text-sm font-bold text-tg-text leading-snug break-words">
-                        {tx.description}
-                      </h3>
-                      <span
-                        className={clsx(
-                          'text-[15px] font-black tracking-tight font-mono shrink-0',
-                          isCredit ? 'text-emerald-400' : 'text-rose-400'
-                        )}
-                      >
-                        {amountStr}
-                      </span>
-                    </div>
+                    <p className="text-[13px] font-bold text-tg-text truncate group-hover:text-tg-blue transition-colors">
+                      {tx.description}
+                    </p>
+                    <p className="text-[11px] text-tg-text-hint truncate mt-0.5">
+                      {meta.label} · {tx.date}
+                    </p>
+                  </div>
 
-                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                      <span className="text-[11px] font-bold text-tg-text-secondary">
-                        {meta.label}
-                      </span>
-                      <span className="text-[10px] text-tg-text-hint">•</span>
-                      <span className="text-[11px] text-tg-text-hint">
-                        {tx.date}{tx.time ? ` · ${tx.time}` : ''}
-                      </span>
-                      {tx.reference && (
-                        <>
-                          <span className="text-[10px] text-tg-text-hint">•</span>
-                          <span className="text-[10px] text-tg-text-hint font-mono">
-                            Ref: {tx.reference}
-                          </span>
-                        </>
+                  {/* Amount */}
+                  <div className="text-right shrink-0">
+                    <span
+                      className={clsx(
+                        'text-sm font-bold font-mono tracking-tight',
+                        isCredit ? 'text-emerald-400' : 'text-rose-400'
                       )}
-                    </div>
-
-                    {tx.counterparty && (
-                      <p className="text-[11px] text-tg-text-secondary mt-0.5">
-                        {isCredit ? 'From:' : 'To:'}{' '}
-                        <span className="font-semibold text-tg-text">{tx.counterparty}</span>
-                      </p>
-                    )}
-
-                    {/* Bottom Actions */}
-                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-tg-border/15">
-                      <button
-                        onClick={() => handleCopyReceipt(tx)}
-                        className="px-2.5 py-1 rounded-lg bg-tg-surface hover:bg-tg-blue/15 text-tg-blue text-[11px] font-semibold border border-tg-border/30 flex items-center gap-1 active:scale-95 transition-all"
-                        title="Copy receipt to share in Telegram chat"
-                      >
-                        <Copy className="w-3 h-3" />
-                        <span>Copy Receipt</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleDelete(tx.id)}
-                        className="w-6 h-6 rounded-lg flex items-center justify-center text-tg-text-hint hover:text-rose-500 hover:bg-rose-500/10 active:scale-95 transition-all ml-auto"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    >
+                      {amountStr}
+                    </span>
                   </div>
                 </div>
               );
@@ -780,6 +711,106 @@ export default function ErpScreen() {
           </div>
         )}
       </div>
+
+      {/* ── Transaction Details BottomSheet ── */}
+      <BottomSheet
+        open={Boolean(selectedTx)}
+        onClose={() => setSelectedTx(null)}
+        title="Transaction Details"
+      >
+        {selectedTx && (() => {
+          const meta = BANK_META[selectedTx.bank] || BANK_META.Other;
+          const isCredit = selectedTx.type === 'credit';
+          const symbol = selectedTx.currency === 'USD' ? '$' : '៛';
+          const amountStr = `${isCredit ? '+' : '-'}${symbol}${selectedTx.amount.toLocaleString(
+            undefined,
+            { minimumFractionDigits: selectedTx.currency === 'USD' ? 2 : 0 }
+          )}`;
+
+          return (
+            <div className="p-4 space-y-4">
+              {/* Header: Logo + Big Amount */}
+              <div className="flex flex-col items-center justify-center text-center py-2 space-y-2">
+                <div className="w-14 h-14 rounded-2xl bg-white p-2 shadow-xs border border-black/5 flex items-center justify-center">
+                  {meta.logo ? (
+                    <img src={meta.logo} alt={meta.label} className="w-full h-full object-contain" />
+                  ) : (
+                    <Landmark className="w-6 h-6 text-gray-700" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black font-mono tracking-tight text-tg-text">
+                    <span className={isCredit ? 'text-emerald-400' : 'text-rose-400'}>
+                      {amountStr}
+                    </span>
+                  </h3>
+                  <p className="text-xs font-semibold text-tg-text-secondary mt-0.5">
+                    {selectedTx.description}
+                  </p>
+                </div>
+              </div>
+
+              {/* Detail Rows */}
+              <div className="bg-tg-bg-secondary rounded-2xl border border-tg-border/25 divide-y divide-tg-border/15 overflow-hidden text-xs">
+                <div className="flex items-center justify-between p-3">
+                  <span className="text-tg-text-hint font-medium">Bank</span>
+                  <span className="font-bold text-tg-text">{meta.label}</span>
+                </div>
+                <div className="flex items-center justify-between p-3">
+                  <span className="text-tg-text-hint font-medium">Date & Time</span>
+                  <span className="font-bold text-tg-text font-mono">
+                    {selectedTx.date} {selectedTx.time}
+                  </span>
+                </div>
+                {selectedTx.counterparty && (
+                  <div className="flex items-center justify-between p-3">
+                    <span className="text-tg-text-hint font-medium">
+                      {isCredit ? 'From' : 'To'}
+                    </span>
+                    <span className="font-bold text-tg-text">{selectedTx.counterparty}</span>
+                  </div>
+                )}
+                {selectedTx.reference && (
+                  <div className="flex items-center justify-between p-3">
+                    <span className="text-tg-text-hint font-medium">Reference</span>
+                    <span className="font-mono font-bold text-tg-text">{selectedTx.reference}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between p-3">
+                  <span className="text-tg-text-hint font-medium">Type</span>
+                  <span className={clsx('font-bold capitalize', isCredit ? 'text-emerald-400' : 'text-rose-400')}>
+                    {selectedTx.type === 'credit' ? 'Income (+)' : 'Expense (-)'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-2 pt-1">
+                <button
+                  onClick={() => {
+                    handleCopyReceipt(selectedTx);
+                  }}
+                  className="w-full py-3 rounded-xl bg-tg-blue text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-98 transition-all"
+                >
+                  <Copy className="w-4 h-4" />
+                  <span>Copy Receipt for Telegram</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    handleDelete(selectedTx.id);
+                    setSelectedTx(null);
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-xs flex items-center justify-center gap-1.5 active:scale-98 transition-all"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Delete Transaction</span>
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+      </BottomSheet>
 
       {/* ── Manual Input Bottom Sheet ── */}
       <BottomSheet

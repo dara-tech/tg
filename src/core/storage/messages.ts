@@ -35,7 +35,7 @@ export async function getDraft(peerId: string): Promise<string> {
 
 import { type RealMessageItem, toUint8Array } from '@/services/telegram.real';
 
-const conversationMessagesCache = new Map<string, RealMessageItem[]>();
+export const conversationMessagesCache = new Map<string, RealMessageItem[]>();
 const MSG_STORAGE_KEY = 'tg-msg-cache-v1';
 
 export function getCachedMessages(id: string): RealMessageItem[] {

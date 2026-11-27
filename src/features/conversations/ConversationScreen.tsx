@@ -43,8 +43,8 @@ import {
 } from '@/services/telegram.real';
 import type { ChatPermissions } from '@/store/dialogs.store';
 import { onMTProtoUpdate } from '@/core/telegram/mtproto.client';
-import { getDraft, saveDraft, getCachedMessages, setCachedMessages } from '@/core/storage/messages';
-export { getCachedMessages, setCachedMessages };
+import { getDraft, saveDraft, getCachedMessages, setCachedMessages, conversationMessagesCache } from '@/core/storage/messages';
+export { getCachedMessages, setCachedMessages, conversationMessagesCache };
 import { format, isToday, isYesterday } from 'date-fns';
 
 type Msg = RealMessageItem;

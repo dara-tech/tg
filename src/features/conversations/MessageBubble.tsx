@@ -746,7 +746,12 @@ function MediaContent({
             onOpenMedia?.(blobUrl, 'image');
           } else if (!loading) {
             setLoading(true);
-            downloadMediaUrl(media).then(setBlobUrl).finally(() => setLoading(false));
+            downloadMediaUrl(media)
+              .then((url) => {
+                if (url) setBlobUrl(url);
+                else toast('Could not load photo', 'error');
+              })
+              .finally(() => setLoading(false));
           }
         }}
         className={clsx(

@@ -33,6 +33,7 @@ import {
   sendRealSticker,
   sendRealTextMessage,
   sendTyping,
+  toUint8Array,
   uploadAndSendMedia,
   type RawMedia,
   type RealContactItem,
@@ -161,8 +162,19 @@ export function getCachedMessages(id: string): Msg[] {
     const parsed = JSON.parse(raw) as Record<string, Msg[]>;
     const stored = parsed?.[id];
     if (Array.isArray(stored) && stored.length > 0) {
-      conversationMessagesCache.set(id, stored);
-      return stored;
+      const normalized = stored.map((m) => ({
+        ...m,
+        media: m.media
+          ? {
+              ...m.media,
+              fileReference: m.media.fileReference
+                ? toUint8Array(m.media.fileReference)
+                : undefined,
+            }
+          : undefined,
+      }));
+      conversationMessagesCache.set(id, normalized);
+      return normalized;
     }
   } catch {
     // ignore storage errors

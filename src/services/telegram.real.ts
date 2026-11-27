@@ -212,6 +212,17 @@ export interface RawMedia {
   webpage?: { url?: string; site_name?: string; title?: string; description?: string };
 }
 
+export function toUint8Array(input: unknown): Uint8Array {
+  if (!input) return new Uint8Array();
+  if (input instanceof Uint8Array) return input;
+  if (Array.isArray(input)) return new Uint8Array(input);
+  if (typeof input === 'object') {
+    const values = Object.values(input as Record<string, number>);
+    return new Uint8Array(values);
+  }
+  return new Uint8Array();
+}
+
 function parseEntities(raw?: Array<{ _: string; offset: number; length: number; url?: string }>): TextEntity[] | undefined {
   if (!raw?.length) return undefined;
   const out: TextEntity[] = [];
@@ -1403,23 +1414,24 @@ export async function downloadMediaUrl(media: MediaAttachment, thumbOnly = false
               _: 'inputPhotoFileLocation',
               id: media.id,
               access_hash: media.accessHash,
-              file_reference: media.fileReference ?? new Uint8Array(),
+              file_reference: toUint8Array(media.fileReference),
               thumb_size: thumb || media.thumbSize || 'x',
             }
           : {
               _: 'inputDocumentFileLocation',
               id: media.id,
               access_hash: media.accessHash,
-              file_reference: media.fileReference ?? new Uint8Array(),
+              file_reference: toUint8Array(media.fileReference),
               thumb_size: isDocThumb ? (thumb || media.thumbSize || 'm') : '',
             };
 
       let bytes: Uint8Array | null = null;
       try {
         bytes = await fetchFileBytes(makeLocation(targetThumb), media.dcId);
-      } catch {
+      } catch (err) {
+        console.warn('[downloadMediaUrl] targetThumb failed, trying fallback sizes:', targetThumb, err);
         // Fallback size cascade: try other available thumbnail sizes
-        const fallbacks = isPhotoLocation ? ['m', 's', 'y'].filter((s) => s !== targetThumb) : isDocThumb ? ['s', 'm'] : [];
+        const fallbacks = isPhotoLocation ? ['m', 'x', 's', 'y'].filter((s) => s !== targetThumb) : isDocThumb ? ['s', 'm'] : [];
         for (const fb of fallbacks) {
           try {
             bytes = await fetchFileBytes(makeLocation(fb), media.dcId);
@@ -1686,7 +1698,7 @@ export async function sendRealSticker(chatId: string, sticker: StickerItem, acce
         _: 'inputDocument',
         id: sticker.id,
         access_hash: sticker.accessHash,
-        file_reference: sticker.fileReference ?? new Uint8Array(),
+        file_reference: toUint8Array(sticker.fileReference),
       },
     },
     message: '',

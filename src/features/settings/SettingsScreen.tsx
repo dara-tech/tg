@@ -31,6 +31,8 @@ import {
 } from 'lucide-react';
 import { AI_PERSONAS, getPersonaConfig } from '@/services/aiCall/personas';
 import type { AIPersona } from '@/services/aiCall/types';
+import { usePersonaStore } from '@/store/persona.store';
+import { CustomPersonaManager } from '@/components/ai/CustomPersonaManager';
 import { Avatar }      from '@/components/ui/Avatar';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button }      from '@/components/ui/Button';
@@ -74,6 +76,8 @@ export default function SettingsScreen() {
   const [avatarColor, setAvatarColor] = useState('#2563EB');
   const [editOpen, setEditOpen] = useState(false);
   const [panel, setPanel] = useState<PanelId>(null);
+  const [showCustomPersonas, setShowCustomPersonas] = useState(false);
+  const { customs: customPersonas } = usePersonaStore();
   const [savingProfile, setSavingProfile] = useState(false);
   const [fontSearch, setFontSearch] = useState('');
   const safeKhmerFont: KhmerFontId = KHMER_FONTS[ui.khmerFont] ? ui.khmerFont : 'hanuman';
@@ -1149,92 +1153,148 @@ export default function SettingsScreen() {
         title="AI Voice Call"
         maxWidth="sm:max-w-md"
       >
-        <div className="p-4 space-y-4 max-h-[75vh] overflow-y-auto">
-          <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2">
-              {Object.values(AI_PERSONAS).map((p) => {
-                const isSelected = ui.aiPersona === p.id;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => {
-                      ui.setAiPersona(p.id);
-                      toast(`${p.name} selected`, 'info');
-                    }}
-                    className={`flex items-center gap-2.5 p-2 rounded-xl text-left border transition-all ${
-                      isSelected
-                        ? 'bg-tg-blue/15 border-tg-blue/40 text-tg-text'
-                        : 'bg-tg-surface border-tg-border/20 text-tg-text hover:bg-tg-surface/80'
-                    }`}
-                  >
-                    <div
-                      className="w-9 h-9 rounded-full overflow-hidden shrink-0 flex items-center justify-center text-xs font-bold"
-                      style={{
-                        background: `linear-gradient(135deg, ${p.gradient.from}, ${p.gradient.to})`,
-                      }}
-                    >
-                      {p.avatar ? (
-                        <img src={p.avatar} alt={p.name} className="w-full h-full object-cover" />
-                      ) : (
-                        p.gradient.initial
-                      )}
-                    </div>
-                    <div className="truncate min-w-0 flex-1">
-                      <p className="text-xs font-semibold text-tg-text truncate">{p.name}</p>
-                      <p className="text-[10px] text-tg-text-hint truncate">{p.tagline}</p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+        {showCustomPersonas ? (
+          <div className="h-[75vh]">
+            <CustomPersonaManager onBack={() => setShowCustomPersonas(false)} />
           </div>
+        ) : (
+          <div className="p-4 space-y-4 max-h-[75vh] overflow-y-auto">
+            {/* Built-in personas */}
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                {Object.values(AI_PERSONAS).map((p) => {
+                  const isSelected = ui.aiPersona === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        ui.setAiPersona(p.id);
+                        toast(`${p.name} selected`, 'info');
+                      }}
+                      className={`flex items-center gap-2.5 p-2 rounded-xl text-left border transition-all ${
+                        isSelected
+                          ? 'bg-tg-blue/15 border-tg-blue/40 text-tg-text'
+                          : 'bg-tg-surface border-tg-border/20 text-tg-text hover:bg-tg-surface/80'
+                      }`}
+                    >
+                      <div
+                        className="w-9 h-9 rounded-full overflow-hidden shrink-0 flex items-center justify-center text-xs font-bold"
+                        style={{
+                          background: `linear-gradient(135deg, ${p.gradient.from}, ${p.gradient.to})`,
+                        }}
+                      >
+                        {p.avatar ? (
+                          <img src={p.avatar} alt={p.name} className="w-full h-full object-cover" />
+                        ) : (
+                          p.gradient.initial
+                        )}
+                      </div>
+                      <div className="truncate min-w-0 flex-1">
+                        <p className="text-xs font-semibold text-tg-text truncate">{p.name}</p>
+                        <p className="text-[10px] text-tg-text-hint truncate">{p.tagline}</p>
+                      </div>
+                    </button>
+                  );
+                })}
 
-          <div className="space-y-1.5 pt-1">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-tg-text-hint">Gemini API Key (Optional)</label>
-              <a
-                href="https://aistudio.google.com/app/apikey"
-                target="_blank"
-                rel="noreferrer"
-                className="text-[11px] text-tg-blue hover:underline flex items-center gap-1"
-              >
-                <span>Get Key</span>
-                <ExternalLink className="w-3 h-3" />
-              </a>
+                {/* Custom personas inline */}
+                {customPersonas.map((p) => {
+                  const isSelected = ui.aiPersona === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        ui.setAiPersona(p.id);
+                        toast(`${p.name} selected`, 'info');
+                      }}
+                      className={`flex items-center gap-2.5 p-2 rounded-xl text-left border transition-all ${
+                        isSelected
+                          ? 'bg-tg-blue/15 border-tg-blue/40 text-tg-text'
+                          : 'bg-tg-surface border-tg-border/20 text-tg-text hover:bg-tg-surface/80'
+                      }`}
+                    >
+                      <div
+                        className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-lg"
+                        style={{ background: `linear-gradient(135deg, ${p.gradientFrom}, ${p.gradientTo})` }}
+                      >
+                        {p.avatarEmoji}
+                      </div>
+                      <div className="truncate min-w-0 flex-1">
+                        <p className="text-xs font-semibold text-tg-text truncate">{p.name}</p>
+                        <p className="text-[10px] text-tg-text-hint truncate">{p.tagline || 'Custom'}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div className="relative">
-              <input
-                type={showToken ? 'text' : 'password'}
-                value={ui.aiApiKey || ''}
-                onChange={(e) => ui.setAiApiKey(e.target.value)}
-                placeholder="Default key active"
-                className="w-full bg-tg-surface border border-tg-border rounded-xl px-3.5 py-2 text-sm text-tg-text pr-10 focus:outline-none focus:border-tg-blue font-mono"
-              />
+
+            {/* My AI Characters button */}
+            <button
+              type="button"
+              onClick={() => setShowCustomPersonas(true)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-tg-surface border border-tg-border/30 hover:border-tg-blue/40 transition-colors"
+            >
+              <div className="w-9 h-9 rounded-full bg-tg-blue/15 flex items-center justify-center shrink-0">
+                <Bot className="w-4 h-4 text-tg-blue" />
+              </div>
+              <div className="text-left flex-1">
+                <p className="text-sm font-medium text-tg-text">My AI Characters</p>
+                <p className="text-xs text-tg-text-hint">
+                  {customPersonas.length > 0 ? `${customPersonas.length} custom character${customPersonas.length !== 1 ? 's' : ''}` : 'Create custom personas'}
+                </p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-tg-text-hint" />
+            </button>
+
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-tg-text-hint">Gemini API Key (Optional)</label>
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] text-tg-blue hover:underline flex items-center gap-1"
+                >
+                  <span>Get Key</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+              <div className="relative">
+                <input
+                  type={showToken ? 'text' : 'password'}
+                  value={ui.aiApiKey || ''}
+                  onChange={(e) => ui.setAiApiKey(e.target.value)}
+                  placeholder="Default key active"
+                  className="w-full bg-tg-surface border border-tg-border rounded-xl px-3.5 py-2 text-sm text-tg-text pr-10 focus:outline-none focus:border-tg-blue font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowToken(!showToken)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-tg-text-hint hover:text-tg-text"
+                >
+                  {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-2">
               <button
                 type="button"
-                onClick={() => setShowToken(!showToken)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-tg-text-hint hover:text-tg-text"
+                onClick={() => {
+                  setPanel(null);
+                  ui.startAiCall();
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-tg-blue text-white text-sm font-semibold hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
               >
-                {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                <Phone className="w-4 h-4" />
+                <span>Call AI Companion</span>
               </button>
             </div>
           </div>
-
-          <div className="pt-2">
-            <button
-              type="button"
-              onClick={() => {
-                setPanel(null);
-                ui.startAiCall();
-              }}
-              className="w-full py-2.5 px-4 rounded-xl bg-tg-blue text-white text-sm font-semibold hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
-            >
-              <Phone className="w-4 h-4" />
-              <span>Call AI Companion</span>
-            </button>
-          </div>
-        </div>
+        )}
       </BottomSheet>
 
       {/* Help & FAQ Panel */}

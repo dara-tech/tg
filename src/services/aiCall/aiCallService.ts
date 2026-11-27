@@ -3,6 +3,46 @@ import { AI_PERSONAS, DEFAULT_AI_PERSONA, getPersonaConfig } from './personas';
 import { downsampleBuffer, floatTo16BitPCM, arrayBufferToBase64, base64ToFloat32Array } from './audioUtils';
 import { getSharedAudioContext } from './sharedAudio';
 
+// Resolve persona config — built-in first, then custom personas from localStorage
+function resolvePersonaConfig(personaId: string) {
+  // Try built-in first
+  const builtin = getPersonaConfig(personaId);
+  if (builtin && builtin.id !== DEFAULT_AI_PERSONA || personaId === DEFAULT_AI_PERSONA) {
+    // Check if it's genuinely matched (not the fallback)
+    const isBuiltin = Object.keys(AI_PERSONAS).includes(personaId.toLowerCase());
+    if (isBuiltin) return builtin;
+  }
+  // Try custom personas from localStorage
+  try {
+    const raw = localStorage.getItem('tg-custom-personas');
+    if (raw) {
+      const { state } = JSON.parse(raw) as { state?: { customs?: Array<{
+        id: string; name: string; tagline?: string; voice?: string;
+        prompt: string; greeting: string; avatarEmoji?: string;
+        gradientFrom?: string; gradientTo?: string;
+      }> } };
+      const custom = state?.customs?.find((c) => c.id === personaId);
+      if (custom) {
+        return {
+          id: custom.id as AIPersona,
+          name: custom.name,
+          tagline: custom.tagline || '',
+          description: custom.name,
+          avatar: '',
+          voice: (custom.voice || 'Aoede') as 'Aoede' | 'Kore' | 'Puck' | 'Charon' | 'Fenrir',
+          prompt: custom.prompt,
+          greeting: custom.greeting,
+          gradient: { from: custom.gradientFrom || '#3b82f6', to: custom.gradientTo || '#1d4ed8', initial: custom.avatarEmoji || '🤖' },
+          category: 'general' as const,
+          tags: ['Custom'],
+        };
+      }
+    }
+  } catch {}
+  // Final fallback
+  return getPersonaConfig(personaId);
+}
+
 export class AICallService extends EventTarget {
   private ws: WebSocket | null = null;
   private audioContext: AudioContext | null = null;
@@ -37,7 +77,7 @@ export class AICallService extends EventTarget {
 
   // Status & Persona
   private currentState: AIState = 'disconnected';
-  private personaId: AIPersona = DEFAULT_AI_PERSONA;
+  private personaId: string = DEFAULT_AI_PERSONA;
   private customApiKey: string = '';
   private isMuted: boolean = false;
   private isIntentionalDisconnect: boolean = false;
@@ -47,7 +87,7 @@ export class AICallService extends EventTarget {
   private userVolumeLevel = 0;
   private aiVolumeLevel = 0;
 
-  constructor(persona: AIPersona = DEFAULT_AI_PERSONA, customApiKey: string = '') {
+  constructor(persona: string = DEFAULT_AI_PERSONA, customApiKey: string = '') {
     super();
     this.personaId = persona;
     this.customApiKey = customApiKey;
@@ -57,11 +97,11 @@ export class AICallService extends EventTarget {
     return this.currentState;
   }
 
-  public getPersona(): AIPersona {
+  public getPersona(): string {
     return this.personaId;
   }
 
-  public setPersona(persona: AIPersona) {
+  public setPersona(persona: string) {
     if (this.personaId === persona) return;
     this.personaId = persona;
     if (this.currentState === 'connected' || this.currentState === 'listening' || this.currentState === 'speaking') {
@@ -322,7 +362,7 @@ export class AICallService extends EventTarget {
       this.setState('connected');
       this.nextPlayTime = this.audioContext?.currentTime || 0;
 
-      const personaConfig = getPersonaConfig(this.personaId);
+      const personaConfig = resolvePersonaConfig(this.personaId);
 
       const setupPayload: any = {
         model: 'models/gemini-3.8-live',
@@ -373,7 +413,7 @@ export class AICallService extends EventTarget {
 
           // Trigger initial greeting voice response via clientContent
           if (!this.sessionHandle && this.ws?.readyState === WebSocket.OPEN) {
-            const personaConfig = getPersonaConfig(this.personaId);
+            const personaConfig = resolvePersonaConfig(this.personaId);
             const greetingPrompt = `The voice call is now connected. Speak aloud to the user right now and introduce yourself: "${personaConfig.greeting}"`;
             this.ws.send(
               JSON.stringify({
@@ -556,7 +596,7 @@ export class AICallService extends EventTarget {
     }
     const text = this.currentAiTurnText.trim();
     if (text) {
-      const personaConfig = getPersonaConfig(this.personaId);
+      const personaConfig = resolvePersonaConfig(this.personaId);
       this.dispatchEvent(
         new CustomEvent('transcript', {
           detail: {
@@ -622,7 +662,7 @@ export class AICallService extends EventTarget {
     this.setState('disconnected');
   }
 
-  public startCall(persona?: AIPersona, apiKey?: string): Promise<void> {
+  public startCall(persona?: string, apiKey?: string): Promise<void> {
     if (persona) this.setPersona(persona);
     return this.start(apiKey);
   }
@@ -644,7 +684,7 @@ export class AICallService extends EventTarget {
 
 let singletonInstance: AICallService | null = null;
 
-export function getAICallService(persona: AIPersona = DEFAULT_AI_PERSONA, apiKey: string = ''): AICallService {
+export function getAICallService(persona: string = DEFAULT_AI_PERSONA, apiKey: string = ''): AICallService {
   if (!singletonInstance) {
     singletonInstance = new AICallService(persona, apiKey);
   } else {
@@ -655,7 +695,7 @@ export function getAICallService(persona: AIPersona = DEFAULT_AI_PERSONA, apiKey
   return singletonInstance;
 }
 
-export function createAiCall(persona: AIPersona = DEFAULT_AI_PERSONA, apiKey: string = ''): AICallService {
+export function createAiCall(persona: string = DEFAULT_AI_PERSONA, apiKey: string = ''): AICallService {
   if (singletonInstance) {
     singletonInstance.disconnect();
   }

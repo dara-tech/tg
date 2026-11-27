@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Mic, MicOff, PhoneOff, Smartphone, Volume2, Users, X } from 'lucide-react';
 import { useUIStore } from '@/store/ui.store';
+import { usePersonaStore } from '@/store/persona.store';
 import { createAiCall, stopAiCall, getActiveAiCall } from '@/services/aiCall/aiCallService';
 import { AI_PERSONAS, getPersonaConfig } from '@/services/aiCall/personas';
 import { unlockAudioPlayback } from '@/services/aiCall/sharedAudio';
@@ -17,6 +18,7 @@ export function ActiveCallOverlay() {
     setActiveCall,
     setAiPersona,
   } = useUIStore();
+  const { customs: customPersonas } = usePersonaStore();
 
   const [duration, setDuration] = useState(0);
   const [muted, setMuted] = useState(false);
@@ -39,6 +41,7 @@ export function ActiveCallOverlay() {
   const aiStateRef = useRef(aiState);
 
   const personaConfig = getPersonaConfig(aiPersona);
+  const customPersonaConfig = customPersonas.find((c) => c.id === aiPersona);
 
   // Keep refs in sync — no RAF restart needed
   useEffect(() => { isAiCallRef.current = isAiCall; }, [isAiCall]);
@@ -206,10 +209,10 @@ export function ActiveCallOverlay() {
     `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
   const displayName = isAiCall
-    ? personaConfig?.name || 'Telegram AI'
+    ? customPersonaConfig?.name || personaConfig?.name || 'Telegram AI'
     : activeCallName || `User ${activeCallId}`;
   const initials = isAiCall
-    ? personaConfig?.gradient?.initial || 'AI'
+    ? customPersonaConfig?.avatarEmoji || personaConfig?.gradient?.initial || 'AI'
     : displayName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || 'U';
 
   return (
@@ -279,7 +282,14 @@ export function ActiveCallOverlay() {
             onClick={isAiCall && aiState === 'speaking' ? handleInterrupt : undefined}
             className="relative w-32 h-32 rounded-full overflow-hidden border border-tg-border/30 shadow-2xl flex items-center justify-center cursor-pointer transition-transform active:scale-95 bg-tg-surface z-10"
           >
-            {isAiCall && personaConfig?.avatar ? (
+            {isAiCall && customPersonaConfig ? (
+              <div
+                className="w-full h-full flex items-center justify-center text-5xl"
+                style={{ background: `linear-gradient(135deg, ${customPersonaConfig.gradientFrom}, ${customPersonaConfig.gradientTo})` }}
+              >
+                {customPersonaConfig.avatarEmoji}
+              </div>
+            ) : isAiCall && personaConfig?.avatar ? (
               <img
                 src={personaConfig.avatar}
                 alt={displayName}
@@ -400,6 +410,29 @@ export function ActiveCallOverlay() {
                     ) : (
                       p.gradient?.initial || 'AI'
                     )}
+                  </div>
+                  <span className="text-xs font-medium truncate">{p.name}</span>
+                </button>
+              );
+            })}
+            {/* Custom personas */}
+            {customPersonas.map((p) => {
+              const isCurrent = p.id === aiPersona;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => handleSwitchPersona(p.id as AIPersona)}
+                  className={`flex items-center gap-2 p-2 rounded-xl text-left transition-all ${
+                    isCurrent
+                      ? 'bg-tg-blue/15 border border-tg-blue/40 text-tg-text'
+                      : 'bg-tg-surface border border-tg-border/20 text-tg-text hover:bg-tg-surface/80'
+                  }`}
+                >
+                  <div
+                    className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-base"
+                    style={{ background: `linear-gradient(135deg, ${p.gradientFrom}, ${p.gradientTo})` }}
+                  >
+                    {p.avatarEmoji}
                   </div>
                   <span className="text-xs font-medium truncate">{p.name}</span>
                 </button>

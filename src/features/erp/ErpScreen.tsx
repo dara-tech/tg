@@ -452,7 +452,7 @@ export default function ErpScreen() {
           {/* Left: Back button */}
           <button
             onClick={() => router.push('/calendar')}
-            className="flex items-center gap-1 text-tg-blue font-normal text-[16px] active:opacity-60 transition-opacity z-10"
+            className="flex items-center gap-1 text-[#2481cc] font-medium text-[16px] active:opacity-60 transition-opacity z-10"
           >
             <ChevronLeft className="w-5 h-5 stroke-[2.5] -mr-1" />
             <span>Calendar</span>
@@ -469,7 +469,7 @@ export default function ErpScreen() {
           <div className="flex items-center gap-1.5 z-10">
             <button
               onClick={() => setAddSheetOpen(true)}
-              className="w-8 h-8 rounded-full bg-tg-blue hover:bg-tg-blue/90 text-white flex items-center justify-center active:scale-95 transition-all shadow-sm"
+              className="w-8 h-8 rounded-full bg-[#2481cc] hover:bg-[#2481cc]/90 text-white flex items-center justify-center active:scale-95 transition-all shadow-sm"
               title="Add Transaction"
               aria-label="Add Transaction"
             >
@@ -480,11 +480,11 @@ export default function ErpScreen() {
       </header>
 
       {/* ── Scrollable Body Content ── */}
-      <div className="flex-1 overflow-y-auto px-4 py-3.5 space-y-3.5 max-w-2xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 max-w-2xl mx-auto w-full">
         {/* Balance Hero Card */}
-        <div className="bg-[#1C1C1E] rounded-3xl p-4.5 text-white shadow-sm border border-white/8 space-y-3">
+        <div className="bg-[#1C1C1E] rounded-3xl p-5 text-white shadow-sm border border-white/10 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-white/60">
+            <span className="text-[13px] font-semibold text-white/60">
               Total Balance
             </span>
 
@@ -493,7 +493,7 @@ export default function ErpScreen() {
               <button
                 onClick={() => setSelectedCurrency('USD')}
                 className={clsx(
-                  'px-2.5 py-0.5 rounded-full text-[11px] font-bold transition-all',
+                  'px-3 py-1 rounded-full text-xs font-bold transition-all',
                   selectedCurrency === 'USD'
                     ? 'bg-white text-black shadow-sm'
                     : 'text-white/60 hover:text-white'
@@ -504,7 +504,7 @@ export default function ErpScreen() {
               <button
                 onClick={() => setSelectedCurrency('KHR')}
                 className={clsx(
-                  'px-2.5 py-0.5 rounded-full text-[11px] font-bold transition-all',
+                  'px-3 py-1 rounded-full text-xs font-bold transition-all',
                   selectedCurrency === 'KHR'
                     ? 'bg-white text-black shadow-sm'
                     : 'text-white/60 hover:text-white'
@@ -516,7 +516,7 @@ export default function ErpScreen() {
           </div>
 
           <div>
-            <h2 className="text-[32px] font-black tracking-tight font-mono">
+            <h2 className="text-[34px] font-black tracking-tight font-mono py-0.5">
               {selectedCurrency === 'USD'
                 ? totals.netUSD >= 0
                   ? `+$${totals.netUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
@@ -528,11 +528,13 @@ export default function ErpScreen() {
           </div>
 
           {/* Clean Inflow & Outflow Chips */}
-          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/10">
-            <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-1.5">
-              <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-white/10">
+            <div className="flex items-center gap-2 bg-white/5 rounded-2xl p-2.5">
+              <div className="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+                <ArrowDownLeft className="w-3.5 h-3.5 stroke-[2.5]" />
+              </div>
               <div className="min-w-0">
-                <span className="text-[10px] text-white/50 block">Inflow</span>
+                <span className="text-[10px] text-white/50 block font-medium">Inflow</span>
                 <span className="text-xs font-bold font-mono text-emerald-400 truncate block">
                   {selectedCurrency === 'USD'
                     ? `+$${totals.incomeUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
@@ -541,10 +543,12 @@ export default function ErpScreen() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-1.5">
-              <ArrowUpRight className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+            <div className="flex items-center gap-2 bg-white/5 rounded-2xl p-2.5">
+              <div className="w-7 h-7 rounded-full bg-rose-500/15 text-rose-400 flex items-center justify-center shrink-0">
+                <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />
+              </div>
               <div className="min-w-0">
-                <span className="text-[10px] text-white/50 block">Outflow</span>
+                <span className="text-[10px] text-white/50 block font-medium">Outflow</span>
                 <span className="text-xs font-bold font-mono text-rose-400 truncate block">
                   {selectedCurrency === 'USD'
                     ? `-$${totals.expenseUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
@@ -556,7 +560,7 @@ export default function ErpScreen() {
         </div>
 
         {/* Action Widgets */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2.5">
           {/* File Upload Input - Excel only */}
           <input
             ref={fileInputRef}
@@ -568,17 +572,21 @@ export default function ErpScreen() {
 
           <button
             onClick={() => setImportSheetOpen(true)}
-            className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-tg-bg-secondary border border-tg-border/25 hover:bg-tg-surface active:scale-[0.98] transition-all text-tg-text"
+            className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-tg-bg-secondary border border-tg-border/25 hover:bg-tg-surface active:scale-[0.98] transition-all text-tg-text shadow-2xs group"
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-400 shrink-0" />
+            <div className="w-6 h-6 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+            </div>
             <span className="text-xs font-bold">Import Excel</span>
           </button>
 
           <button
             onClick={() => setAddSheetOpen(true)}
-            className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-tg-bg-secondary border border-tg-border/25 hover:bg-tg-surface active:scale-[0.98] transition-all text-tg-text"
+            className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-tg-bg-secondary border border-tg-border/25 hover:bg-tg-surface active:scale-[0.98] transition-all text-tg-text shadow-2xs group"
           >
-            <Plus className="w-4 h-4 text-tg-blue shrink-0 stroke-[2.5]" />
+            <div className="w-6 h-6 rounded-lg bg-[#2481cc]/15 text-[#2481cc] flex items-center justify-center shrink-0">
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+            </div>
             <span className="text-xs font-bold">New Transaction</span>
           </button>
         </div>
@@ -591,7 +599,7 @@ export default function ErpScreen() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search transactions..."
-            className="w-full bg-tg-bg-secondary border border-tg-border/25 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-tg-text placeholder:text-tg-text-hint focus:outline-none focus:border-tg-blue"
+            className="w-full bg-tg-bg-secondary border border-tg-border/25 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-tg-text placeholder:text-tg-text-hint focus:outline-none focus:border-[#2481cc]"
           />
         </div>
 
@@ -638,7 +646,7 @@ export default function ErpScreen() {
           </span>
         </div>
 
-        {/* Transaction Cards List - Clean Revolut / iOS Style */}
+        {/* Transaction Cards List - Inset Grouped iOS Table Style */}
         {filteredList.length === 0 ? (
           <div className="py-10 text-center text-tg-text-hint text-xs bg-tg-bg-secondary/40 rounded-3xl border border-tg-border/20 p-6 space-y-2.5">
             <Receipt className="w-8 h-8 mx-auto opacity-30" />
@@ -648,13 +656,13 @@ export default function ErpScreen() {
             </p>
             <button
               onClick={() => setTransactions(DEFAULT_REAL_TRANSACTIONS)}
-              className="px-3 py-1.5 rounded-xl bg-tg-bg border border-tg-border/30 text-tg-blue text-xs font-bold hover:bg-tg-surface transition-all"
+              className="px-3 py-1.5 rounded-xl bg-tg-bg border border-tg-border/30 text-[#2481cc] text-xs font-bold hover:bg-tg-surface transition-all"
             >
               Load Demo Data
             </button>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="bg-tg-bg-secondary rounded-3xl border border-tg-border/25 divide-y divide-tg-border/15 overflow-hidden shadow-xs">
             {filteredList.map((tx) => {
               const meta = BANK_META[tx.bank] || BANK_META.Other;
               const isCredit = tx.type === 'credit';
@@ -668,25 +676,27 @@ export default function ErpScreen() {
                 <div
                   key={tx.id}
                   onClick={() => setSelectedTx(tx)}
-                  className="p-3 rounded-2xl bg-tg-bg-secondary border border-tg-border/20 hover:border-tg-border/40 active:scale-[0.99] transition-all flex items-center justify-between gap-3 cursor-pointer group"
+                  className="p-3.5 flex items-center justify-between gap-3.5 cursor-pointer hover:bg-white/5 active:bg-white/10 transition-colors group"
                 >
-                  {/* Official Bank Logo */}
-                  <div className="w-10 h-10 rounded-xl bg-white p-1.5 flex items-center justify-center shrink-0 shadow-2xs border border-black/5 overflow-hidden">
+                  {/* Official Bank App Icon */}
+                  <div className="w-11 h-11 rounded-2xl overflow-hidden shrink-0 shadow-xs border border-white/10 bg-black/20 flex items-center justify-center">
                     {meta.logo ? (
                       <img
                         src={meta.logo}
                         alt={meta.label}
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-cover"
                         loading="lazy"
                       />
                     ) : (
-                      <Landmark className="w-5 h-5 text-gray-700" />
+                      <div className="w-full h-full bg-indigo-600 flex items-center justify-center text-white">
+                        <Landmark className="w-5 h-5" />
+                      </div>
                     )}
                   </div>
 
-                  {/* Description & Subtitle */}
+                  {/* Details */}
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-bold text-tg-text truncate group-hover:text-tg-blue transition-colors">
+                    <p className="text-[14px] font-bold text-tg-text truncate group-hover:text-[#2481cc] transition-colors leading-snug">
                       {tx.description}
                     </p>
                     <p className="text-[11px] text-tg-text-hint truncate mt-0.5">
@@ -698,7 +708,7 @@ export default function ErpScreen() {
                   <div className="text-right shrink-0">
                     <span
                       className={clsx(
-                        'text-sm font-bold font-mono tracking-tight',
+                        'text-[15px] font-bold font-mono tracking-tight',
                         isCredit ? 'text-emerald-400' : 'text-rose-400'
                       )}
                     >

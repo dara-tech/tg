@@ -343,7 +343,7 @@ export const BANK_META: Record<
   },
   Bakong: {
     label: 'Bakong KHQR',
-    logo: '/icons/banks/khqr.svg',
+    logo: '/icons/banks/bakong.png',
     bg: 'bg-[#E1251B]',
     color: 'text-white',
     border: 'border-[#F04438]',
@@ -357,7 +357,7 @@ export const BANK_META: Record<
   },
   Wing: {
     label: 'Wing Bank',
-    logo: '/icons/banks/wing.svg',
+    logo: '/icons/banks/wing.png',
     bg: 'bg-[#8EC33D]',
     color: 'text-[#1A3300]',
     border: 'border-[#A3DB4A]',

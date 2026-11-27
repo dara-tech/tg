@@ -689,45 +689,55 @@ function AlbumGrid({
   );
 }
 
-function getMediaBoxSize(w?: number, h?: number, isFullWidth = false, maxW = 280, maxH = 380) {
-  if (isFullWidth) {
-    if (w && h && w > 0 && h > 0) {
-      const aspect = h / w;
-      const targetH = Math.min(360, Math.max(160, Math.round(280 * aspect)));
-      return { width: '100%', height: `${targetH}px`, aspectRatio: `${w}/${h}` };
-    }
-    return { width: '100%', height: '220px', aspectRatio: '16/9' };
-  }
-
+function getMediaBoxSize(w?: number, h?: number, isFullWidth = false, maxW = 280, maxH = 340) {
   if (w && h && w > 0 && h > 0) {
     let targetW = w;
     let targetH = h;
     const aspect = w / h;
 
-    if (targetW > maxW) {
-      targetW = maxW;
+    if (aspect >= 1) {
+      // Landscape: limit width first
+      targetW = Math.min(w, maxW);
       targetH = Math.round(targetW / aspect);
-    }
-    if (targetH > maxH) {
-      targetH = maxH;
+      if (targetH > 240) {
+        targetH = 240;
+        targetW = Math.round(targetH * aspect);
+      }
+      if (targetH < 130) {
+        targetH = 130;
+        targetW = Math.round(targetH * aspect);
+      }
+    } else {
+      // Portrait: limit height first
+      targetH = Math.min(h, maxH);
       targetW = Math.round(targetH * aspect);
+      if (targetW > maxW) {
+        targetW = maxW;
+        targetH = Math.round(targetW / aspect);
+      }
+      if (targetW < 160) {
+        targetW = 160;
+        targetH = Math.round(targetW / aspect);
+      }
     }
-    if (targetW < 180) {
-      targetW = 180;
-      targetH = Math.min(maxH, Math.round(targetW / aspect));
-    }
-    if (targetH < 140) {
-      targetH = 140;
-      targetW = Math.min(maxW, Math.round(targetH * aspect));
-    }
+
+    targetW = Math.min(maxW, Math.max(160, targetW));
+    targetH = Math.min(maxH, Math.max(130, targetH));
+
     return {
-      width: `${targetW}px`,
+      width: isFullWidth ? '100%' : `${targetW}px`,
+      maxWidth: `${targetW}px`,
       height: `${targetH}px`,
       aspectRatio: `${w}/${h}`,
     };
   }
 
-  return { width: '260px', height: '200px', aspectRatio: '4/3' };
+  return {
+    width: isFullWidth ? '100%' : '260px',
+    maxWidth: '260px',
+    height: '195px',
+    aspectRatio: '4/3',
+  };
 }
 
 function MediaContent({
@@ -784,9 +794,13 @@ function MediaContent({
   };
 
   if (media.kind === 'photo') {
-    const isFullWidth = hasCaption || hasHeader;
+    const isFullWidth = Boolean(hasCaption);
     const radiusClass = hasHeader
-      ? 'rounded-none'
+      ? hasCaption
+        ? 'rounded-none'
+        : isOut
+        ? 'rounded-b-[18px] rounded-br-[5px]'
+        : 'rounded-b-[18px] rounded-bl-[5px]'
       : hasCaption
       ? 'rounded-t-[18px]'
       : isOut
@@ -797,7 +811,7 @@ function MediaContent({
     return (
       <button
         onClick={() => handleLoadAndOpen('image')}
-        style={{ width: box.width, height: box.height, aspectRatio: box.aspectRatio }}
+        style={{ width: box.width, maxWidth: box.maxWidth, height: box.height, aspectRatio: box.aspectRatio }}
         className={clsx(
           'relative block overflow-hidden focus:outline-none transition-transform active:scale-[0.99] text-left shrink-0',
           radiusClass
@@ -896,19 +910,26 @@ function MediaContent({
   }
 
   if (media.kind === 'video') {
-    const isFullWidth = hasCaption;
+    const isFullWidth = Boolean(hasCaption);
+    const radiusClass = hasHeader
+      ? hasCaption
+        ? 'rounded-none'
+        : isOut
+        ? 'rounded-b-[18px] rounded-br-[5px]'
+        : 'rounded-b-[18px] rounded-bl-[5px]'
+      : hasCaption
+      ? 'rounded-t-[18px]'
+      : isOut
+      ? 'rounded-[18px] rounded-br-[5px]'
+      : 'rounded-[18px] rounded-bl-[5px]';
     const box = getMediaBoxSize(media.width, media.height, isFullWidth);
     return (
       <button
         onClick={() => handleLoadAndOpen('video')}
-        style={{ width: box.width, height: box.height, aspectRatio: box.aspectRatio }}
+        style={{ width: box.width, maxWidth: box.maxWidth, height: box.height, aspectRatio: box.aspectRatio }}
         className={clsx(
           'relative block overflow-hidden bg-black/40 text-left focus:outline-none transition-transform active:scale-[0.99] shrink-0',
-          hasCaption
-            ? 'rounded-t-[18px]'
-            : isOut
-            ? 'rounded-[18px] rounded-br-[5px]'
-            : 'rounded-[18px] rounded-bl-[5px]'
+          radiusClass
         )}
       >
         {blobUrl ? (
@@ -1231,11 +1252,11 @@ export function MessageBubble({
           )
         )}
 
-        <div className="flex flex-col gap-0.5 max-w-[82%] min-w-0">
+        <div className="flex flex-col gap-0.5 max-w-[84%] sm:max-w-[75%] min-w-0">
           <Bubble
             align={message.out ? 'end' : 'start'}
             variant={isEdgeMedia ? 'ghost' : message.out ? 'default' : 'secondary'}
-            className={clsx(isEdgeMedia && 'shadow-none', 'w-full')}
+            className={clsx(isEdgeMedia && 'shadow-none', 'w-fit max-w-full')}
             onContextMenu={openMenu}
             onTouchStart={e => { longPressTimer.current = setTimeout(() => openMenu(e), 450); }}
             onTouchEnd={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}

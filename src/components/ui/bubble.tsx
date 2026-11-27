@@ -37,7 +37,7 @@ export const Bubble = React.forwardRef<HTMLDivElement, BubbleProps>(
         data-align={align}
         data-variant={variant}
         className={clsx(
-          'group/bubble relative flex w-fit max-w-[82%] min-w-0 flex-col gap-1',
+          'group/bubble relative flex w-fit max-w-full min-w-0 flex-col gap-1',
           align === 'end' ? 'ml-auto items-end' : 'mr-auto items-start',
           className
         )}
@@ -46,7 +46,7 @@ export const Bubble = React.forwardRef<HTMLDivElement, BubbleProps>(
         <div
           data-slot="bubble-surface"
           className={clsx(
-            'relative max-w-full min-w-0 rounded-[18px] text-sm transition-colors',
+            'relative max-w-full min-w-0 rounded-[18px] overflow-hidden text-sm transition-colors',
             variant !== 'ghost' && 'shadow-sm',
             align === 'end' ? 'rounded-br-[5px]' : 'rounded-bl-[5px]',
             variantStyles[variant]

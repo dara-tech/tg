@@ -146,6 +146,8 @@ interface UIState {
   isAiCall: boolean;
   aiPersona: string;
   aiApiKey: string;
+  cfAccountId: string;
+  cfApiToken: string;
   setTheme: (t: BgThemeId) => void;
   setAccent: (a: AccentId) => void;
   setNavStyle: (s: NavStyleId) => void;
@@ -164,6 +166,8 @@ interface UIState {
   startAiCall: (persona?: string) => void;
   setAiPersona: (persona: string) => void;
   setAiApiKey: (key: string) => void;
+  setCfAccountId: (id: string) => void;
+  setCfApiToken: (token: string) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -191,6 +195,8 @@ export const useUIStore = create<UIState>()(
       isAiCall: false,
       aiPersona: 'telegram',
       aiApiKey: '',
+      cfAccountId: '',
+      cfApiToken: '',
       setTheme: (theme) => set({ theme }),
       setAccent: (accent) => set({ accent }),
       setNavStyle: (navStyle) => set({ navStyle }),
@@ -217,6 +223,8 @@ export const useUIStore = create<UIState>()(
       }),
       setAiPersona: (aiPersona) => set({ aiPersona: (aiPersona || 'telegram').toLowerCase().trim() }),
       setAiApiKey: (aiApiKey) => set({ aiApiKey }),
+      setCfAccountId: (cfAccountId) => set({ cfAccountId: cfAccountId.trim() }),
+      setCfApiToken: (cfApiToken) => set({ cfApiToken: cfApiToken.trim() }),
     }),
     {
       name: 'tg-ui',
@@ -239,6 +247,8 @@ export const useUIStore = create<UIState>()(
         autoDownloadVideos: s.autoDownloadVideos,
         aiPersona: s.aiPersona,
         aiApiKey: s.aiApiKey,
+        cfAccountId: s.cfAccountId,
+        cfApiToken: s.cfApiToken,
       }),
     }
   )

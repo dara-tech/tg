@@ -45,7 +45,7 @@ import { fetchRealProfile, isMTProtoConfigured, updateRealProfile } from '@/serv
 import { call } from '@/core/telegram/mtproto.client';
 import { logOut } from '@/services/auth.real';
 
-type PanelId = 'notifications' | 'privacy' | 'storage' | 'appearance' | 'wallpaper' | 'khmerFont' | 'language' | 'github' | 'aiCall' | 'help' | null;
+type PanelId = 'notifications' | 'privacy' | 'storage' | 'appearance' | 'wallpaper' | 'khmerFont' | 'language' | 'github' | 'aiCall' | 'cloudflare' | 'help' | null;
 
 const LANGUAGES = ['English', 'ភាសាខ្មែរ', '日本語', '한국어', '中文'];
 
@@ -562,6 +562,7 @@ export default function SettingsScreen() {
               { id: 'wallpaper'     as const, bg: 'bg-pink-500',    icon: <ImageIcon className="w-4 h-4 text-white" />,  label: 'Chat Wallpaper',         desc: ui.chatWallpaper === 'custom' ? 'Custom Image' : (CHAT_WALLPAPERS[ui.chatWallpaper]?.name ?? 'Theme Default') },
               { id: 'khmerFont'     as const, bg: 'bg-violet-500',  icon: <Type className="w-4 h-4 text-white" />,       label: 'Khmer Font',             desc: KHMER_FONTS[safeKhmerFont].name },
               { id: 'aiCall'        as const, bg: 'bg-transparent', icon: <img src="/icons/ai-brain.png" alt="AI" className="w-8 h-8 object-contain" />, label: 'AI Voice Calling', desc: AI_PERSONAS[ui.aiPersona as AIPersona]?.name || 'Telegram AI' },
+              { id: 'cloudflare'    as const, bg: 'bg-orange-500',  icon: <span className="text-white text-[11px] font-black">CF</span>, label: 'Cloudflare AI', desc: ui.cfAccountId ? 'Configured ✓' : 'Not set' },
               { id: 'github'        as const, bg: 'bg-purple-600',  icon: <Key className="w-4 h-4 text-white" />,        label: 'GitHub & ERP Integration', desc: githubToken ? 'Connected' : (githubUsername ? `@${githubUsername.replace(/^@/, '')}` : 'Configure') },
               { id: 'language'      as const, bg: 'bg-indigo-500',  icon: <Globe className="w-4 h-4 text-white" />,      label: 'Language',               desc: ui.language },
               { id: 'help'          as const, bg: 'bg-slate-500',   icon: <HelpCircle className="w-4 h-4 text-white" />, label: 'Help & FAQ',             desc: '' },
@@ -1295,6 +1296,57 @@ export default function SettingsScreen() {
             </div>
           </div>
         )}
+      </BottomSheet>
+
+      {/* Cloudflare AI Panel */}
+      <BottomSheet open={panel === 'cloudflare'} onClose={() => setPanel(null)} title="Cloudflare AI" maxWidth="sm:max-w-md">
+        <div className="p-4 space-y-4">
+          <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20 text-xs text-tg-text-hint leading-relaxed">
+            <span className="font-black text-orange-500">CF</span> Cloudflare Workers AI powers avatar image generation and AI character auto-generation. Get your credentials at <span className="text-orange-400">dash.cloudflare.com</span>.
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-tg-text-hint">Account ID</label>
+            <input
+              type="text"
+              value={ui.cfAccountId || ''}
+              onChange={(e) => ui.setCfAccountId(e.target.value)}
+              placeholder="e.g. 8614fe64de67e25796129174fbf806be"
+              className="w-full bg-tg-surface border border-tg-border rounded-xl px-3.5 py-2 text-sm text-tg-text placeholder:text-tg-text-hint/50 focus:outline-none focus:border-orange-500 font-mono"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-tg-text-hint">API Token</label>
+            <div className="relative">
+              <input
+                type={showToken ? 'text' : 'password'}
+                value={ui.cfApiToken || ''}
+                onChange={(e) => ui.setCfApiToken(e.target.value)}
+                placeholder="cfut_..."
+                className="w-full bg-tg-surface border border-tg-border rounded-xl px-3.5 py-2 text-sm text-tg-text placeholder:text-tg-text-hint/50 pr-10 focus:outline-none focus:border-orange-500 font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => setShowToken(!showToken)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-tg-text-hint hover:text-tg-text"
+              >
+                {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              toast('Cloudflare AI credentials saved ✓', 'info');
+              setPanel(null);
+            }}
+            className="w-full py-2.5 px-4 rounded-xl bg-orange-500 text-white text-sm font-semibold active:scale-[0.99] transition-all"
+          >
+            Save Credentials
+          </button>
+        </div>
       </BottomSheet>
 
       {/* Help & FAQ Panel */}

@@ -12,6 +12,7 @@ export interface CustomPersona {
   prompt: string;
   greeting: string;
   avatarEmoji: string;  // e.g. "🤖"
+  avatarImage?: string; // base64 data URL from Cloudflare image gen
   gradientFrom: string; // hex
   gradientTo: string;   // hex
   createdAt: number;

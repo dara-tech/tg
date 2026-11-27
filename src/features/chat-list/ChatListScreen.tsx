@@ -550,8 +550,8 @@ export default function ChatListScreen() {
     const matchesTab =
       tab === 'all'      ? true :
       tab === 'personal' ? d.peerType === 'user' :
-      tab === 'groups'   ? d.peerType === 'chat' :
-      tab === 'channels' ? d.peerType === 'channel' :
+      tab === 'groups'   ? (d.peerType === 'chat' || Boolean(d.isMegagroup)) :
+      tab === 'channels' ? (d.peerType === 'channel' || Boolean(d.isBroadcast)) :
       d.unreadCount > 0;
     if (!matchesTab) return false;
     if (!searchQuery.trim()) return true;
@@ -561,8 +561,8 @@ export default function ChatListScreen() {
 
   const tabCounts = useMemo(() => ({
     personal: dialogs.filter((d) => d.peerType === 'user' && d.unreadCount > 0).length,
-    groups:   dialogs.filter((d) => d.peerType === 'chat' && d.unreadCount > 0).length,
-    channels: dialogs.filter((d) => d.peerType === 'channel' && d.unreadCount > 0).length,
+    groups:   dialogs.filter((d) => (d.peerType === 'chat' || Boolean(d.isMegagroup)) && d.unreadCount > 0).length,
+    channels: dialogs.filter((d) => (d.peerType === 'channel' || Boolean(d.isBroadcast)) && d.unreadCount > 0).length,
     unread:   dialogs.filter((d) => d.unreadCount > 0).length,
   }), [dialogs]);
 
@@ -939,6 +939,7 @@ export default function ChatListScreen() {
                 className="w-full px-4 py-3 border-b border-tg-border/35 bg-tg-bg-secondary/90 flex items-center gap-3 text-left active:bg-tg-surface transition-colors"
               >
                 <Avatar
+                  chatId={previewDialog.id}
                   letters={previewDialog.avatarLetters}
                   color={previewDialog.avatarColor}
                   online={previewDialog.isOnline}
@@ -948,6 +949,7 @@ export default function ChatListScreen() {
                   accessHash={previewDialog.accessHash}
                   hasPhoto={previewDialog.hasPhoto}
                   photoId={previewDialog.photoId}
+                  dcId={previewDialog.dcId}
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-tg-text text-sm font-bold truncate">{previewDialog.title}</p>
@@ -1311,6 +1313,7 @@ function DialogRow({
       )}
 
       <Avatar
+        chatId={dialog.id}
         letters={dialog.avatarLetters}
         color={dialog.avatarColor}
         online={dialog.isOnline}
@@ -1321,6 +1324,7 @@ function DialogRow({
         accessHash={dialog.accessHash}
         hasPhoto={dialog.hasPhoto}
         photoId={dialog.photoId}
+        dcId={dialog.dcId}
       />
 
       <div className="flex-1 min-w-0">

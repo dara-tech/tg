@@ -925,6 +925,7 @@ export default function ConversationScreen() {
 
         <button className="flex items-center gap-2.5 flex-1 min-w-0 text-left" onClick={() => router.push(`/profile/${chatMeta.isSavedMessages ? 'me' : chatMeta.peerId}`)}>
           <Avatar
+            chatId={chatMeta.id}
             letters={chatMeta.avatarLetters}
             color={chatMeta.avatarColor}
             size="sm"
@@ -935,6 +936,7 @@ export default function ConversationScreen() {
             accessHash={accessHash}
             hasPhoto={chatMeta.hasPhoto}
             photoId={chatMeta.photoId}
+            dcId={chatMeta.dcId}
           />
           <div className="text-left min-w-0">
             <p className="text-tg-text font-semibold text-[16px] leading-tight truncate">{chatMeta.title}</p>

@@ -45,6 +45,7 @@ export interface RealDialogItem {
   readInboxMaxId?: number;
   hasPhoto?: boolean;
   photoId?: string;
+  dcId?: number;
   topMessageId?: number;
   isSavedMessages?: boolean;
   lastMessageMedia?: DialogMediaMeta;
@@ -128,6 +129,7 @@ export interface RealContactItem {
   letters: string;
   hasPhoto?: boolean;
   photoId?: string;
+  dcId?: number;
   topMessageId?: number;
   isSavedMessages?: boolean;
   lastMessageMedia?: DialogMediaMeta;
@@ -797,7 +799,12 @@ async function _fetchRealDialogs(
       const title = isSelf
         ? 'Saved Messages'
         : [u?.first_name, u?.last_name].filter(Boolean).join(' ') || `User ${uid}`;
-      const photoId = isSelf ? undefined : (u?.photo?.photo_id ? String(u.photo.photo_id) : undefined);
+      const photoId = isSelf
+        ? undefined
+        : u?.photo?.photo_id ?? (u?.photo as any)?.id
+        ? String(u?.photo?.photo_id ?? (u?.photo as any)?.id)
+        : undefined;
+      const userDcId = u?.photo?.dc_id;
       const userPermissions = computeChatPermissions(undefined, 'user');
       items.push({
         id: `u_${uid}`,
@@ -819,6 +826,7 @@ async function _fetchRealDialogs(
         readInboxMaxId: d.read_inbox_max_id ?? 0,
         hasPhoto: Boolean(photoId),
         photoId,
+        dcId: userDcId,
         topMessageId: d.top_message,
         isSavedMessages: isSelf,
         lastMessageMedia,
@@ -837,7 +845,10 @@ async function _fetchRealDialogs(
     const isBroadcast = Boolean(c?.broadcast);
     if (isMegagroup) megagroupIds.add(numId);
     const peerType = d.peer.channel_id !== undefined && !isMegagroup ? 'channel' : 'chat';
-    const photoId = c?.photo?.photo_id ? String(c.photo.photo_id) : undefined;
+    const photoId = c?.photo?.photo_id ?? (c?.photo as any)?.id
+      ? String(c?.photo?.photo_id ?? (c?.photo as any)?.id)
+      : undefined;
+    const chatDcId = c?.photo?.dc_id;
     const permissions = computeChatPermissions(c as any, peerType);
     const peerKey = `${d.peer.channel_id !== undefined ? 'c' : 'g'}_${cid}`;
     chatPermissionsCache.set(peerKey, permissions);
@@ -862,6 +873,7 @@ async function _fetchRealDialogs(
       readInboxMaxId: d.read_inbox_max_id ?? 0,
       hasPhoto: Boolean(photoId),
       photoId,
+      dcId: chatDcId,
       topMessageId: d.top_message,
       lastMessageMedia,
       isBroadcast,
@@ -886,30 +898,70 @@ const avatarPending = new Map<string, Promise<string | null>>();
 
 export function downloadPeerAvatarUrl(
   peerType: 'user' | 'chat' | 'channel',
-  peerId: number,
+  peerId: number | string,
   accessHash = '0',
   photoId = '0',
-  big = false
+  big = false,
+  chatId?: string,
+  dcId?: number
 ): Promise<string | null> {
-  const key = `${peerType}_${peerId}_${photoId}_${big ? 'big' : 'sm'}`;
+  const pId = String(peerId);
+  const key = `${peerType}_${pId}_${photoId}_${big ? 'big' : 'sm'}`;
   if (avatarBlobCache.has(key)) return Promise.resolve(avatarBlobCache.get(key)!);
   if (avatarPending.has(key)) return avatarPending.get(key)!;
 
-  const effectivePeerType =
-    peerType === 'chat' && megagroupIds.has(peerId) ? 'channel' : peerType;
+  // Resolve whether this peer is a channel in MTProto:
+  // In Telegram, any supergroup/megagroup or broadcast channel is a channel (channel_id + access_hash).
+  let isChannel =
+    peerType === 'channel' ||
+    (chatId ? chatId.startsWith('c_') : false) ||
+    megagroupIds.has(Number(pId));
 
-  const peer =
-    effectivePeerType === 'user'
-      ? { _: 'inputPeerUser', user_id: String(peerId), access_hash: accessHash }
-      : effectivePeerType === 'channel'
-      ? { _: 'inputPeerChannel', channel_id: String(peerId), access_hash: accessHash }
-      : { _: 'inputPeerChat', chat_id: String(peerId) };
+  let hash = (accessHash && String(accessHash) !== '0')
+    ? String(accessHash)
+    : (peerAccessHashMap.get(pId) || '0');
 
-  const p = call<{ bytes?: Uint8Array }>('upload.getFile', {
-    location: { _: 'inputPeerPhotoFileLocation', big, peer, photo_id: photoId },
-    offset: 0,
-    limit: big ? 512 * 1024 : 64 * 1024,
-  })
+  let targetDcId = dcId;
+
+  try {
+    const dialogs = useDialogsStore.getState().dialogs;
+    const found = dialogs.find(
+      (d) => String(d.peerId) === pId || (chatId && d.id === chatId) || d.id === `c_${pId}` || d.id === `g_${pId}`
+    );
+    if (found) {
+      if (found.id.startsWith('c_') || found.isMegagroup || found.isBroadcast) {
+        isChannel = true;
+      }
+      if (hash === '0' && found.accessHash && String(found.accessHash) !== '0') {
+        hash = String(found.accessHash);
+        peerAccessHashMap.set(pId, hash);
+      }
+      if (!targetDcId && found.dcId) {
+        targetDcId = found.dcId;
+      }
+    }
+  } catch {}
+
+  const myUserId = useAuthStore.getState().userId;
+  const isSelf = myUserId && (pId === String(myUserId) || chatId === `u_${myUserId}` || chatId === 'me');
+
+  const peer = isSelf
+    ? { _: 'inputPeerSelf' }
+    : peerType === 'user'
+    ? { _: 'inputPeerUser', user_id: pId, access_hash: hash }
+    : isChannel
+    ? { _: 'inputPeerChannel', channel_id: pId, access_hash: hash }
+    : { _: 'inputPeerChat', chat_id: pId };
+
+  const p = call<{ bytes?: Uint8Array }>(
+    'upload.getFile',
+    {
+      location: { _: 'inputPeerPhotoFileLocation', big, peer, photo_id: photoId },
+      offset: 0,
+      limit: big ? 512 * 1024 : 64 * 1024,
+    },
+    targetDcId ? { dcId: targetDcId } : undefined
+  )
     .then((res) => {
       if (!res.bytes) return null;
       const copy = new Uint8Array(res.bytes.byteLength);
@@ -918,7 +970,36 @@ export function downloadPeerAvatarUrl(
       avatarBlobCache.set(key, url);
       return url;
     })
-    .catch(() => null)
+    .catch((err) => {
+      // Automatic fallback: if inputPeerChat failed with CHAT_ID_INVALID/PEER_ID_INVALID, retry as channel!
+      const errStr = String(err?.message || err?.error_message || err);
+      if (!isChannel && (errStr.includes('CHAT_ID_INVALID') || errStr.includes('PEER_ID_INVALID') || errStr.includes('CHANNEL_INVALID'))) {
+        return call<{ bytes?: Uint8Array }>(
+          'upload.getFile',
+          {
+            location: {
+              _: 'inputPeerPhotoFileLocation',
+              big,
+              peer: { _: 'inputPeerChannel', channel_id: pId, access_hash: hash },
+              photo_id: photoId,
+            },
+            offset: 0,
+            limit: big ? 512 * 1024 : 64 * 1024,
+          },
+          targetDcId ? { dcId: targetDcId } : undefined
+        )
+          .then((retryRes) => {
+            if (!retryRes.bytes) return null;
+            const copy = new Uint8Array(retryRes.bytes.byteLength);
+            copy.set(retryRes.bytes);
+            const url = URL.createObjectURL(new Blob([copy.buffer], { type: 'image/jpeg' }));
+            avatarBlobCache.set(key, url);
+            return url;
+          })
+          .catch(() => null);
+      }
+      return null;
+    })
     .finally(() => avatarPending.delete(key));
 
   avatarPending.set(key, p);

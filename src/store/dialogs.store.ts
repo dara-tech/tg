@@ -49,6 +49,7 @@ export interface NormalizedDialog {
   readInboxMaxId?: number;
   hasPhoto?: boolean;
   photoId?: string;
+  dcId?: number;
   topMessageId?: number;
   isSavedMessages?: boolean;
   lastMessageMedia?: DialogMediaMeta;

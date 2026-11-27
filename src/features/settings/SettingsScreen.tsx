@@ -562,7 +562,7 @@ export default function SettingsScreen() {
               { id: 'wallpaper'     as const, bg: 'bg-pink-500',    icon: <ImageIcon className="w-4 h-4 text-white" />,  label: 'Chat Wallpaper',         desc: ui.chatWallpaper === 'custom' ? 'Custom Image' : (CHAT_WALLPAPERS[ui.chatWallpaper]?.name ?? 'Theme Default') },
               { id: 'khmerFont'     as const, bg: 'bg-violet-500',  icon: <Type className="w-4 h-4 text-white" />,       label: 'Khmer Font',             desc: KHMER_FONTS[safeKhmerFont].name },
               { id: 'aiCall'        as const, bg: 'bg-transparent', icon: <img src="/icons/ai-brain.png" alt="AI" className="w-8 h-8 object-contain" />, label: 'AI Voice Calling', desc: AI_PERSONAS[ui.aiPersona as AIPersona]?.name || 'Telegram AI' },
-              { id: 'cloudflare'    as const, bg: 'bg-orange-500',  icon: <span className="text-white text-[11px] font-black">CF</span>, label: 'Cloudflare AI', desc: ui.cfAccountId ? 'Configured ✓' : 'Not set' },
+              { id: 'cloudflare'    as const, bg: 'bg-sky-600',     icon: <Bot className="w-4 h-4 text-white" />,        label: 'Cloudflare AI',          desc: ui.cfAccountId ? 'Configured' : 'Not configured' },
               { id: 'github'        as const, bg: 'bg-purple-600',  icon: <Key className="w-4 h-4 text-white" />,        label: 'GitHub & ERP Integration', desc: githubToken ? 'Connected' : (githubUsername ? `@${githubUsername.replace(/^@/, '')}` : 'Configure') },
               { id: 'language'      as const, bg: 'bg-indigo-500',  icon: <Globe className="w-4 h-4 text-white" />,      label: 'Language',               desc: ui.language },
               { id: 'help'          as const, bg: 'bg-slate-500',   icon: <HelpCircle className="w-4 h-4 text-white" />, label: 'Help & FAQ',             desc: '' },
@@ -1159,10 +1159,13 @@ export default function SettingsScreen() {
             <CustomPersonaManager onBack={() => setShowCustomPersonas(false)} />
           </div>
         ) : (
-          <div className="p-4 space-y-4 max-h-[75vh] overflow-y-auto">
-            {/* Built-in personas */}
+          <div className="p-4 space-y-5 max-h-[75vh] overflow-y-auto">
+            {/* Personas Picker */}
             <div className="space-y-2">
-              <div className="grid grid-cols-2 gap-2">
+              <p className="text-[11px] font-semibold text-tg-text-hint uppercase tracking-wider px-1">
+                Select Companion
+              </p>
+              <div className="flex gap-3 overflow-x-auto pb-1 pt-1 scrollbar-none">
                 {Object.values(AI_PERSONAS).map((p) => {
                   const isSelected = ui.aiPersona === p.id;
                   return (
@@ -1173,14 +1176,14 @@ export default function SettingsScreen() {
                         ui.setAiPersona(p.id);
                         toast(`${p.name} selected`, 'info');
                       }}
-                      className={`flex items-center gap-2.5 p-2 rounded-xl text-left border transition-all ${
-                        isSelected
-                          ? 'bg-tg-blue/15 border-tg-blue/40 text-tg-text'
-                          : 'bg-tg-surface border-tg-border/20 text-tg-text hover:bg-tg-surface/80'
-                      }`}
+                      className="flex flex-col items-center gap-1.5 shrink-0 group focus:outline-none"
                     >
                       <div
-                        className="w-9 h-9 rounded-full overflow-hidden shrink-0 flex items-center justify-center text-xs font-bold"
+                        className={`w-14 h-14 rounded-full overflow-hidden flex items-center justify-center text-sm font-bold transition-all ${
+                          isSelected
+                            ? 'ring-2 ring-tg-blue ring-offset-2 ring-offset-tg-bg scale-105'
+                            : 'opacity-70 hover:opacity-100'
+                        }`}
                         style={{
                           background: `linear-gradient(135deg, ${p.gradient.from}, ${p.gradient.to})`,
                         }}
@@ -1191,15 +1194,13 @@ export default function SettingsScreen() {
                           p.gradient.initial
                         )}
                       </div>
-                      <div className="truncate min-w-0 flex-1">
-                        <p className="text-xs font-semibold text-tg-text truncate">{p.name}</p>
-                        <p className="text-[10px] text-tg-text-hint truncate">{p.tagline}</p>
-                      </div>
+                      <span className={`text-xs max-w-[64px] truncate text-center ${isSelected ? 'font-bold text-tg-blue' : 'text-tg-text-hint'}`}>
+                        {p.name.split(' ')[0]}
+                      </span>
                     </button>
                   );
                 })}
 
-                {/* Custom personas inline */}
                 {customPersonas.map((p) => {
                   const isSelected = ui.aiPersona === p.id;
                   return (
@@ -1210,15 +1211,14 @@ export default function SettingsScreen() {
                         ui.setAiPersona(p.id);
                         toast(`${p.name} selected`, 'info');
                       }}
-                      className={`flex items-center gap-2.5 p-2 rounded-xl text-left border transition-all ${
-                        isSelected
-                          ? 'bg-tg-blue/15 border-tg-blue/40 text-tg-text'
-                          : 'bg-tg-surface border-tg-border/20 text-tg-text hover:bg-tg-surface/80'
-                      }`}
+                      className="flex flex-col items-center gap-1.5 shrink-0 group focus:outline-none"
                     >
                       <div
-                        className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-lg overflow-hidden"
-                        style={p.avatarImage ? {} : { background: `linear-gradient(135deg, ${p.gradientFrom}, ${p.gradientTo})` }}
+                        className={`w-14 h-14 rounded-full overflow-hidden flex items-center justify-center text-xl bg-tg-surface border border-tg-border/30 transition-all ${
+                          isSelected
+                            ? 'ring-2 ring-tg-blue ring-offset-2 ring-offset-tg-bg scale-105'
+                            : 'opacity-70 hover:opacity-100'
+                        }`}
                       >
                         {p.avatarImage ? (
                           <img src={p.avatarImage} alt={p.name} className="w-full h-full object-cover" />
@@ -1226,86 +1226,100 @@ export default function SettingsScreen() {
                           p.avatarEmoji
                         )}
                       </div>
-                      <div className="truncate min-w-0 flex-1">
-                        <p className="text-xs font-semibold text-tg-text truncate">{p.name}</p>
-                        <p className="text-[10px] text-tg-text-hint truncate">{p.tagline || 'Custom'}</p>
-                      </div>
+                      <span className={`text-xs max-w-[64px] truncate text-center ${isSelected ? 'font-bold text-tg-blue' : 'text-tg-text-hint'}`}>
+                        {p.name.split(' ')[0]}
+                      </span>
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            {/* My AI Characters button */}
-            <button
-              type="button"
-              onClick={() => setShowCustomPersonas(true)}
-              className="w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl bg-tg-surface border border-tg-border/30 hover:border-tg-blue/40 transition-all active:scale-[0.99]"
-            >
-              <div className="w-9 h-9 rounded-full bg-tg-blue/15 flex items-center justify-center shrink-0 text-tg-blue">
-                <Bot className="w-4 h-4" />
-              </div>
-              <div className="text-left flex-1 min-w-0">
-                <p className="text-sm font-bold text-tg-text flex items-center gap-1.5">
-                  <span>My AI Characters</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-tg-blue/10 text-tg-blue font-semibold">
-                    Custom AI
-                  </span>
-                </p>
-                <p className="text-xs text-tg-text-hint truncate mt-0.5">
-                  {customPersonas.length > 0 ? `${customPersonas.length} custom character${customPersonas.length !== 1 ? 's' : ''}` : 'Generate personas with Cloudflare AI'}
-                </p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-tg-text-hint/60" />
-            </button>
-
-            {/* Cloudflare AI Quick Shortcut */}
-            <button
-              type="button"
-              onClick={() => setPanel('cloudflare')}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-orange-500/10 border border-orange-500/20 text-xs text-orange-400 hover:bg-orange-500/15 transition-colors"
-            >
-              <span className="flex items-center gap-1.5 font-medium">
-                <span className="font-black text-orange-500">CF</span>
-                <span>Cloudflare AI (Llama 3.3 + Flux Schnell)</span>
-              </span>
-              <span className="text-[11px] font-semibold flex items-center gap-1 text-orange-400/80">
-                {ui.cfAccountId ? 'Configured ✓' : 'Configure'}
-                <ChevronRight className="w-3.5 h-3.5" />
-              </span>
-            </button>
-
-            <div className="space-y-1.5 pt-1">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-tg-text-hint">Gemini API Key (Optional)</label>
-                <a
-                  href="https://aistudio.google.com/app/apikey"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[11px] text-tg-blue hover:underline flex items-center gap-1"
-                >
-                  <span>Get Key</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-              <div className="relative">
-                <input
-                  type={showToken ? 'text' : 'password'}
-                  value={ui.aiApiKey || ''}
-                  onChange={(e) => ui.setAiApiKey(e.target.value)}
-                  placeholder="Default key active"
-                  className="w-full bg-tg-surface border border-tg-border rounded-xl px-3.5 py-2 text-sm text-tg-text pr-10 focus:outline-none focus:border-tg-blue font-mono"
-                />
+            {/* Custom Characters Row */}
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold text-tg-text-hint uppercase tracking-wider px-1">
+                Custom Characters
+              </p>
+              <div className="bg-tg-surface rounded-xl border border-tg-border/30 overflow-hidden">
                 <button
                   type="button"
-                  onClick={() => setShowToken(!showToken)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-tg-text-hint hover:text-tg-text"
+                  onClick={() => setShowCustomPersonas(true)}
+                  className="w-full flex items-center justify-between p-3.5 hover:bg-tg-border/10 transition-colors text-left"
                 >
-                  {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-tg-blue/10 flex items-center justify-center text-tg-blue shrink-0">
+                      <Bot className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-tg-text">Manage Characters</p>
+                      <p className="text-[11px] text-tg-text-hint">Create, edit, or auto-generate with AI</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 text-tg-text-hint text-xs">
+                    <span>{customPersonas.length}</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
                 </button>
               </div>
             </div>
 
+            {/* Configuration */}
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold text-tg-text-hint uppercase tracking-wider px-1">
+                Configuration
+              </p>
+              <div className="bg-tg-surface rounded-xl border border-tg-border/30 divide-y divide-tg-border/20 overflow-hidden">
+                {/* Gemini API Key */}
+                <div className="p-3 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-medium text-tg-text-hint">Gemini API Key (Optional)</label>
+                    <a
+                      href="https://aistudio.google.com/app/apikey"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[11px] text-tg-blue hover:underline flex items-center gap-0.5"
+                    >
+                      <span>Get Key</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showToken ? 'text' : 'password'}
+                      value={ui.aiApiKey || ''}
+                      onChange={(e) => ui.setAiApiKey(e.target.value)}
+                      placeholder="Default key active"
+                      className="w-full bg-transparent border-none text-xs text-tg-text pr-8 focus:outline-none font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowToken(!showToken)}
+                      className="absolute right-0 top-1/2 -translate-y-1/2 text-tg-text-hint hover:text-tg-text p-1"
+                    >
+                      {showToken ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Cloudflare AI Setup Row */}
+                <button
+                  type="button"
+                  onClick={() => setPanel('cloudflare')}
+                  className="w-full flex items-center justify-between p-3.5 hover:bg-tg-border/10 transition-colors text-left"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-tg-text">Cloudflare AI</p>
+                    <p className="text-[11px] text-tg-text-hint">Account & Token for Flux image generation</p>
+                  </div>
+                  <div className="flex items-center gap-1 text-tg-text-hint text-xs">
+                    <span>{ui.cfAccountId ? 'Configured' : 'Not set'}</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Call Action Button */}
             <div className="pt-2">
               <button
                 type="button"
@@ -1313,10 +1327,10 @@ export default function SettingsScreen() {
                   setPanel(null);
                   ui.startAiCall();
                 }}
-                className="w-full py-2.5 px-4 rounded-xl bg-tg-blue text-white text-sm font-semibold hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 rounded-xl bg-tg-blue text-white text-sm font-semibold active:opacity-80 transition-opacity flex items-center justify-center gap-2 shadow-sm"
               >
                 <Phone className="w-4 h-4" />
-                <span>Call AI Companion</span>
+                <span>Start Voice Call</span>
               </button>
             </div>
           </div>
@@ -1326,30 +1340,30 @@ export default function SettingsScreen() {
       {/* Cloudflare AI Panel */}
       <BottomSheet open={panel === 'cloudflare'} onClose={() => setPanel(null)} title="Cloudflare AI" maxWidth="sm:max-w-md">
         <div className="p-4 space-y-4">
-          <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20 text-xs text-tg-text-hint leading-relaxed">
-            <span className="font-black text-orange-500">CF</span> Cloudflare Workers AI powers avatar image generation and AI character auto-generation. Get your credentials at <span className="text-orange-400">dash.cloudflare.com</span>.
-          </div>
+          <p className="text-xs text-tg-text-hint leading-relaxed">
+            Configure your Cloudflare Workers AI credentials to enable character auto-generation and Flux avatar portraits.
+          </p>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-tg-text-hint">Account ID</label>
+            <label className="text-[11px] font-semibold text-tg-text-hint uppercase tracking-wider">Account ID</label>
             <input
               type="text"
               value={ui.cfAccountId || ''}
               onChange={(e) => ui.setCfAccountId(e.target.value)}
-              placeholder="e.g. 8614fe64de67e25796129174fbf806be"
-              className="w-full bg-tg-surface border border-tg-border rounded-xl px-3.5 py-2 text-sm text-tg-text placeholder:text-tg-text-hint/50 focus:outline-none focus:border-orange-500 font-mono"
+              placeholder="Cloudflare Account ID"
+              className="w-full bg-tg-surface border border-tg-border/40 rounded-xl px-3.5 py-2.5 text-xs text-tg-text placeholder:text-tg-text-hint/40 focus:outline-none focus:border-tg-blue font-mono"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-tg-text-hint">API Token</label>
+            <label className="text-[11px] font-semibold text-tg-text-hint uppercase tracking-wider">API Token</label>
             <div className="relative">
               <input
                 type={showToken ? 'text' : 'password'}
                 value={ui.cfApiToken || ''}
                 onChange={(e) => ui.setCfApiToken(e.target.value)}
-                placeholder="cfut_..."
-                className="w-full bg-tg-surface border border-tg-border rounded-xl px-3.5 py-2 text-sm text-tg-text placeholder:text-tg-text-hint/50 pr-10 focus:outline-none focus:border-orange-500 font-mono"
+                placeholder="Cloudflare API Token"
+                className="w-full bg-tg-surface border border-tg-border/40 rounded-xl px-3.5 py-2.5 text-xs text-tg-text placeholder:text-tg-text-hint/40 pr-10 focus:outline-none focus:border-tg-blue font-mono"
               />
               <button
                 type="button"
@@ -1364,10 +1378,10 @@ export default function SettingsScreen() {
           <button
             type="button"
             onClick={() => {
-              toast('Cloudflare AI credentials saved ✓', 'info');
+              toast('Credentials saved');
               setPanel(null);
             }}
-            className="w-full py-2.5 px-4 rounded-xl bg-orange-500 text-white text-sm font-semibold active:scale-[0.99] transition-all"
+            className="w-full py-2.5 px-4 rounded-xl bg-tg-blue text-white text-xs font-semibold active:opacity-80 transition-opacity"
           >
             Save Credentials
           </button>

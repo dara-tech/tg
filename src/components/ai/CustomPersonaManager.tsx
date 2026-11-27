@@ -1,36 +1,23 @@
 'use client';
 import { useState } from 'react';
 import {
-  ArrowLeft, Plus, Trash2, Pencil, Mic, Check, X,
-  Wand2, Image as ImageIcon, Loader2, Phone, Bot,
+  ArrowLeft, Plus, Trash2, Pencil, Check, X,
+  Wand2, Image as ImageIcon, Loader2, Phone, Bot, Sparkles,
 } from 'lucide-react';
 import { usePersonaStore, type CustomPersona, type CustomVoice } from '@/store/persona.store';
 import { useUIStore } from '@/store/ui.store';
 import { cfAutoGenPersona, cfGenImage } from '@/services/cloudflare';
 import { toast } from '@/components/ui/Toast';
 
-// ── Voice Options ─────────────────────────────────────────────────────────────
-const VOICES: { id: CustomVoice; label: string; desc: string; color: string }[] = [
-  { id: 'Aoede',  label: 'Aoede',  desc: 'Warm & melodic (Best for friendly/gentle)', color: 'text-pink-400' },
-  { id: 'Kore',   label: 'Kore',   desc: 'Clear & youthful (Best for energetic)',     color: 'text-cyan-400' },
-  { id: 'Puck',   label: 'Puck',   desc: 'Bright & witty (Best for banter/comedy)',   color: 'text-emerald-400' },
-  { id: 'Charon', label: 'Charon', desc: 'Deep & authoritative (Best for tech/lead)', color: 'text-blue-400' },
-  { id: 'Fenrir', label: 'Fenrir', desc: 'Smooth & confident (Best for advisor)',     color: 'text-purple-400' },
+const VOICES: { id: CustomVoice; label: string; desc: string }[] = [
+  { id: 'Aoede',  label: 'Aoede',  desc: 'Warm & melodic' },
+  { id: 'Kore',   label: 'Kore',   desc: 'Clear & youthful' },
+  { id: 'Puck',   label: 'Puck',   desc: 'Bright & witty' },
+  { id: 'Charon', label: 'Charon', desc: 'Deep & authoritative' },
+  { id: 'Fenrir', label: 'Fenrir', desc: 'Smooth & confident' },
 ];
 
-// ── Gradients ─────────────────────────────────────────────────────────────────
-const GRADIENTS = [
-  { from: '#3b82f6', to: '#1d4ed8' },
-  { from: '#8b5cf6', to: '#6d28d9' },
-  { from: '#06b6d4', to: '#0891b2' },
-  { from: '#10b981', to: '#059669' },
-  { from: '#f472b6', to: '#ec4899' },
-  { from: '#f59e0b', to: '#d97706' },
-  { from: '#ef4444', to: '#b91c1c' },
-  { from: '#6366f1', to: '#4338ca' },
-];
-
-const EMOJIS = ['🤖','🌸','🦊','🐉','⚡','🎯','🎵','🌙','🔥','💎','👑','🦋','🎭','🧠','🌺','🐱'];
+const EMOJIS = ['🤖', '🌸', '🦊', '⚡', '🎯', '🎵', '🌙', '🔥', '💎', '👑', '🦋', '🧠'];
 
 type FormState = Omit<CustomPersona, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -43,25 +30,24 @@ const blank = (): FormState => ({
   greeting: '',
   avatarEmoji: '🤖',
   avatarImage: undefined,
-  gradientFrom: GRADIENTS[0].from,
-  gradientTo: GRADIENTS[0].to,
+  gradientFrom: '#3b82f6',
+  gradientTo: '#1d4ed8',
 });
 
-// ── Avatar Preview ─────────────────────────────────────────────────────────────
-function AvatarCircle({
-  emoji, from, to, image, size = 'md',
-}: { emoji: string; from: string; to: string; image?: string; size?: 'sm' | 'md' | 'lg' | 'xl' }) {
+// ── Clean Avatar ─────────────────────────────────────────────────────────────
+function Avatar({
+  emoji, image, size = 'md',
+}: { emoji: string; image?: string; size?: 'sm' | 'md' | 'lg' | 'xl' }) {
   const szClass = {
-    sm: 'w-11 h-11 text-base',
-    md: 'w-14 h-14 text-2xl',
+    sm: 'w-10 h-10 text-base',
+    md: 'w-12 h-12 text-xl',
     lg: 'w-20 h-20 text-3xl',
     xl: 'w-24 h-24 text-4xl',
   }[size];
 
   return (
     <div
-      className={`${szClass} rounded-full flex items-center justify-center shrink-0 shadow-lg overflow-hidden border border-white/10`}
-      style={image ? {} : { background: `linear-gradient(135deg, ${from}, ${to})` }}
+      className={`${szClass} rounded-full flex items-center justify-center shrink-0 bg-tg-surface border border-tg-border/30 overflow-hidden select-none`}
     >
       {image ? (
         <img src={image} alt="avatar" className="w-full h-full object-cover" />
@@ -72,7 +58,7 @@ function AvatarCircle({
   );
 }
 
-// ── Persona Editor ─────────────────────────────────────────────────────────────
+// ── Editor ───────────────────────────────────────────────────────────────────
 interface EditorProps {
   initial: FormState & { id?: string };
   onSave: (data: FormState) => void;
@@ -81,12 +67,11 @@ interface EditorProps {
 
 function PersonaEditor({ initial, onSave, onCancel }: EditorProps) {
   const [form, setForm] = useState<FormState>({ ...initial });
-  const [tab, setTab] = useState<'basic' | 'voice' | 'prompt'>('basic');
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
-  const [genIdea, setGenIdea] = useState('');
-  const [genLoading, setGenLoading] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
   const [imgLoading, setImgLoading] = useState(false);
-  const [showAutoBar, setShowAutoBar] = useState(!initial.name);
 
   const setF = (k: keyof FormState, v: any) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -94,19 +79,17 @@ function PersonaEditor({ initial, onSave, onCancel }: EditorProps) {
   const validate = () => {
     const e: Partial<Record<keyof FormState, string>> = {};
     if (!form.name.trim()) e.name = 'Name is required';
-    if (!form.prompt.trim()) e.prompt = 'System prompt is required';
+    if (!form.prompt.trim()) e.prompt = 'System instructions are required';
     if (!form.greeting.trim()) e.greeting = 'Greeting is required';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  // Full AI Auto-Generation from Concept
   const handleAutoGen = async () => {
-    const concept = genIdea.trim() || form.name.trim() || 'A sweet and supportive Cambodian companion';
-    setGenLoading(true);
+    if (!aiPrompt.trim()) return;
+    setAiLoading(true);
     try {
-      toast('Generating character with Cloudflare AI...', 'info');
-      const res = await cfAutoGenPersona(concept);
+      const res = await cfAutoGenPersona(aiPrompt.trim());
       setForm((f) => ({
         ...f,
         name: res.name,
@@ -118,36 +101,33 @@ function PersonaEditor({ initial, onSave, onCancel }: EditorProps) {
         avatarEmoji: res.avatarEmoji,
       }));
 
-      // Automatically generate avatar image right away
       try {
-        toast('Generating avatar portrait with Cloudflare Flux...', 'info');
         const img = await cfGenImage(res.imagePrompt);
         setF('avatarImage', img);
-      } catch (imgErr) {
-        console.warn('Image auto-gen warning:', imgErr);
+      } catch (e) {
+        console.warn('Auto image gen skipped:', e);
       }
 
-      toast('AI Character & Avatar created', 'info');
-      setShowAutoBar(false);
+      setAiModalOpen(false);
+      setAiPrompt('');
+      toast('Character generated');
     } catch (err: any) {
       toast(err?.message || 'Generation failed', 'error');
     } finally {
-      setGenLoading(false);
+      setAiLoading(false);
     }
   };
 
-  // Image-only Generator
   const handleGenImage = async () => {
     setImgLoading(true);
     try {
       const prompt = form.description
-        ? `High-quality portrait photo of ${form.name}: ${form.description}, digital art, clean aesthetic, studio lighting, looking directly at camera`
-        : `High-quality portrait photo of ${form.name || 'a friendly AI companion'}, digital art, clean aesthetic, studio lighting`;
+        ? `Portrait avatar of ${form.name}: ${form.description}, clean background, professional digital portrait`
+        : `Portrait avatar of ${form.name || 'a virtual companion'}, clean background, studio lighting`;
 
-      toast('Generating image with Flux Schnell...', 'info');
       const dataUrl = await cfGenImage(prompt);
       setF('avatarImage', dataUrl);
-      toast('Avatar image updated', 'info');
+      toast('Avatar image generated');
     } catch (err: any) {
       toast(err?.message || 'Image generation failed', 'error');
     } finally {
@@ -156,285 +136,234 @@ function PersonaEditor({ initial, onSave, onCancel }: EditorProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-tg-bg">
-      {/* Top Bar */}
-      <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-tg-border/30 shrink-0">
+    <div className="flex flex-col h-full bg-tg-bg text-tg-text">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-tg-border/20 shrink-0">
         <button
           onClick={onCancel}
-          className="p-1.5 -ml-1.5 rounded-full hover:bg-tg-surface text-tg-text-hint hover:text-tg-text transition-colors"
+          className="text-sm text-tg-text-hint hover:text-tg-text transition-colors"
         >
-          <X className="w-5 h-5" />
+          Cancel
         </button>
-        <div className="flex-1 min-w-0">
-          <span className="font-bold text-tg-text text-base truncate">
-            {initial.name ? `Edit "${initial.name}"` : 'New AI Character'}
-          </span>
-        </div>
-        <button
-          onClick={() => setShowAutoBar((v) => !v)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
-            showAutoBar
-              ? 'bg-tg-blue text-white shadow-md'
-              : 'bg-tg-surface text-tg-text-secondary border border-tg-border/30 hover:text-tg-text'
-          }`}
-        >
-          <Wand2 className="w-3.5 h-3.5" />
-          <span>Auto-Gen</span>
-        </button>
+        <span className="font-semibold text-sm">
+          {initial.name ? 'Edit Character' : 'New Character'}
+        </span>
         <button
           onClick={() => { if (validate()) onSave(form); }}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-tg-blue text-white text-xs font-bold active:scale-95 transition-transform shadow-md"
+          className="text-sm font-semibold text-tg-blue active:opacity-70 transition-opacity"
         >
-          <Check className="w-3.5 h-3.5" /> Save
+          Save
         </button>
       </div>
 
-      {/* Auto-Gen Banner */}
-      {showAutoBar && (
-        <div className="px-4 py-3 border-b border-tg-border/30 bg-tg-surface/60 shrink-0 animate-in fade-in slide-in-from-top-1 duration-150">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-tg-text mb-2">
-            <Wand2 className="w-3.5 h-3.5 text-tg-blue" />
-            <span>Cloudflare AI Auto-Generation</span>
-          </div>
-          <div className="flex gap-2">
-            <input
-              value={genIdea}
-              onChange={(e) => setGenIdea(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !genLoading && handleAutoGen()}
-              placeholder='e.g. "sweet Khmer girl" or "senior tech lead"'
-              className="flex-1 bg-tg-surface border border-tg-border/40 rounded-xl px-3 py-2 text-xs text-tg-text placeholder:text-tg-text-hint focus:outline-none focus:border-tg-blue"
-            />
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+        {/* Avatar Section */}
+        <div className="flex flex-col items-center gap-3">
+          <Avatar emoji={form.avatarEmoji} image={form.avatarImage} size="xl" />
+          <div className="flex items-center gap-2">
             <button
-              onClick={handleAutoGen}
-              disabled={genLoading}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-tg-blue text-white text-xs font-bold disabled:opacity-60 active:scale-95 transition-all shadow-md shrink-0"
+              type="button"
+              onClick={handleGenImage}
+              disabled={imgLoading}
+              className="text-xs font-medium text-tg-blue hover:underline flex items-center gap-1 active:opacity-70"
             >
-              {genLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-              <span>{genLoading ? 'Crafting...' : 'Generate'}</span>
+              {imgLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3" />}
+              <span>{imgLoading ? 'Generating...' : form.avatarImage ? 'Regenerate Photo' : 'Generate Photo'}</span>
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Character Profile Hero */}
-      <div className="flex items-center gap-4 px-4 py-4 border-b border-tg-border/20 shrink-0 bg-tg-bg-secondary/40">
-        <div className="relative group">
-          <AvatarCircle
-            emoji={form.avatarEmoji}
-            from={form.gradientFrom}
-            to={form.gradientTo}
-            image={form.avatarImage}
-            size="lg"
-          />
-          <button
-            onClick={handleGenImage}
-            disabled={imgLoading}
-            title="Generate portrait with Cloudflare Flux"
-            className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-tg-blue text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform disabled:opacity-60"
-          >
-            {imgLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
-          </button>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-tg-text text-lg truncate">{form.name || 'Unnamed Character'}</p>
-          <p className="text-xs text-tg-text-hint truncate mt-0.5">{form.tagline || 'Ready to talk'}</p>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="px-2 py-0.5 rounded-full bg-tg-surface text-[10px] font-semibold text-tg-blue border border-tg-border/30">
-              Voice: {form.voice}
-            </span>
             {form.avatarImage && (
-              <span className="px-2 py-0.5 rounded-full bg-tg-surface text-[10px] font-semibold text-tg-text-secondary border border-tg-border/30">
-                Flux Image
-              </span>
+              <>
+                <span className="text-tg-text-hint text-xs">•</span>
+                <button
+                  type="button"
+                  onClick={() => setF('avatarImage', undefined)}
+                  className="text-xs text-tg-red hover:underline active:opacity-70"
+                >
+                  Remove
+                </button>
+              </>
             )}
           </div>
         </div>
-        {form.avatarImage && (
-          <button
-            onClick={() => setF('avatarImage', undefined)}
-            className="p-1.5 rounded-full text-tg-text-hint hover:text-tg-red transition-colors"
-            title="Remove generated image"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        )}
-      </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex gap-1 px-4 py-2 border-b border-tg-border/20 shrink-0 bg-tg-bg">
-        {(['basic', 'voice', 'prompt'] as const).map((t) => (
+        {/* AI Helper Banner */}
+        <div className="flex items-center justify-between p-3 rounded-xl bg-tg-surface border border-tg-border/30">
+          <div>
+            <p className="text-xs font-medium text-tg-text">Auto-Fill with AI</p>
+            <p className="text-[11px] text-tg-text-hint">Generate personality, prompt, and photo</p>
+          </div>
           <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition-all ${
-              tab === t
-                ? 'bg-tg-blue text-white shadow-sm'
-                : 'text-tg-text-hint hover:text-tg-text hover:bg-tg-surface'
-            }`}
+            type="button"
+            onClick={() => setAiModalOpen(true)}
+            className="px-3 py-1.5 rounded-lg bg-tg-blue/10 text-tg-blue text-xs font-semibold hover:bg-tg-blue/15 active:scale-95 transition-all flex items-center gap-1"
           >
-            {t}
+            <Wand2 className="w-3 h-3" />
+            <span>Auto-Gen</span>
           </button>
-        ))}
-      </div>
+        </div>
 
-      {/* Tab Panels */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {tab === 'basic' && (
-          <>
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-tg-text-hint">Character Name *</label>
+        {/* General Info */}
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold text-tg-text-hint uppercase tracking-wider px-1">General</p>
+          <div className="bg-tg-surface rounded-xl border border-tg-border/30 divide-y divide-tg-border/20 overflow-hidden">
+            <div className="p-3 space-y-1">
+              <label className="text-[11px] text-tg-text-hint font-medium">Name</label>
               <input
                 value={form.name}
                 onChange={(e) => setF('name', e.target.value)}
-                placeholder="e.g. Sopheap, Sakura, Nova..."
-                className="w-full bg-tg-surface border border-tg-border/40 rounded-xl px-3.5 py-2.5 text-sm text-tg-text placeholder:text-tg-text-hint focus:outline-none focus:border-tg-blue"
+                placeholder="e.g. Sopheap"
+                className="w-full bg-transparent text-sm text-tg-text placeholder:text-tg-text-hint/40 focus:outline-none"
               />
-              {errors.name && <p className="text-xs text-tg-red">{errors.name}</p>}
+              {errors.name && <p className="text-[11px] text-tg-red">{errors.name}</p>}
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-tg-text-hint">Tagline</label>
+            <div className="p-3 space-y-1">
+              <label className="text-[11px] text-tg-text-hint font-medium">Tagline</label>
               <input
                 value={form.tagline}
                 onChange={(e) => setF('tagline', e.target.value)}
-                placeholder="e.g. Sweet & Cheerful Voice Companion"
-                className="w-full bg-tg-surface border border-tg-border/40 rounded-xl px-3.5 py-2.5 text-sm text-tg-text placeholder:text-tg-text-hint focus:outline-none focus:border-tg-blue"
+                placeholder="e.g. Friendly Tech Lead"
+                className="w-full bg-transparent text-sm text-tg-text placeholder:text-tg-text-hint/40 focus:outline-none"
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-tg-text-hint">Character Bio</label>
+            <div className="p-3 space-y-1">
+              <label className="text-[11px] text-tg-text-hint font-medium">Bio</label>
               <textarea
                 value={form.description}
                 onChange={(e) => setF('description', e.target.value)}
-                placeholder="Short bio (used as prompt for Flux portrait generation)..."
+                placeholder="Short description..."
                 rows={2}
-                className="w-full bg-tg-surface border border-tg-border/40 rounded-xl px-3.5 py-2.5 text-sm text-tg-text placeholder:text-tg-text-hint focus:outline-none focus:border-tg-blue resize-none"
+                className="w-full bg-transparent text-sm text-tg-text placeholder:text-tg-text-hint/40 focus:outline-none resize-none"
               />
             </div>
-
-            {/* Cloudflare Flux Image Generator Banner */}
-            <div className="p-3.5 rounded-2xl bg-tg-surface border border-tg-border/30 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-tg-text flex items-center gap-1.5">
-                  <ImageIcon className="w-3.5 h-3.5 text-tg-blue" />
-                  <span>Cloudflare Flux Avatar</span>
-                </p>
-                <p className="text-[11px] text-tg-text-hint truncate mt-0.5">
-                  {form.avatarImage ? 'Custom Flux portrait generated' : 'Generate photorealistic AI avatar portrait'}
-                </p>
-              </div>
-              <button
-                onClick={handleGenImage}
-                disabled={imgLoading}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tg-blue text-white text-xs font-bold shadow-md active:scale-95 disabled:opacity-60 transition-all shrink-0"
-              >
-                {imgLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
-                <span>{imgLoading ? 'Generating...' : 'Gen Image'}</span>
-              </button>
-            </div>
-
-            {/* Emoji & Colors */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-tg-text-hint">Fallback Emoji</label>
-              <div className="grid grid-cols-8 gap-1.5">
-                {EMOJIS.map((e) => (
-                  <button
-                    key={e}
-                    onClick={() => setF('avatarEmoji', e)}
-                    className={`aspect-square rounded-xl text-lg flex items-center justify-center transition-all active:scale-95 ${
-                      form.avatarEmoji === e && !form.avatarImage
-                        ? 'bg-tg-blue/20 ring-2 ring-tg-blue scale-105'
-                        : 'bg-tg-surface hover:bg-tg-surface/80'
-                    }`}
-                  >
-                    {e}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-tg-text-hint">Theme Gradient</label>
-              <div className="flex flex-wrap gap-2">
-                {GRADIENTS.map((g) => (
-                  <button
-                    key={g.from}
-                    onClick={() => { setF('gradientFrom', g.from); setF('gradientTo', g.to); }}
-                    className={`w-8 h-8 rounded-full transition-all active:scale-95 ${
-                      form.gradientFrom === g.from ? 'scale-110 ring-2 ring-white/70 shadow-md' : 'opacity-80'
-                    }`}
-                    style={{ background: `linear-gradient(135deg, ${g.from}, ${g.to})` }}
-                  />
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-
-        {tab === 'voice' && (
-          <div className="space-y-2">
-            <p className="text-xs text-tg-text-hint mb-2">
-              Gemini Live Voice Engine — Choose voice timbre for live voice calls:
-            </p>
-            {VOICES.map((v) => (
-              <button
-                key={v.id}
-                onClick={() => setF('voice', v.id)}
-                className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl border transition-all text-left ${
-                  form.voice === v.id
-                    ? 'border-tg-blue bg-tg-blue/10 text-tg-text'
-                    : 'border-tg-border/30 bg-tg-surface text-tg-text'
-                }`}
-              >
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${form.voice === v.id ? 'bg-tg-blue/20' : 'bg-tg-bg'}`}>
-                  <Mic className={`w-4 h-4 ${form.voice === v.id ? 'text-tg-blue' : v.color}`} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold">{v.label}</p>
-                  <p className="text-xs text-tg-text-hint truncate">{v.desc}</p>
-                </div>
-                {form.voice === v.id && (
-                  <Check className="w-4 h-4 text-tg-blue shrink-0" />
-                )}
-              </button>
-            ))}
           </div>
-        )}
+        </div>
 
-        {tab === 'prompt' && (
-          <>
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-tg-text-hint">System Prompt (Persona Instruction) *</label>
+        {/* Voice Selection */}
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold text-tg-text-hint uppercase tracking-wider px-1">Voice (Gemini Live)</p>
+          <div className="bg-tg-surface rounded-xl border border-tg-border/30 divide-y divide-tg-border/20 overflow-hidden">
+            {VOICES.map((v) => {
+              const selected = form.voice === v.id;
+              return (
+                <button
+                  key={v.id}
+                  type="button"
+                  onClick={() => setF('voice', v.id)}
+                  className="w-full flex items-center justify-between p-3 text-left hover:bg-tg-border/10 transition-colors"
+                >
+                  <div>
+                    <p className={`text-sm ${selected ? 'font-semibold text-tg-blue' : 'text-tg-text'}`}>{v.label}</p>
+                    <p className="text-[11px] text-tg-text-hint">{v.desc}</p>
+                  </div>
+                  {selected && <Check className="w-4 h-4 text-tg-blue shrink-0" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Instructions */}
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold text-tg-text-hint uppercase tracking-wider px-1">Instructions</p>
+          <div className="bg-tg-surface rounded-xl border border-tg-border/30 divide-y divide-tg-border/20 overflow-hidden">
+            <div className="p-3 space-y-1">
+              <label className="text-[11px] text-tg-text-hint font-medium">System Prompt</label>
               <textarea
                 value={form.prompt}
                 onChange={(e) => setF('prompt', e.target.value)}
-                placeholder={'You are [Name] — describe personality, dialect, tone, rules...\n\nExample: You are Sopheap, a friendly Cambodian companion. Speak in natural polite Khmer. Keep responses concise (1-2 sentences) for real-time phone audio.'}
-                rows={8}
-                className="w-full bg-tg-surface border border-tg-border/40 rounded-xl px-3.5 py-2.5 text-xs text-tg-text placeholder:text-tg-text-hint focus:outline-none focus:border-tg-blue font-mono leading-relaxed resize-none"
+                placeholder="You are [Name]... Describe personality, style, dialect, and rules."
+                rows={5}
+                className="w-full bg-transparent text-xs text-tg-text placeholder:text-tg-text-hint/40 focus:outline-none resize-none font-mono leading-relaxed"
               />
-              {errors.prompt && <p className="text-xs text-tg-red">{errors.prompt}</p>}
+              {errors.prompt && <p className="text-[11px] text-tg-red">{errors.prompt}</p>}
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-tg-text-hint">Opening Greeting *</label>
+            <div className="p-3 space-y-1">
+              <label className="text-[11px] text-tg-text-hint font-medium">Opening Greeting</label>
               <textarea
                 value={form.greeting}
                 onChange={(e) => setF('greeting', e.target.value)}
-                placeholder="What the AI says aloud as soon as the call connects..."
-                rows={3}
-                className="w-full bg-tg-surface border border-tg-border/40 rounded-xl px-3.5 py-2.5 text-xs text-tg-text placeholder:text-tg-text-hint focus:outline-none focus:border-tg-blue resize-none"
+                placeholder="What the AI says aloud when call connects..."
+                rows={2}
+                className="w-full bg-transparent text-xs text-tg-text placeholder:text-tg-text-hint/40 focus:outline-none resize-none leading-relaxed"
               />
-              {errors.greeting && <p className="text-xs text-tg-red">{errors.greeting}</p>}
+              {errors.greeting && <p className="text-[11px] text-tg-red">{errors.greeting}</p>}
             </div>
-          </>
-        )}
+          </div>
+        </div>
+
+        {/* Fallback Emoji */}
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold text-tg-text-hint uppercase tracking-wider px-1">Fallback Icon</p>
+          <div className="flex flex-wrap gap-2 p-3 bg-tg-surface rounded-xl border border-tg-border/30">
+            {EMOJIS.map((e) => (
+              <button
+                key={e}
+                type="button"
+                onClick={() => setF('avatarEmoji', e)}
+                className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all ${
+                  form.avatarEmoji === e && !form.avatarImage
+                    ? 'bg-tg-blue/20 ring-1 ring-tg-blue'
+                    : 'hover:bg-tg-border/20'
+                }`}
+              >
+                {e}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
+
+      {/* Auto-Gen Dialog */}
+      {aiModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-sm bg-tg-bg-secondary border border-tg-border/40 rounded-2xl p-4 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-tg-text">Auto-Generate Character</p>
+              <button
+                onClick={() => setAiModalOpen(false)}
+                className="text-tg-text-hint hover:text-tg-text"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-tg-text-hint">
+              Enter a brief description. Cloudflare AI will design the persona and generate the avatar photo.
+            </p>
+            <input
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !aiLoading && handleAutoGen()}
+              placeholder='e.g. "Sweet Cambodian girl" or "Financial Advisor"'
+              className="w-full bg-tg-surface border border-tg-border/40 rounded-xl px-3 py-2 text-xs text-tg-text placeholder:text-tg-text-hint focus:outline-none focus:border-tg-blue"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setAiModalOpen(false)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium text-tg-text hover:bg-tg-surface"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleAutoGen}
+                disabled={aiLoading || !aiPrompt.trim()}
+                className="px-4 py-1.5 rounded-lg bg-tg-blue text-white text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
+              >
+                {aiLoading && <Loader2 className="w-3 h-3 animate-spin" />}
+                <span>{aiLoading ? 'Generating...' : 'Generate'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// ── Main Custom Personas Manager Screen ────────────────────────────────────────
+// ── List View ────────────────────────────────────────────────────────────────
 interface Props { onBack: () => void }
 
 export function CustomPersonaManager({ onBack }: Props) {
@@ -442,8 +371,6 @@ export function CustomPersonaManager({ onBack }: Props) {
   const { setAiPersona, startAiCall } = useUIStore();
   const [editing, setEditing] = useState<(FormState & { id?: string }) | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const [quickConcept, setQuickConcept] = useState('');
-  const [quickLoading, setQuickLoading] = useState(false);
 
   const handleSave = (data: FormState) => {
     if (editing?.id) {
@@ -462,172 +389,124 @@ export function CustomPersonaManager({ onBack }: Props) {
     toast('Character deleted');
   };
 
-  // Quick 1-Click Auto-Gen from the home list
-  const handleQuickAutoGen = async () => {
-    if (!quickConcept.trim()) return;
-    setQuickLoading(true);
-    try {
-      toast('Auto-generating persona with Cloudflare Llama-3.3...', 'info');
-      const res = await cfAutoGenPersona(quickConcept.trim());
-
-      let imgUrl: string | undefined = undefined;
-      try {
-        toast('Generating Flux Schnell portrait...', 'info');
-        imgUrl = await cfGenImage(res.imagePrompt);
-      } catch (err) {
-        console.warn('Image generation warning:', err);
-      }
-
-      const created = addPersona({
-        name: res.name,
-        tagline: res.tagline,
-        description: res.description,
-        voice: res.voice,
-        prompt: res.prompt,
-        greeting: res.greeting,
-        avatarEmoji: res.avatarEmoji,
-        avatarImage: imgUrl,
-        gradientFrom: GRADIENTS[0].from,
-        gradientTo: GRADIENTS[0].to,
-      });
-
-      setQuickConcept('');
-      toast(`Created "${created.name}"`);
-    } catch (err: any) {
-      toast(err?.message || 'Quick generation failed', 'error');
-    } finally {
-      setQuickLoading(false);
-    }
-  };
-
   if (editing !== null) {
     return <PersonaEditor initial={editing} onSave={handleSave} onCancel={() => setEditing(null)} />;
   }
 
   return (
-    <div className="flex flex-col h-full bg-tg-bg">
+    <div className="flex flex-col h-full bg-tg-bg text-tg-text">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-tg-border/30 shrink-0">
-        <button
-          onClick={onBack}
-          className="p-1.5 -ml-1.5 rounded-full hover:bg-tg-surface text-tg-text-hint hover:text-tg-text transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div className="flex-1 min-w-0">
-          <h2 className="font-bold text-tg-text">My AI Characters</h2>
-          <p className="text-xs text-tg-text-hint">{customs.length} custom persona{customs.length !== 1 ? 's' : ''}</p>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-tg-border/20 shrink-0">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onBack}
+            className="p-1 -ml-1 text-tg-text-hint hover:text-tg-text transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <span className="font-semibold text-base">Custom Characters</span>
         </div>
         <button
           onClick={() => setEditing(blank())}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tg-blue text-white text-xs font-bold active:scale-95 transition-transform shadow-md"
+          className="text-sm font-semibold text-tg-blue hover:opacity-80 active:opacity-60 transition-opacity flex items-center gap-1"
         >
-          <Plus className="w-3.5 h-3.5" /> New
+          <Plus className="w-4 h-4" />
+          <span>New</span>
         </button>
       </div>
 
-      {/* Quick AI Auto-Gen Box */}
-      <div className="px-4 py-3 border-b border-tg-border/30 bg-tg-surface/60 shrink-0">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-bold text-tg-text flex items-center gap-1.5">
-            <Wand2 className="w-3.5 h-3.5 text-tg-blue" />
-            <span>AI Auto-Gen Character</span>
-          </span>
-          <span className="text-[10px] text-tg-text-hint font-medium">Cloudflare AI + Flux</span>
-        </div>
-        <div className="flex gap-2">
-          <input
-            value={quickConcept}
-            onChange={(e) => setQuickConcept(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !quickLoading && handleQuickAutoGen()}
-            placeholder='e.g. "Cambodian street food chef", "Cyberpunk hacker"'
-            className="flex-1 bg-tg-surface border border-tg-border/40 rounded-xl px-3 py-2 text-xs text-tg-text placeholder:text-tg-text-hint focus:outline-none focus:border-tg-blue"
-          />
-          <button
-            onClick={handleQuickAutoGen}
-            disabled={quickLoading || !quickConcept.trim()}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-tg-blue text-white text-xs font-bold disabled:opacity-50 active:scale-95 transition-all shadow-md shrink-0"
-          >
-            {quickLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-            <span>{quickLoading ? 'Creating...' : 'Gen'}</span>
-          </button>
-        </div>
-      </div>
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {/* Quick Create Action */}
+        <button
+          type="button"
+          onClick={() => setEditing(blank())}
+          className="w-full flex items-center gap-3 p-3 rounded-xl bg-tg-surface border border-tg-border/30 hover:bg-tg-border/10 text-left transition-colors"
+        >
+          <div className="w-9 h-9 rounded-full bg-tg-blue/10 flex items-center justify-center text-tg-blue shrink-0">
+            <Plus className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-tg-text">Create AI Character</p>
+            <p className="text-xs text-tg-text-hint">Add prompt, greeting, voice, and portrait</p>
+          </div>
+        </button>
 
-      {/* Persona List */}
-      <div className="flex-1 overflow-y-auto">
-        {customs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center py-10">
-            <div className="w-14 h-14 rounded-2xl bg-tg-surface flex items-center justify-center border border-tg-border/30 shadow-sm text-tg-blue">
-              <Bot className="w-7 h-7" />
-            </div>
-            <div>
-              <p className="font-bold text-tg-text text-base">No Custom Characters</p>
-              <p className="text-xs text-tg-text-hint mt-1 max-w-xs leading-relaxed">
-                Type an idea in the box above to generate a unique character with AI voice and portrait.
+        {/* Character List */}
+        <div className="space-y-1.5">
+          <p className="text-[11px] font-semibold text-tg-text-hint uppercase tracking-wider px-1">
+            Saved Characters ({customs.length})
+          </p>
+
+          {customs.length === 0 ? (
+            <div className="py-12 text-center space-y-2 bg-tg-surface rounded-xl border border-tg-border/20">
+              <Bot className="w-8 h-8 mx-auto text-tg-text-hint/40" />
+              <p className="text-sm font-medium text-tg-text">No characters yet</p>
+              <p className="text-xs text-tg-text-hint max-w-xs mx-auto">
+                Tap above to design a custom persona for live voice calling.
               </p>
             </div>
-          </div>
-        ) : (
-          <div className="divide-y divide-tg-border/15 py-1">
-            {customs.map((p) => (
-              <div key={p.id} className="flex items-center gap-3 px-4 py-3 hover:bg-tg-surface/40 transition-colors">
-                <AvatarCircle
-                  emoji={p.avatarEmoji}
-                  from={p.gradientFrom}
-                  to={p.gradientTo}
-                  image={p.avatarImage}
-                  size="sm"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-tg-text truncate">{p.name}</p>
-                  <p className="text-xs text-tg-text-hint truncate mt-0.5">{p.tagline || p.voice}</p>
+          ) : (
+            <div className="bg-tg-surface rounded-xl border border-tg-border/30 divide-y divide-tg-border/20 overflow-hidden">
+              {customs.map((p) => (
+                <div key={p.id} className="flex items-center gap-3 p-3 hover:bg-tg-border/10 transition-colors">
+                  <Avatar emoji={p.avatarEmoji} image={p.avatarImage} size="sm" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-tg-text truncate">{p.name}</p>
+                    <p className="text-xs text-tg-text-hint truncate mt-0.5">
+                      {p.tagline || p.voice}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => { setAiPersona(p.id); startAiCall(p.id); }}
+                      title="Call"
+                      className="w-8 h-8 rounded-full bg-tg-blue/10 text-tg-blue flex items-center justify-center active:scale-90 transition-transform hover:bg-tg-blue/20"
+                    >
+                      <Phone className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditing({ ...p })}
+                      title="Edit"
+                      className="w-8 h-8 rounded-full hover:bg-tg-border/30 text-tg-text-hint flex items-center justify-center active:scale-90 transition-transform"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDelete(p.id)}
+                      title="Delete"
+                      className="w-8 h-8 rounded-full hover:bg-tg-red/10 text-tg-text-hint hover:text-tg-red flex items-center justify-center active:scale-90 transition-transform"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => { setAiPersona(p.id); startAiCall(p.id); }}
-                    title="Start Live AI Call"
-                    className="w-8 h-8 rounded-full bg-tg-blue text-white flex items-center justify-center active:scale-90 transition-transform shadow-sm"
-                  >
-                    <Phone className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => setEditing({ ...p })}
-                    title="Edit character"
-                    className="w-8 h-8 rounded-full bg-tg-surface text-tg-text-hint flex items-center justify-center active:scale-90 transition-transform hover:text-tg-text"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => setConfirmDelete(p.id)}
-                    title="Delete character"
-                    className="w-8 h-8 rounded-full bg-tg-surface text-tg-text-hint flex items-center justify-center active:scale-90 transition-transform hover:text-tg-red"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Modal */}
       {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm pb-8 px-4">
-          <div className="w-full max-w-sm bg-tg-bg-secondary border border-tg-border/40 rounded-3xl p-5 shadow-2xl animate-in slide-in-from-bottom duration-200">
-            <p className="font-bold text-tg-text text-center mb-1">Delete AI Character?</p>
-            <p className="text-xs text-tg-text-hint text-center mb-5">This action cannot be undone.</p>
-            <div className="flex gap-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-xs bg-tg-bg-secondary border border-tg-border/40 rounded-2xl p-4 space-y-3 shadow-2xl">
+            <p className="font-semibold text-sm text-tg-text text-center">Delete Character?</p>
+            <p className="text-xs text-tg-text-hint text-center">This cannot be undone.</p>
+            <div className="flex gap-2 pt-1">
               <button
+                type="button"
                 onClick={() => setConfirmDelete(null)}
-                className="flex-1 py-2.5 rounded-xl bg-tg-surface text-tg-text text-xs font-semibold active:scale-95 transition-transform"
+                className="flex-1 py-2 rounded-xl bg-tg-surface text-xs font-medium text-tg-text"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={() => handleDelete(confirmDelete)}
-                className="flex-1 py-2.5 rounded-xl bg-tg-red text-white text-xs font-semibold active:scale-95 transition-transform shadow-md"
+                className="flex-1 py-2 rounded-xl bg-tg-red text-xs font-semibold text-white shadow-sm"
               >
                 Delete
               </button>

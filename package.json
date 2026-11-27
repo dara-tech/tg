@@ -37,6 +37,7 @@
     "tweetnacl": "^1.0.3",
     "typescript": "^5",
     "ws": "^8.23.0",
+    "xlsx": "^0.18.5",
     "zustand": "^5.0.0"
   },
   "devDependencies": {

@@ -25,6 +25,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { toast } from '@/components/ui/Toast';
 import clsx from 'clsx';
 import { format } from 'date-fns';
+import * as XLSX from 'xlsx';
 import {
   parseErpTransactions,
   type BankTransaction,
@@ -244,29 +245,67 @@ export default function ErpScreen() {
     }
   };
 
-  // ERP File Upload (CSV, TSV, JSON, TXT)
+  // ERP File Upload (Excel .xlsx / .xls, CSV, TSV, JSON, TXT)
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const text = event.target?.result as string;
-        if (!text) {
-          toast('Uploaded file is empty', 'error');
-          return;
-        }
+    const fileName = file.name.toLowerCase();
+    const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
 
-        setPastedText(text);
-        setImportTab('paste');
-        setImportSheetOpen(true);
-        toast(`Loaded ${file.name}. Review transaction preview below.`, 'info');
-      } catch (err: any) {
-        toast(`File read failed: ${err.message}`, 'error');
-      }
-    };
-    reader.readAsText(file);
+    if (isExcel) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const buffer = event.target?.result as ArrayBuffer;
+          if (!buffer) {
+            toast('Excel file is empty', 'error');
+            return;
+          }
+          const data = new Uint8Array(buffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          if (!firstSheetName) {
+            toast('No worksheets found in Excel file', 'error');
+            return;
+          }
+          const worksheet = workbook.Sheets[firstSheetName];
+          const csvText = XLSX.utils.sheet_to_csv(worksheet);
+          if (!csvText || !csvText.trim()) {
+            toast('Excel worksheet contains no data rows', 'error');
+            return;
+          }
+
+          setPastedText(csvText);
+          setImportTab('paste');
+          setImportSheetOpen(true);
+          toast(`Loaded Excel: ${file.name} (${firstSheetName})`, 'success');
+        } catch (err: any) {
+          toast(`Excel read error: ${err.message}`, 'error');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const text = event.target?.result as string;
+          if (!text) {
+            toast('Uploaded file is empty', 'error');
+            return;
+          }
+
+          setPastedText(text);
+          setImportTab('paste');
+          setImportSheetOpen(true);
+          toast(`Loaded ${file.name}. Review transaction preview below.`, 'info');
+        } catch (err: any) {
+          toast(`File read failed: ${err.message}`, 'error');
+        }
+      };
+      reader.readAsText(file);
+    }
+
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -362,22 +401,16 @@ export default function ErpScreen() {
           <button
             onClick={() => router.push('/calendar')}
             className="flex items-center gap-0.5 text-tg-blue font-normal text-[17px] active:opacity-60 transition-opacity -ml-1 py-1 z-10"
-            aria-label="Back to Calendar"
+
           >
             <ChevronLeft className="w-6 h-6 -mr-0.5 stroke-[2.5]" />
-            <span>Calendar</span>
           </button>
 
           {/* Center: Title & Subtitle cleanly centered */}
           <div className="absolute inset-x-0 flex flex-col items-center justify-center pointer-events-none px-24">
             <h1 className="text-[17px] font-semibold text-tg-text tracking-tight truncate leading-tight">
-              ERP Bank Ledger
+            Transaction
             </h1>
-            <p className="text-[11px] text-tg-text-hint font-normal leading-tight mt-0.5 truncate">
-              {transactions.length === 0
-                ? 'Cash Flow & Statements'
-                : `${transactions.length} transaction${transactions.length === 1 ? '' : 's'}`}
-            </p>
           </div>
 
           {/* Right: Actions matching circular buttons */}
@@ -491,7 +524,7 @@ export default function ErpScreen() {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv,.txt,.json,.tsv"
+            accept=".xlsx,.xls,.csv,.txt,.json,.tsv"
             onChange={handleFileUpload}
             className="hidden"
           />
@@ -839,7 +872,7 @@ export default function ErpScreen() {
           <div className="flex items-center gap-2 p-2.5 rounded-2xl bg-tg-bg-secondary border border-tg-border/25 text-xs">
             <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
             <span className="text-tg-text-secondary text-[11px]">
-              Supports CSV, TSV (Excel/Sheets), Odoo/JSON, or raw bank statement text
+              Supports Excel (.xlsx, .xls), CSV, TSV (Sheets), Odoo/JSON, or raw bank statement text
             </span>
           </div>
 
@@ -910,7 +943,7 @@ export default function ErpScreen() {
                 <FileSpreadsheet className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-xs font-bold text-tg-text">Choose CSV, TSV, or JSON file</p>
+                <p className="text-xs font-bold text-tg-text">Choose Excel (.xlsx, .xls), CSV, or JSON</p>
                 <p className="text-[11px] text-tg-text-hint mt-0.5">Click to browse your device files</p>
               </div>
             </div>

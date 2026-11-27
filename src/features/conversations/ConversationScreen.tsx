@@ -8,6 +8,7 @@ import { BottomSheet }   from '@/components/ui/BottomSheet';
 import { toast }         from '@/components/ui/Toast';
 import { MediaViewer }   from '@/features/media/MediaViewer';
 import { LocationPreviewModal, type LocationPreviewData } from '@/components/ui/LocationPreviewModal';
+import { MessageSkeletonList } from '@/components/ui/Skeleton';
 import { ChatWallpaperLayer } from '@/components/ui/ChatWallpaperLayer';
 import { MessageBubble } from './MessageBubble';
 import { MessageInput }  from './MessageInput';
@@ -1087,6 +1088,9 @@ export default function ConversationScreen() {
         {/* Inner flex-col with mt-auto so messages anchor to bottom when few messages exist, without flex-end scroll clipping */}
         <div className="min-h-full flex flex-col">
         <div className="mt-auto" />
+        {loading && messages.length === 0 && (
+          <MessageSkeletonList />
+        )}
         {loadingOlder && (
           <p className="text-tg-text-hint text-xs text-center py-2">Loading older messages…</p>
         )}

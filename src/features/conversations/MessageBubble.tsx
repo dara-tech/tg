@@ -677,6 +677,47 @@ function AlbumGrid({
   );
 }
 
+function getMediaBoxSize(w?: number, h?: number, isFullWidth = false, maxW = 280, maxH = 380) {
+  if (isFullWidth) {
+    if (w && h && w > 0 && h > 0) {
+      const aspect = h / w;
+      const targetH = Math.min(360, Math.max(160, Math.round(280 * aspect)));
+      return { width: '100%', height: `${targetH}px`, aspectRatio: `${w}/${h}` };
+    }
+    return { width: '100%', height: '220px', aspectRatio: '16/9' };
+  }
+
+  if (w && h && w > 0 && h > 0) {
+    let targetW = w;
+    let targetH = h;
+    const aspect = w / h;
+
+    if (targetW > maxW) {
+      targetW = maxW;
+      targetH = Math.round(targetW / aspect);
+    }
+    if (targetH > maxH) {
+      targetH = maxH;
+      targetW = Math.round(targetH * aspect);
+    }
+    if (targetW < 180) {
+      targetW = 180;
+      targetH = Math.min(maxH, Math.round(targetW / aspect));
+    }
+    if (targetH < 140) {
+      targetH = 140;
+      targetW = Math.min(maxW, Math.round(targetH * aspect));
+    }
+    return {
+      width: `${targetW}px`,
+      height: `${targetH}px`,
+      aspectRatio: `${w}/${h}`,
+    };
+  }
+
+  return { width: '260px', height: '200px', aspectRatio: '4/3' };
+}
+
 function MediaContent({
   media, time, isOut, status, hasCaption, hasHeader = false, onOpenMedia, onOpenLocation,
 }: {
@@ -739,6 +780,8 @@ function MediaContent({
       : isOut
       ? 'rounded-[18px] rounded-br-[5px]'
       : 'rounded-[18px] rounded-bl-[5px]';
+    const box = getMediaBoxSize(media.width, media.height, isFullWidth);
+
     return (
       <button
         onClick={() => {
@@ -754,34 +797,21 @@ function MediaContent({
               .finally(() => setLoading(false));
           }
         }}
+        style={{ width: box.width, height: box.height, aspectRatio: box.aspectRatio }}
         className={clsx(
-          'relative block overflow-hidden focus:outline-none transition-transform active:scale-[0.99] text-left',
-          isFullWidth ? `w-full ${radiusClass}` : radiusClass
+          'relative block overflow-hidden focus:outline-none transition-transform active:scale-[0.99] text-left shrink-0',
+          radiusClass
         )}
       >
         {blobUrl ? (
           <img
             src={blobUrl}
             alt="Photo"
-            className={clsx(
-              'block object-cover',
-              isFullWidth
-                ? 'w-full max-h-[360px]'
-                : isOut
-                ? 'w-auto max-w-[280px] max-h-[380px] min-w-[180px] rounded-[18px] rounded-br-[5px]'
-                : 'w-auto max-w-[280px] max-h-[380px] min-w-[180px] rounded-[18px] rounded-bl-[5px]'
-            )}
+            className="w-full h-full object-cover block"
           />
         ) : (
           <div
-            className={clsx(
-              'bg-tg-surface/60 backdrop-blur-sm flex flex-col items-center justify-center gap-2 text-tg-text-hint select-none',
-              isFullWidth
-                ? `w-full h-[200px] ${radiusClass}`
-                : isOut
-                ? 'w-[260px] h-[180px] rounded-[18px] rounded-br-[5px]'
-                : 'w-[260px] h-[180px] rounded-[18px] rounded-bl-[5px]'
-            )}
+            className="w-full h-full bg-tg-surface/60 backdrop-blur-sm flex flex-col items-center justify-center gap-2 text-tg-text-hint select-none"
           >
             {loading ? (
               <div className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center">
@@ -866,16 +896,19 @@ function MediaContent({
   }
 
   if (media.kind === 'video') {
+    const isFullWidth = hasCaption;
+    const box = getMediaBoxSize(media.width, media.height, isFullWidth);
     return (
       <button
         onClick={() => handleLoadAndOpen('video')}
+        style={{ width: box.width, height: box.height, aspectRatio: box.aspectRatio }}
         className={clsx(
-          'relative block overflow-hidden bg-black/40 text-left focus:outline-none transition-transform active:scale-[0.99]',
+          'relative block overflow-hidden bg-black/40 text-left focus:outline-none transition-transform active:scale-[0.99] shrink-0',
           hasCaption
-            ? 'w-full rounded-t-[18px]'
+            ? 'rounded-t-[18px]'
             : isOut
-            ? 'rounded-[18px] rounded-br-[5px] w-[260px] h-[180px]'
-            : 'rounded-[18px] rounded-bl-[5px] w-[260px] h-[180px]'
+            ? 'rounded-[18px] rounded-br-[5px]'
+            : 'rounded-[18px] rounded-bl-[5px]'
         )}
       >
         {blobUrl ? (

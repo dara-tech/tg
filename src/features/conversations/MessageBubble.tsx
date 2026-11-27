@@ -516,7 +516,19 @@ function AlbumTile({
       }
       return;
     }
-    if (blobUrl) onOpenMedia?.(blobUrl, 'image');
+    if (blobUrl) {
+      onOpenMedia?.(blobUrl, 'image');
+      return;
+    }
+    setLoading(true);
+    const url = await downloadMediaUrl(media);
+    setLoading(false);
+    if (url) {
+      setBlobUrl(url);
+      onOpenMedia?.(url, 'image');
+    } else {
+      toast('Could not download photo', 'error');
+    }
   };
 
   return (
@@ -784,19 +796,7 @@ function MediaContent({
 
     return (
       <button
-        onClick={() => {
-          if (blobUrl) {
-            onOpenMedia?.(blobUrl, 'image');
-          } else if (!loading) {
-            setLoading(true);
-            downloadMediaUrl(media)
-              .then((url) => {
-                if (url) setBlobUrl(url);
-                else toast('Could not load photo', 'error');
-              })
-              .finally(() => setLoading(false));
-          }
-        }}
+        onClick={() => handleLoadAndOpen('image')}
         style={{ width: box.width, height: box.height, aspectRatio: box.aspectRatio }}
         className={clsx(
           'relative block overflow-hidden focus:outline-none transition-transform active:scale-[0.99] text-left shrink-0',

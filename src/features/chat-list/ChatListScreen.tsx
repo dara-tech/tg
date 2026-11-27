@@ -36,7 +36,7 @@ import { toast }      from '@/components/ui/Toast';
 import { StoriesRow } from './StoriesRow';
 import { useAuthStore } from '@/store/auth.store';
 import { useDialogsStore, type DialogMediaMeta } from '@/store/dialogs.store';
-import { getCachedMessages, setCachedMessages } from '@/features/conversations/ConversationScreen';
+import { getCachedMessages, setCachedMessages } from '@/core/storage/messages';
 import { onMTProtoUpdate } from '@/core/telegram/mtproto.client';
 import { createRealChannel, createRealGroup, downloadMediaUrl, fetchRealDialogs, fetchRealHistory, fetchRealStories, getMediaPreviewLabel, isMTProtoConfigured, parseMedia, toDialogMediaMeta, type MediaAttachment, type RawMedia, type RealDialogItem, type RealMessageItem, type RealStoryItem } from '@/services/telegram.real';
 import { format, isToday, differenceInCalendarDays } from 'date-fns';

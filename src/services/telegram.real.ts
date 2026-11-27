@@ -81,6 +81,8 @@ export interface MediaAttachment {
   pollOptions?: string[];
   webPage?: WebPagePreview;
   localUrl?: string;
+  messageId?: number;
+  chatId?: string;
 }
 
 export interface ReactionItem {
@@ -215,9 +217,14 @@ export interface RawMedia {
 export function toUint8Array(input: unknown): Uint8Array {
   if (!input) return new Uint8Array();
   if (input instanceof Uint8Array) return input;
+  if (input instanceof ArrayBuffer) return new Uint8Array(input);
+  if (ArrayBuffer.isView(input)) return new Uint8Array(input.buffer, input.byteOffset, input.byteLength);
   if (Array.isArray(input)) return new Uint8Array(input);
   if (typeof input === 'object') {
-    const values = Object.values(input as Record<string, number>);
+    if ('data' in input && Array.isArray((input as { data?: unknown }).data)) {
+      return new Uint8Array((input as { data: number[] }).data);
+    }
+    const values = Object.values(input as Record<string, number>).filter((v) => typeof v === 'number');
     return new Uint8Array(values);
   }
   return new Uint8Array();
@@ -238,7 +245,12 @@ function parseEntities(raw?: Array<{ _: string; offset: number; length: number; 
   return out.length ? out : undefined;
 }
 
-export function parseMedia(raw?: RawMedia): MediaAttachment | undefined {
+export function parseMedia(
+  raw?: RawMedia,
+  messageId?: number,
+  chatId?: string,
+  accessHash?: string
+): MediaAttachment | undefined {
   if (!raw) return undefined;
 
   if (raw._ === 'messageMediaPhoto' && raw.photo) {
@@ -254,12 +266,14 @@ export function parseMedia(raw?: RawMedia): MediaAttachment | undefined {
     return {
       kind: 'photo',
       id: String(raw.photo.id),
-      accessHash: String(raw.photo.access_hash ?? '0'),
+      accessHash: String(raw.photo.access_hash ?? accessHash ?? '0'),
       fileReference: raw.photo.file_reference,
       dcId: raw.photo.dc_id,
       thumbSize: preferred?.type || 'm',
       width: preferred?.w,
       height: preferred?.h,
+      messageId,
+      chatId,
     };
   }
 
@@ -296,7 +310,7 @@ export function parseMedia(raw?: RawMedia): MediaAttachment | undefined {
     return {
       kind,
       id: String(raw.document.id),
-      accessHash: String(raw.document.access_hash ?? '0'),
+      accessHash: String(raw.document.access_hash ?? accessHash ?? '0'),
       fileReference: raw.document.file_reference,
       dcId: raw.document.dc_id,
       mimeType: raw.document.mime_type,
@@ -310,6 +324,8 @@ export function parseMedia(raw?: RawMedia): MediaAttachment | undefined {
       width: videoAttr?.w ?? imageSizeAttr?.w,
       height: videoAttr?.h ?? imageSizeAttr?.h,
       waveform: audioAttr?.waveform,
+      messageId,
+      chatId,
     };
   }
 
@@ -1254,7 +1270,7 @@ export async function fetchRealHistory(
       return Boolean(m && m._ !== 'messageEmpty' && typeof m.id === 'number');
     })
     .map((m) => {
-      const media = parseMedia(m.media);
+      const media = parseMedia(m.media, m.id, chatId, accessHash);
       const isOut = Boolean(m.out);
       const isService = m._ === 'messageService' || Boolean(m.action);
       const serviceText = isService ? formatServiceAction(m.action) : '';
@@ -1395,6 +1411,34 @@ async function fetchFileBytes(
   return merged;
 }
 
+export async function refreshMessageFileReference(chatId: string, messageId: number, accessHash?: string): Promise<Uint8Array | null> {
+  try {
+    let res: { messages?: Array<{ media?: { photo?: { file_reference?: unknown }; document?: { file_reference?: unknown } } }> };
+    if (chatId.startsWith('c_')) {
+      const channelId = chatId.slice(2);
+      const hash = (accessHash && accessHash !== '0') ? accessHash : (peerAccessHashMap.get(channelId) || '0');
+      res = await call('channels.getMessages', {
+        channel: { _: 'inputChannel', channel_id: channelId, access_hash: hash },
+        id: [{ _: 'inputMessageID', id: messageId }],
+      });
+    } else {
+      res = await call('messages.getMessages', {
+        id: [{ _: 'inputMessageID', id: messageId }],
+      });
+    }
+    const freshMsg = res?.messages?.[0];
+    if (freshMsg?.media?.photo?.file_reference) {
+      return toUint8Array(freshMsg.media.photo.file_reference);
+    }
+    if (freshMsg?.media?.document?.file_reference) {
+      return toUint8Array(freshMsg.media.document.file_reference);
+    }
+  } catch (err) {
+    console.warn('[refreshMessageFileReference] failed to get fresh ref:', err);
+  }
+  return null;
+}
+
 export async function downloadMediaUrl(media: MediaAttachment, thumbOnly = false): Promise<string | null> {
   const isPhotoLocation = media.kind === 'photo' && !media.mimeType;
   const isDocThumb =
@@ -1408,35 +1452,74 @@ export async function downloadMediaUrl(media: MediaAttachment, thumbOnly = false
 
   const p = (async () => {
     try {
-      const makeLocation = (thumb?: string) =>
+      let currentFileRef = toUint8Array(media.fileReference);
+
+      const makeLocation = (thumb?: string, fileRef?: Uint8Array) =>
         isPhotoLocation
           ? {
               _: 'inputPhotoFileLocation',
               id: media.id,
               access_hash: media.accessHash,
-              file_reference: toUint8Array(media.fileReference),
+              file_reference: fileRef ?? currentFileRef,
               thumb_size: thumb || media.thumbSize || 'x',
             }
           : {
               _: 'inputDocumentFileLocation',
               id: media.id,
               access_hash: media.accessHash,
-              file_reference: toUint8Array(media.fileReference),
+              file_reference: fileRef ?? currentFileRef,
               thumb_size: isDocThumb ? (thumb || media.thumbSize || 'm') : '',
             };
 
-      let bytes: Uint8Array | null = null;
-      try {
-        bytes = await fetchFileBytes(makeLocation(targetThumb), media.dcId);
-      } catch (err) {
-        console.warn('[downloadMediaUrl] targetThumb failed, trying fallback sizes:', targetThumb, err);
-        // Fallback size cascade: try other available thumbnail sizes
-        const fallbacks = isPhotoLocation ? ['m', 'x', 's', 'y'].filter((s) => s !== targetThumb) : isDocThumb ? ['s', 'm'] : [];
+      const fetchAttempt = async (loc: Record<string, unknown>, dcId?: number): Promise<Uint8Array | null> => {
+        try {
+          return await fetchFileBytes(loc, dcId);
+        } catch (err: unknown) {
+          const msg = String((err as { error_message?: string; message?: string })?.error_message ?? (err as { message?: string })?.message ?? err);
+          if (
+            (msg.includes('FILE_REFERENCE_') || msg.includes('FILEREF_')) &&
+            media.chatId &&
+            media.messageId
+          ) {
+            console.log(`[downloadMediaUrl] Refreshing expired file_reference for msg ${media.messageId}...`);
+            const freshRef = await refreshMessageFileReference(media.chatId, media.messageId, media.accessHash);
+            if (freshRef && freshRef.byteLength > 0) {
+              currentFileRef = freshRef;
+              media.fileReference = freshRef;
+              const refreshedLoc = makeLocation(loc.thumb_size as string, freshRef);
+              try {
+                return await fetchFileBytes(refreshedLoc, dcId);
+              } catch {}
+            }
+          }
+          return null;
+        }
+      };
+
+      // 1. Primary attempt: requested thumbnail on declared DC
+      let bytes = await fetchAttempt(makeLocation(targetThumb), media.dcId);
+
+      // 2. Fallback sizes on declared DC
+      if (!bytes) {
+        const fallbacks = isPhotoLocation
+          ? ['x', 'm', 'y', 's', 'w', 'a', 'b', 'c', 'd'].filter((s) => s !== targetThumb)
+          : isDocThumb
+          ? ['m', 's']
+          : [];
         for (const fb of fallbacks) {
-          try {
-            bytes = await fetchFileBytes(makeLocation(fb), media.dcId);
+          bytes = await fetchAttempt(makeLocation(fb), media.dcId);
+          if (bytes) break;
+        }
+      }
+
+      // 3. Fallback to primary DC if declared DC failed or returned nothing
+      if (!bytes && media.dcId) {
+        bytes = await fetchAttempt(makeLocation(targetThumb));
+        if (!bytes) {
+          for (const fb of ['x', 'm', 'y', 's']) {
+            bytes = await fetchAttempt(makeLocation(fb));
             if (bytes) break;
-          } catch {}
+          }
         }
       }
 

@@ -107,6 +107,22 @@ export async function call<T = unknown>(
       }
     }
 
+    // Auto-authorize secondary storage DC when AUTH_KEY_UNREGISTERED or USER_MIGRATE occurs on secondary DC
+    if (errorMsg.includes('AUTH_KEY_UNREGISTERED') && options?.dcId && _retryCount < 2) {
+      try {
+        const exported = await call<{ id: string | number; bytes: Uint8Array }>(
+          'auth.exportAuthorization',
+          { dc_id: options.dcId }
+        );
+        if (exported?.bytes) {
+          await mt.call('auth.importAuthorization', { id: exported.id, bytes: exported.bytes }, { dcId: options.dcId });
+          return call<T>(method, params, { ...options, _retryCount: _retryCount + 1 });
+        }
+      } catch (authErr) {
+        console.warn(`[MTProto] Could not export auth to DC ${options.dcId}:`, authErr);
+      }
+    }
+
     // Auto-recover from AUTH_KEY_DUPLICATED or corrupted primary session key
     // (Never clear the primary session if an error happened on a secondary file DC)
     const isAuthKeyCorrupt =

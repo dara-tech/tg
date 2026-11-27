@@ -43,7 +43,8 @@ import {
 } from '@/services/telegram.real';
 import type { ChatPermissions } from '@/store/dialogs.store';
 import { onMTProtoUpdate } from '@/core/telegram/mtproto.client';
-import { getDraft, saveDraft } from '@/core/storage/messages';
+import { getDraft, saveDraft, getCachedMessages, setCachedMessages } from '@/core/storage/messages';
+export { getCachedMessages, setCachedMessages };
 import { format, isToday, isYesterday } from 'date-fns';
 
 type Msg = RealMessageItem;
@@ -150,64 +151,6 @@ function describeTypingAction(action?: { _?: string }): string | null {
   }
 }
 
-const conversationMessagesCache = new Map<string, Msg[]>();
-const MSG_STORAGE_KEY = 'tg-msg-cache-v1';
-
-export function getCachedMessages(id: string): Msg[] {
-  const mem = conversationMessagesCache.get(id);
-  if (mem && mem.length > 0) return mem;
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = window.localStorage.getItem(MSG_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as Record<string, Msg[]>;
-    const stored = parsed?.[id];
-    if (Array.isArray(stored) && stored.length > 0) {
-      const normalized = stored.map((m) => ({
-        ...m,
-        media: m.media
-          ? {
-              ...m.media,
-              fileReference: m.media.fileReference
-                ? toUint8Array(m.media.fileReference)
-                : undefined,
-            }
-          : undefined,
-      }));
-      conversationMessagesCache.set(id, normalized);
-      return normalized;
-    }
-  } catch {
-    // ignore storage errors
-  }
-  return [];
-}
-
-export function setCachedMessages(id: string, msgs: Msg[]) {
-  conversationMessagesCache.set(id, msgs);
-  if (typeof window === 'undefined' || msgs.length === 0) return;
-  try {
-    const raw = window.localStorage.getItem(MSG_STORAGE_KEY);
-    const parsed: Record<string, Msg[]> = raw ? JSON.parse(raw) : {};
-    // Keep only the latest 10 messages per chat and at most 20 chats in localStorage
-    const tail = msgs.slice(-10).map((m) => ({
-      ...m,
-      media: m.media ? { ...m.media, localUrl: undefined } : undefined,
-      albumMedia: undefined,
-    }));
-    delete parsed[id];
-    parsed[id] = tail;
-    const keys = Object.keys(parsed);
-    if (keys.length > 20) {
-      for (const oldKey of keys.slice(0, keys.length - 20)) {
-        delete parsed[oldKey];
-      }
-    }
-    window.localStorage.setItem(MSG_STORAGE_KEY, JSON.stringify(parsed));
-  } catch {
-    // ignore quota errors
-  }
-}
 
 export default function ConversationScreen() {
   const { id } = useParams<{ id: string }>();

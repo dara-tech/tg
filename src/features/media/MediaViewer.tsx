@@ -301,7 +301,7 @@ export function MediaViewer({
               src={src}
               alt="media detail"
               draggable={false}
-              className="max-w-[98vw] max-h-[82vh] object-contain shadow-2xl rounded-sm"
+              className="max-w-full max-h-[92vh] w-auto h-auto object-contain select-none"
             />
           ) : (
             <video
@@ -309,7 +309,7 @@ export function MediaViewer({
               controls
               playsInline
               autoPlay
-              className="max-w-[98vw] max-h-[82vh] object-contain shadow-2xl rounded-sm"
+              className="max-w-full max-h-[92vh] w-auto h-auto object-contain select-none"
             />
           )}
         </div>

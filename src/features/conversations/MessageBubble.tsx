@@ -753,6 +753,7 @@ function MediaContent({
   onOpenLocation?: (loc: { lat: number; long: number; title?: string }) => void;
 }) {
   const [blobUrl, setBlobUrl] = useState<string | null>(media.localUrl ?? null);
+  const [thumbUrl, setThumbUrl] = useState<string | null>(media.thumbUrl ?? null);
   const [loading, setLoading] = useState(false);
   const theme = useUIStore((s) => s.theme);
   const isDarkMap = BG_THEMES[theme]?.isDark ?? true;
@@ -778,6 +779,11 @@ function MediaContent({
         .finally(() => {
           if (active) setLoading(false);
         });
+    } else if (media.kind === 'video') {
+      // Eagerly fetch thumbnail poster for video messages
+      downloadMediaUrl(media, true).then((url) => {
+        if (active && url) setThumbUrl(url);
+      });
     }
     return () => {
       active = false;
@@ -787,7 +793,7 @@ function MediaContent({
   const handleLoadAndOpen = async (type: 'image' | 'video') => {
     if (blobUrl) { onOpenMedia?.(blobUrl, type); return; }
     setLoading(true);
-    const url = await downloadMediaUrl(media);
+    const url = await downloadMediaUrl(media, false);
     setLoading(false);
     if (url) { setBlobUrl(url); onOpenMedia?.(url, type); }
     else toast('Could not download media', 'error');
@@ -928,28 +934,42 @@ function MediaContent({
         onClick={() => handleLoadAndOpen('video')}
         style={{ width: box.width, maxWidth: box.maxWidth, height: box.height, aspectRatio: box.aspectRatio }}
         className={clsx(
-          'relative block overflow-hidden bg-black/40 text-left focus:outline-none transition-transform active:scale-[0.99] shrink-0',
+          'relative block overflow-hidden bg-black/40 text-left focus:outline-none transition-transform active:scale-[0.99] shrink-0 group/video',
           radiusClass
         )}
       >
-        {blobUrl ? (
+        {thumbUrl ? (
+          <img
+            src={thumbUrl}
+            alt="Video thumbnail"
+            className="w-full h-full object-cover block"
+          />
+        ) : blobUrl ? (
           <video src={blobUrl} className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full min-h-[160px] flex items-center justify-center bg-black/50">
-            <div className="w-12 h-12 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white text-sm pl-0.5 shadow-lg">
-              {loading ? '…' : '▶'}
-            </div>
-          </div>
+          <div className="w-full h-full min-h-[160px] bg-tg-surface/60 backdrop-blur-sm" />
         )}
+
+        {/* Circular glass play button */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-12 h-12 rounded-full bg-black/60 backdrop-blur-md border border-white/25 flex items-center justify-center text-white shadow-xl transition-transform group-hover/video:scale-105">
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Play className="w-5 h-5 fill-current ml-0.5 text-white/95" />
+            )}
+          </div>
+        </div>
+
         {media.duration && (
-          <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium">
+          <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium select-none pointer-events-none">
             {Math.floor(media.duration / 60)}:{String(Math.floor(media.duration % 60)).padStart(2, '0')}
           </span>
         )}
         {!hasCaption && (
           <span
             suppressHydrationWarning
-            className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white/95 text-[10px] flex items-center gap-1 shadow-sm select-none"
+            className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white/95 text-[10px] flex items-center gap-1 shadow-sm select-none pointer-events-none"
           >
             <span>{time}</span>
             {isOut && <StatusTick status={status ?? 'sent'} />}

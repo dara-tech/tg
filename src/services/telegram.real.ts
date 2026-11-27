@@ -1368,31 +1368,36 @@ const mediaPending = new Map<string, Promise<string | null>>();
 async function fetchFileBytes(
   location: Record<string, unknown>,
   dcId?: number,
-  maxBytes = 8 * 1024 * 1024
+  maxBytes = 32 * 1024 * 1024
 ): Promise<Uint8Array | null> {
   const chunkSize = 512 * 1024;
   const chunks: Uint8Array[] = [];
   let offset = 0;
 
   while (offset < maxBytes) {
-    const callPromise = call<{ bytes?: Uint8Array }>(
-      'upload.getFile',
-      { location, offset, limit: chunkSize },
-      dcId ? { dcId } : undefined
-    );
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => reject(new Error('DOWNLOAD_CHUNK_TIMEOUT')), 12000);
-    });
-
-    let res: { bytes?: Uint8Array };
-    try {
-      res = await Promise.race([callPromise, timeoutPromise]);
-    } finally {
-      if (timer) clearTimeout(timer);
+    let res: { bytes?: Uint8Array } | null = null;
+    let attempt = 0;
+    while (attempt < 2 && !res) {
+      attempt++;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        const callPromise = call<{ bytes?: Uint8Array }>(
+          'upload.getFile',
+          { location, offset, limit: chunkSize },
+          dcId ? { dcId } : undefined
+        );
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error('DOWNLOAD_CHUNK_TIMEOUT')), 25000);
+        });
+        res = await Promise.race([callPromise, timeoutPromise]);
+      } catch (chunkErr) {
+        if (attempt >= 2) throw chunkErr;
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
     }
 
-    if (!res.bytes || res.bytes.byteLength === 0) break;
+    if (!res?.bytes || res.bytes.byteLength === 0) break;
     const copy = new Uint8Array(res.bytes.byteLength);
     copy.set(res.bytes);
     chunks.push(copy);
@@ -1471,9 +1476,13 @@ export async function downloadMediaUrl(media: MediaAttachment, thumbOnly = false
               thumb_size: isDocThumb ? (thumb || media.thumbSize || 'm') : '',
             };
 
+      const targetMaxBytes = thumbOnly
+        ? 5 * 1024 * 1024
+        : Math.min(128 * 1024 * 1024, Math.max(media.size ?? 0, 32 * 1024 * 1024));
+
       const fetchAttempt = async (loc: Record<string, unknown>, dcId?: number): Promise<Uint8Array | null> => {
         try {
-          return await fetchFileBytes(loc, dcId);
+          return await fetchFileBytes(loc, dcId, targetMaxBytes);
         } catch (err: unknown) {
           const msg = String((err as { error_message?: string; message?: string })?.error_message ?? (err as { message?: string })?.message ?? err);
           if (
@@ -1488,7 +1497,7 @@ export async function downloadMediaUrl(media: MediaAttachment, thumbOnly = false
               media.fileReference = freshRef;
               const refreshedLoc = makeLocation(loc.thumb_size as string, freshRef);
               try {
-                return await fetchFileBytes(refreshedLoc, dcId);
+                return await fetchFileBytes(refreshedLoc, dcId, targetMaxBytes);
               } catch {}
             }
           }
@@ -1524,12 +1533,24 @@ export async function downloadMediaUrl(media: MediaAttachment, thumbOnly = false
       }
 
       if (!bytes) return null;
-      const mime = isPhotoLocation
+      let mime = isPhotoLocation
         ? 'image/jpeg'
         : isDocThumb
-        ? 'image/webp'
+        ? 'image/jpeg'
         : media.mimeType || 'application/octet-stream';
-      const blob = new Blob([bytes.buffer as ArrayBuffer], { type: mime });
+
+      // Sniff magic bytes for 100% accurate MIME type on media Blobs
+      if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+        mime = 'image/jpeg';
+      } else if (bytes.length >= 4 && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) {
+        mime = 'image/webp';
+      } else if (bytes.length >= 8 && bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70) {
+        mime = 'video/mp4';
+      } else if (media.kind === 'video' && !isDocThumb) {
+        mime = 'video/mp4';
+      }
+
+      const blob = new Blob([bytes], { type: mime });
       const url = URL.createObjectURL(blob);
       mediaBlobCache.set(cacheKey, url);
       return url;

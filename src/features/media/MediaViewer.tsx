@@ -131,8 +131,9 @@ export function MediaViewer({
     setTimeout(() => setCopiedCaption(false), 2000);
   };
 
-  // Double tap to toggle zoom
+  // Double tap to toggle zoom (images only)
   const handleContentClick = (e: React.MouseEvent) => {
+    if (type === 'video') return;
     const now = Date.now();
     if (now - lastTapRef.current < 300) {
       // Double tap detected
@@ -147,8 +148,9 @@ export function MediaViewer({
     setShowControls((prev) => !prev);
   };
 
-  // Touch gestures for swipe-down to dismiss and pinch-to-zoom
+  // Touch gestures for swipe-down to dismiss and pinch-to-zoom (images only)
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (type === 'video') return;
     if (e.touches.length === 1) {
       dragStartRef.current = {
         x: e.touches[0].clientX,
@@ -167,6 +169,7 @@ export function MediaViewer({
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    if (type === 'video') return;
     if (e.touches.length === 2 && initialDistanceRef.current) {
       const dist = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
@@ -214,7 +217,10 @@ export function MediaViewer({
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-50 flex flex-col select-none touch-none transition-colors duration-200"
+      className={clsx(
+        'fixed inset-0 z-50 flex flex-col select-none transition-colors duration-200',
+        type === 'image' && 'touch-none'
+      )}
       style={{ backgroundColor: `rgba(0, 0, 0, ${backdropOpacity})` }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -304,13 +310,22 @@ export function MediaViewer({
               className="max-w-full max-h-[92vh] w-auto h-auto object-contain select-none"
             />
           ) : (
-            <video
-              src={src}
-              controls
-              playsInline
-              autoPlay
-              className="max-w-full max-h-[92vh] w-auto h-auto object-contain select-none"
-            />
+            <div
+              className="relative max-w-full max-h-full flex items-center justify-center p-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <video
+                src={src}
+                controls
+                playsInline
+                autoPlay
+                preload="auto"
+                controlsList="nodownload"
+                className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-xl shadow-2xl select-auto"
+                onClick={(e) => e.stopPropagation()}
+                onPlay={() => setShowControls(true)}
+              />
+            </div>
           )}
         </div>
       </div>

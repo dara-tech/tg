@@ -85,7 +85,10 @@ export default function AiScreen() {
           status: 'sent',
           sender: {
             peerId: 0,
-            firstName: persona.name,
+            name: persona.name,
+            letters: persona.gradient?.initial || persona.name?.[0] || 'AI',
+            color: persona.gradient?.from || '#0A84FF',
+            peerType: 'user',
           },
         },
       ]);

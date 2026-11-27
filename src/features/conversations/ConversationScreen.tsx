@@ -339,7 +339,10 @@ export default function ConversationScreen() {
             status: 'sent',
             sender: {
               peerId: 0,
-              firstName: persona.name,
+              name: persona?.name || chatMeta.title,
+              letters: persona?.gradient?.initial || chatMeta.avatarLetters,
+              color: persona?.gradient?.from || chatMeta.avatarColor,
+              peerType: 'user',
             },
           };
           setMessages([welcomeMsg]);
@@ -726,7 +729,10 @@ export default function ConversationScreen() {
             status: 'sent',
             sender: {
               peerId: 0,
-              firstName: chatMeta.title,
+              name: chatMeta.title,
+              letters: chatMeta.avatarLetters,
+              color: chatMeta.avatarColor,
+              peerType: 'user',
             },
           };
           setMessages((prev) => [...prev, aiMsg]);

@@ -580,45 +580,52 @@ export default function ChatListScreen() {
     <div className="flex flex-col h-full min-h-0 bg-tg-bg relative">
       {/* ── iOS-style Chats Header ── */}
       <div className="px-4 pt-3 pb-2 safe-top bg-tg-bg shrink-0">
-        <div className="flex items-center justify-between mb-2.5">
-          <button
-            onClick={() => {
-              setEditMode((v) => !v);
-              setSelectedIds([]);
-            }}
-            className="px-4 h-9 rounded-full bg-tg-bg-secondary border border-tg-border/40 text-sm font-medium text-tg-text active:scale-95 transition-transform"
-          >
-            {editMode ? 'Done' : 'Edit'}
-          </button>
+        <div className="relative flex items-center justify-between mb-2.5 min-h-[36px]">
+          {/* Left: Edit button */}
+          <div className="flex items-center z-10">
+            <button
+              onClick={() => {
+                setEditMode((v) => !v);
+                setSelectedIds([]);
+              }}
+              className="px-4 h-9 rounded-full bg-tg-bg-secondary border border-tg-border/40 text-sm font-medium text-tg-text active:scale-95 transition-transform"
+            >
+              {editMode ? 'Done' : 'Edit'}
+            </button>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setStoriesExpanded((v) => !v)}
-            className="flex items-center gap-2 px-2 py-1 rounded-full active:scale-95 transition-transform"
-            aria-label="Toggle stories and search"
-          >
-            {!storiesExpanded && headerAvatars.length > 0 && (
-              <div className="flex items-center -space-x-2">
-                {headerAvatars.map((d, idx) => (
-                  <div key={`${d.id}-${idx}`} className="rounded-full ring-2 ring-tg-bg">
-                    <Avatar
-                      letters={d.letters || d.name[0]}
-                      color={d.color.startsWith('linear') ? '#2563EB' : d.color}
-                      size="xs"
-                      peerType={d.peerType}
-                      peerId={d.peerId}
-                      accessHash={d.accessHash}
-                      hasPhoto={d.hasPhoto}
-                      photoId={d.photoId}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-            <h1 className="text-tg-text text-[18px] font-bold tracking-tight leading-none">Chats</h1>
-          </button>
+          {/* Center: Title (Perfect Absolute Center) */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-24">
+            <button
+              type="button"
+              onClick={() => setStoriesExpanded((v) => !v)}
+              className="pointer-events-auto flex items-center gap-2 px-2 py-1 rounded-full active:scale-95 transition-transform max-w-full truncate"
+              aria-label="Toggle stories and search"
+            >
+              {!storiesExpanded && headerAvatars.length > 0 && (
+                <div className="flex items-center -space-x-2 shrink-0">
+                  {headerAvatars.map((d, idx) => (
+                    <div key={`${d.id}-${idx}`} className="rounded-full ring-2 ring-tg-bg">
+                      <Avatar
+                        letters={d.letters || d.name[0]}
+                        color={d.color.startsWith('linear') ? '#2563EB' : d.color}
+                        size="xs"
+                        peerType={d.peerType}
+                        peerId={d.peerId}
+                        accessHash={d.accessHash}
+                        hasPhoto={d.hasPhoto}
+                        photoId={d.photoId}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+              <h1 className="text-tg-text text-[18px] font-bold tracking-tight leading-none truncate">Chats</h1>
+            </button>
+          </div>
 
-          <div className="flex items-center gap-2">
+          {/* Right: Actions (Contacts, Add Story, New Chat) */}
+          <div className="flex items-center gap-1.5 z-10">
             <button
               onClick={() => router.push('/contacts')}
               className="w-9 h-9 rounded-full bg-tg-bg-secondary border border-tg-border/40 flex items-center justify-center text-tg-text active:scale-95 transition-transform"

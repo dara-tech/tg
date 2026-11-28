@@ -118,7 +118,7 @@ export function BottomNav() {
                     'flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-[22px] transition-all mx-0.5',
                     isFirst && 'rounded-bl-[32px]',
                     isLast && 'rounded-br-[32px]',
-                    active ? 'bg-tg-blue text-white shadow-xs' : 'active:bg-tg-surface'
+                    active ? 'bg-tg-blue text-white' : 'active:bg-tg-surface'
                   )}
                 >
                   {renderTabIcon(tab, active, 'text-white', tab.href === '/dialogs' ? totalUnread : 0)}
@@ -182,7 +182,7 @@ export function BottomNav() {
                     'flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-2 rounded-[22px] transition-all',
                     isFirst && 'rounded-bl-[32px]',
                     isLast && 'rounded-br-[32px]',
-                    active ? 'bg-tg-blue text-white shadow-xs' : 'active:bg-tg-surface'
+                    active ? 'bg-tg-blue text-white' : 'active:bg-tg-surface'
                   )}
                 >
                   {renderTabIcon(tab, active, 'text-white', tab.href === '/dialogs' ? totalUnread : 0)}

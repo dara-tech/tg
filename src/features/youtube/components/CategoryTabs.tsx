@@ -26,17 +26,17 @@ export const CategoryTabs = memo(function CategoryTabs({
   ];
 
   return (
-    <div className="px-4 pb-2.5 flex items-center gap-2 overflow-x-auto scrollbar-hide">
+    <div className="px-3.5 pb-2 pt-0.5 flex items-center gap-2 overflow-x-auto scrollbar-hide">
       {allTabs.map((cat) => {
         const active = activeCategory === cat.id;
         return (
           <button
             key={cat.id}
             onClick={() => onSelectCategory(cat.id)}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${
               active
-                ? 'bg-tg-text text-tg-bg font-semibold shadow-sm'
-                : 'bg-tg-surface text-tg-text border border-tg-border/30 hover:bg-tg-surface/80'
+                ? 'bg-tg-text text-tg-bg shadow-xs'
+                : 'bg-tg-surface text-tg-text border border-tg-border/30 hover:bg-tg-surface/80 active:scale-95'
             }`}
           >
             {cat.label}

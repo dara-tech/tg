@@ -10,14 +10,6 @@ import {
 } from 'lucide-react';
 import { fetchSearchSuggestions, extractYouTubeId } from '@/services/youtube.service';
 
-function YoutubeIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
-      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-    </svg>
-  );
-}
-
 interface YouTubeHeaderProps {
   isSearchOpen: boolean;
   setIsSearchOpen: (open: boolean) => void;
@@ -118,9 +110,10 @@ export const YouTubeHeader = memo(function YouTubeHeader({
     setTimeout(() => setCopiedChannel(false), 2000);
   };
 
+  // ── Mode 1: Search Input Active ──
   if (isSearchOpen) {
     return (
-      <div className="px-3 py-2 flex items-center gap-2 relative" ref={searchBoxRef}>
+      <div className="px-3.5 py-2.5 flex items-center gap-2 relative" ref={searchBoxRef}>
         <button
           onClick={() => {
             setIsSearchOpen(false);
@@ -146,14 +139,14 @@ export const YouTubeHeader = memo(function YouTubeHeader({
                 handleSubmit(inputValue);
               }
             }}
-            placeholder="Search YouTube or paste link..."
-            className="w-full bg-tg-surface text-tg-text placeholder-tg-text-hint text-xs rounded-full pl-4 pr-16 py-2 border border-tg-border/40 focus:outline-none focus:border-tg-blue transition-colors"
+            placeholder="Search YouTube or paste video link..."
+            className="w-full bg-tg-surface text-tg-text placeholder-tg-text-hint text-xs rounded-full pl-4 pr-16 py-2 border border-tg-border/40 focus:outline-none focus:border-red-500 transition-colors"
             autoFocus
           />
 
           <div className="absolute right-2 flex items-center gap-1">
             {isSearchingOrResolving ? (
-              <Loader2 className="w-4 h-4 text-tg-blue animate-spin mr-1" />
+              <Loader2 className="w-4 h-4 text-red-500 animate-spin mr-1" />
             ) : inputValue ? (
               <button
                 onClick={() => {
@@ -178,7 +171,7 @@ export const YouTubeHeader = memo(function YouTubeHeader({
 
         {/* Autocomplete Suggestions Dropdown */}
         {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute top-[48px] left-3 right-3 z-40 bg-tg-surface border border-tg-border/40 rounded-2xl shadow-2xl overflow-hidden py-1">
+          <div className="absolute top-[48px] left-3.5 right-3.5 z-40 bg-tg-surface border border-tg-border/40 rounded-2xl shadow-2xl overflow-hidden py-1">
             {suggestions.map((s, idx) => (
               <div
                 key={idx}
@@ -199,9 +192,10 @@ export const YouTubeHeader = memo(function YouTubeHeader({
     );
   }
 
+  // ── Mode 2: Channel View (Shows Back Button) ──
   if (selectedChannel) {
     return (
-      <div className="px-4 py-2.5 flex items-center justify-between gap-3">
+      <div className="px-3.5 py-2.5 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <button
             onClick={onBack}
@@ -219,8 +213,7 @@ export const YouTubeHeader = memo(function YouTubeHeader({
           <button
             onClick={() => setIsSearchOpen(true)}
             className="w-9 h-9 rounded-full bg-tg-surface border border-tg-border/30 flex items-center justify-center text-tg-text-secondary hover:text-tg-text active:scale-95 transition-transform"
-            title="Search YouTube"
-            aria-label="Search"
+            aria-label="Search channel"
           >
             <Search className="w-4 h-4" />
           </button>
@@ -241,24 +234,25 @@ export const YouTubeHeader = memo(function YouTubeHeader({
     );
   }
 
+  // ── Mode 3: Official YouTube Home Feed Navbar (Clean, authentic brand, no redundant back button) ──
   return (
-    <div className="px-4 py-2.5 flex items-center justify-between gap-3">
-      <div className="flex items-center gap-2.5">
-        <button
-          onClick={onBack}
-          className="w-9 h-9 rounded-full bg-tg-surface border border-tg-border/30 flex items-center justify-center text-tg-text-secondary hover:text-tg-text active:scale-95 transition-transform"
-          aria-label="Back"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div onClick={onLogoClick} className="flex items-center gap-1.5 cursor-pointer">
-          <YoutubeIcon className="w-6 h-6 text-red-600" />
-          <span className="text-[19px] font-bold tracking-tight text-tg-text">
-            YouTube
-          </span>
+    <div className="px-3.5 pt-2 pb-2 flex items-center justify-between gap-3">
+      {/* Official YouTube Logo & Typography */}
+      <div
+        onClick={onLogoClick}
+        className="flex items-center gap-1.5 cursor-pointer select-none active:opacity-85 transition-opacity"
+      >
+        <div className="w-[30px] h-[21px] rounded-[6px] bg-[#FF0000] flex items-center justify-center shadow-xs shrink-0">
+          <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-white fill-current translate-x-0.2">
+            <path d="M8 5v14l11-7z" />
+          </svg>
         </div>
+        <span className="text-[19px] font-black tracking-[-0.04em] text-tg-text leading-none font-sans">
+          YouTube
+        </span>
       </div>
 
+      {/* Right Action Icons (Search & Shuffle) */}
       <div className="flex items-center gap-2">
         <button
           onClick={() => setIsSearchOpen(true)}
@@ -272,7 +266,7 @@ export const YouTubeHeader = memo(function YouTubeHeader({
         <button
           onClick={onShuffle}
           className="w-9 h-9 rounded-full bg-tg-surface border border-tg-border/30 flex items-center justify-center text-tg-text-secondary hover:text-tg-text active:scale-95 transition-transform"
-          title="Shuffle / Discover new videos"
+          title="Discover fresh videos"
           aria-label="Shuffle"
         >
           <Shuffle className="w-4 h-4" />

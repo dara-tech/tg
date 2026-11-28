@@ -484,7 +484,7 @@ export default function SettingsScreen() {
                         </div>
                       )}
                       {id === 'minimal' && (
-                        <div className="w-full h-3 border-t border-tg-border/30 flex items-center justify-around px-1">
+                        <div className="w-full h-3.5 rounded-full border border-tg-border/30 bg-tg-bg-secondary flex items-center justify-around px-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#ff3b30]" />
                           <span className="w-1 h-1 rounded-full bg-tg-text-hint/40" />
                           <span className="w-1 h-1 rounded-full bg-tg-text-hint/40" />

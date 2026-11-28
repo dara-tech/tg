@@ -8,6 +8,7 @@ import {
   Heart,
   Check,
   Loader2,
+  ExternalLink,
 } from 'lucide-react';
 import { type DailymotionVideo } from '@/services/dailymotion.service';
 
@@ -91,11 +92,12 @@ export const DailymotionPlayerView = memo(function DailymotionPlayerView({
           )}
 
           <iframe
-            src={`https://www.dailymotion.com/embed/video/${currentVideo.id}?autoplay=1&mute=0&ui-logo=0&ui-start-screen-info=0`}
+            src={`https://geo.dailymotion.com/player/x8lr5.html?video=${currentVideo.id}&autoplay=1`}
             title={currentVideo.title}
             className="w-full h-full border-0"
-            allow="autoplay; fullscreen; picture-in-picture"
+            allow="autoplay; fullscreen; picture-in-picture; web-share"
             allowFullScreen
+            referrerPolicy="strict-origin-when-cross-origin"
             onLoad={() => setIsVideoLoading(false)}
           />
         </div>
@@ -176,6 +178,16 @@ export const DailymotionPlayerView = memo(function DailymotionPlayerView({
             <Heart className={`w-3.5 h-3.5 ${isFavorite ? 'fill-current' : ''}`} />
             <span>{isFavorite ? 'Favorited' : 'Favorite'}</span>
           </button>
+
+          <a
+            href={`https://www.dailymotion.com/video/${currentVideo.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3.5 py-1.5 rounded-full bg-tg-surface border border-tg-border/30 text-tg-text-secondary hover:text-tg-text text-xs font-medium flex items-center gap-1.5 active:scale-95 transition-all shrink-0"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>Open Web</span>
+          </a>
         </div>
       </div>
 

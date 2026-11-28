@@ -13,6 +13,7 @@ import { DailymotionHeader } from './components/DailymotionHeader';
 import { DailymotionCategoryTabs } from './components/DailymotionCategoryTabs';
 import { DailymotionFeedView } from './components/DailymotionFeedView';
 import { DailymotionPlayerView } from './components/DailymotionPlayerView';
+import { DailymotionChannelView } from './components/DailymotionChannelView';
 
 export default function DailymotionScreen() {
   const router = useRouter();
@@ -40,7 +41,9 @@ export default function DailymotionScreen() {
   const [isLoadingFeed, setIsLoadingFeed] = useState(false);
 
   // Channel view state
-  const [selectedChannel, setSelectedChannel] = useState<{ name: string } | null>(null);
+  const [selectedChannel, setSelectedChannel] = useState<{ name: string; avatar?: string } | null>(null);
+  const [channelVideos, setChannelVideos] = useState<DailymotionVideo[]>([]);
+  const [isLoadingChannel, setIsLoadingChannel] = useState(false);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
@@ -181,17 +184,17 @@ export default function DailymotionScreen() {
 
   // ── Channel Navigation Handler ──
   const handleOpenChannel = useCallback(
-    async (channel: { name: string }) => {
+    async (channel: { name: string; avatar?: string }) => {
       setSelectedChannel(channel);
-      setIsLoadingFeed(true);
+      setIsLoadingChannel(true);
       scrollToTop();
       try {
         const vids = await searchDailymotionVideos(channel.name, 1);
-        setVideos(vids);
+        setChannelVideos(vids);
       } catch {
-        setVideos([]);
+        setChannelVideos([]);
       } finally {
-        setIsLoadingFeed(false);
+        setIsLoadingChannel(false);
       }
     },
     [scrollToTop]
@@ -246,7 +249,7 @@ export default function DailymotionScreen() {
         )}
       </div>
 
-      {/* ── Main View: Watch Mode OR Feed Mode ── */}
+      {/* ── Main View: Watch Mode OR Channel View OR Feed Mode ── */}
       {isWatchView && currentVideo ? (
         <DailymotionPlayerView
           currentVideo={currentVideo}
@@ -259,6 +262,15 @@ export default function DailymotionScreen() {
           }}
           onPlayNextVideo={handlePlayVideo}
           playerContainerRef={playerContainerRef}
+        />
+      ) : selectedChannel ? (
+        <DailymotionChannelView
+          channel={selectedChannel}
+          videos={channelVideos}
+          isLoading={isLoadingChannel}
+          onPlayVideo={handlePlayVideo}
+          isFavorite={isFavorite}
+          onToggleFavorite={toggleFavorite}
         />
       ) : (
         <DailymotionFeedView

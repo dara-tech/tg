@@ -31,12 +31,10 @@ export const DailymotionPlayerView = memo(function DailymotionPlayerView({
   onPlayNextVideo,
   playerContainerRef,
 }: DailymotionPlayerViewProps) {
-  const [isVideoLoading, setIsVideoLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    setIsVideoLoading(true);
     setLiked(false);
     setCopied(false);
 
@@ -82,15 +80,8 @@ export const DailymotionPlayerView = memo(function DailymotionPlayerView({
           </button>
         </div>
 
-        {/* 16:9 Dailymotion Embed Player with Loading Indicator */}
+        {/* 16:9 Dailymotion Embed Player */}
         <div className="relative aspect-video w-full bg-black">
-          {isVideoLoading && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#0e1621] z-10">
-              <Loader2 className="w-8 h-8 animate-spin text-[#0066dc]" />
-              <span className="text-xs text-tg-text-hint">Loading player…</span>
-            </div>
-          )}
-
           <iframe
             src={`https://geo.dailymotion.com/player/x8lr5.html?video=${currentVideo.id}&autoplay=1`}
             title={currentVideo.title}
@@ -98,7 +89,6 @@ export const DailymotionPlayerView = memo(function DailymotionPlayerView({
             allow="autoplay; fullscreen; picture-in-picture; web-share"
             allowFullScreen
             referrerPolicy="strict-origin-when-cross-origin"
-            onLoad={() => setIsVideoLoading(false)}
           />
         </div>
       </div>

@@ -18,6 +18,8 @@ const ProfileScreen = lazy(() => import('./features/profile/ProfileScreen'));
 const QrScannerScreen = lazy(() => import('./features/qr-scanner/QrScannerScreen'));
 const SearchScreen = lazy(() => import('./features/search/SearchScreen'));
 const ErpScreen = lazy(() => import('./features/erp/ErpScreen'));
+const YouTubeScreen = lazy(() => import('./features/youtube/YouTubeScreen'));
+import { GlobalYouTubePlayer } from './components/youtube/GlobalYouTubePlayer';
 
 function RouteLoadingFallback() {
   return (
@@ -78,11 +80,15 @@ export default function App() {
                 <Route path="/search" element={<SearchScreen />} />
                 <Route path="/erp" element={<ErpScreen />} />
                 <Route path="/bank" element={<Navigate to="/erp" replace />} />
+                <Route path="/youtube" element={<YouTubeScreen />} />
                 <Route path="*" element={<Navigate to="/dialogs" replace />} />
               </Routes>
             </Suspense>
           </KeepAliveTabs>
         </main>
+
+        {/* Global floating Picture-in-Picture & background YouTube player */}
+        <GlobalYouTubePlayer />
 
         {/* Global bottom navigation */}
         <BottomNav />

@@ -1,20 +1,34 @@
 'use client';
 
 export function DialogSkeletonList({ count = 8 }: { count?: number }) {
+  const widths = [
+    { title: 'w-36', preview: 'w-[75%]' },
+    { title: 'w-44', preview: 'w-[60%]' },
+    { title: 'w-28', preview: 'w-[80%]' },
+    { title: 'w-40', preview: 'w-[50%]' },
+    { title: 'w-32', preview: 'w-[70%]' },
+    { title: 'w-48', preview: 'w-[65%]' },
+    { title: 'w-30', preview: 'w-[55%]' },
+    { title: 'w-36', preview: 'w-[72%]' },
+  ];
+
   return (
-    <div className="space-y-0.5 animate-pulse">
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 px-4 py-2.5">
-          <div className="w-11 h-11 rounded-full bg-tg-surface shrink-0" />
-          <div className="flex-1 min-w-0 space-y-2">
-            <div className="flex justify-between items-center gap-4">
-              <div className="h-3.5 bg-tg-surface rounded-full w-32" />
-              <div className="h-2.5 bg-tg-surface rounded-full w-10" />
+    <div className="divide-y divide-tg-border/25">
+      {Array.from({ length: count }).map((_, i) => {
+        const w = widths[i % widths.length];
+        return (
+          <div key={i} className="flex items-center gap-3 px-4 py-3">
+            <div className="w-12 h-12 rounded-full bg-tg-surface shimmer-effect shrink-0 shadow-sm" />
+            <div className="flex-1 min-w-0 space-y-2">
+              <div className="flex justify-between items-center gap-4">
+                <div className={`h-3.5 bg-tg-surface rounded-md shimmer-effect ${w.title}`} />
+                <div className="h-2.5 bg-tg-surface/70 rounded-md w-9 shimmer-effect" />
+              </div>
+              <div className={`h-3 bg-tg-surface/60 rounded-md shimmer-effect ${w.preview}`} />
             </div>
-            <div className="h-3 bg-tg-surface/70 rounded-full w-3/4" />
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

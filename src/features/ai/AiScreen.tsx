@@ -239,58 +239,6 @@ export default function AiScreen() {
       openMode: 'fullscreen',
       subAppId: 'summarizer',
     },
-    {
-      id: 'ai_vision',
-      name: 'Vision & OCR',
-      khmerName: 'ស្កេនរូប & អត្ថបទ',
-      tagline: 'Extract text from receipts, documents & images',
-      badge: 'Scan',
-      badgeColor: 'bg-sky-600',
-      customIconSrc: '/icons/banks/khqr.svg',
-      iconGradient: 'from-sky-500 via-blue-600 to-indigo-600',
-      category: 'business',
-      openMode: 'fullscreen',
-      subAppId: 'vision',
-    },
-    {
-      id: 'erp_ai',
-      name: 'Bank & ERP',
-      khmerName: 'គ្រប់គ្រងហិរញ្ញវត្ថុ',
-      tagline: 'Business cash flow, automated invoices & records',
-      badge: 'Finance',
-      badgeColor: 'bg-orange-500',
-      customIconSrc: '/avatars/financemaster.png',
-      iconGradient: 'from-orange-500 via-amber-500 to-yellow-600',
-      category: 'business',
-      openMode: 'route',
-      route: '/erp',
-    },
-    {
-      id: 'qr_scanner',
-      name: 'QR Scanner',
-      khmerName: 'ស្កេន QR Code',
-      tagline: 'Scan Bakong KHQR, links & contact codes',
-      badge: 'QR',
-      badgeColor: 'bg-indigo-600',
-      customIconSrc: '/icons/banks/bakong.png',
-      iconGradient: 'from-indigo-500 via-purple-600 to-pink-600',
-      category: 'business',
-      openMode: 'route',
-      route: '/qr-scan',
-    },
-    {
-      id: 'smart_search',
-      name: 'Smart Search',
-      khmerName: 'ស្វែងរកឆ្លាតវៃ',
-      tagline: 'Semantic search across messages, files & channels',
-      badge: 'Search',
-      badgeColor: 'bg-cyan-600',
-      customIconSrc: '/avatars/questioner.png',
-      iconGradient: 'from-cyan-500 via-blue-600 to-teal-600',
-      category: 'creative',
-      openMode: 'route',
-      route: '/search',
-    },
   ];
 
   const handleLaunchApp = (app: CustomAiApp) => {
@@ -1254,20 +1202,6 @@ export default function AiScreen() {
               <div className="min-w-0">
                 <h4 className="text-xs font-bold text-tg-text truncate">AI Translate</h4>
                 <p className="text-[10px] text-tg-text-hint truncate">បកប្រែ & អក្ខរាវិរុទ្ធ</p>
-              </div>
-            </div>
-
-            {/* Quick Card 4: Bank & ERP */}
-            <div
-              onClick={() => router.push('/erp')}
-              className="p-3 rounded-2xl bg-tg-bg-secondary border border-tg-border/25 hover:border-tg-border/60 cursor-pointer active:scale-[0.98] transition-all flex items-center gap-2.5"
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 p-1 flex items-center justify-center text-white shrink-0">
-                <BarChart3 className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <h4 className="text-xs font-bold text-tg-text truncate">Bank & ERP</h4>
-                <p className="text-[10px] text-tg-text-hint truncate">គ្រប់គ្រងហិរញ្ញវត្ថុ</p>
               </div>
             </div>
           </div>

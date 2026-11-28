@@ -51,14 +51,13 @@
         background: var(--tg-bg) !important;
         color: var(--tg-text);
       }
-      .tg-shell-shimmer {
-        animation: tgShimmer 1.5s infinite linear;
-        background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
-        background-size: 200% 100%;
+      @keyframes tgSpin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
       }
-      @keyframes tgShimmer {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
+      @keyframes tgPulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.92; }
       }
     </style>
 
@@ -96,96 +95,13 @@
   </head>
   <body class="bg-tg-bg text-tg-text font-sans antialiased">
     <div id="root">
-      <div style="display:flex;flex-direction:column;height:100vh;background-color:#0e1621;color:#fff;overflow:hidden;user-select:none;">
-        <!-- Top App Header -->
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top, 12px) + 8px) 16px 8px;border-bottom:1px solid rgba(255,255,255,0.06);">
-          <div style="width:36px;height:24px;border-radius:12px;background:rgba(255,255,255,0.08);"></div>
-          <div style="font-size:17px;font-weight:600;letter-spacing:-0.2px;">Chats</div>
-          <div style="width:24px;height:24px;border-radius:12px;background:rgba(255,255,255,0.08);"></div>
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100dvh;height:100lvh;height:-webkit-fill-available;background-color:#0e1621;user-select:none;">
+        <div style="width:76px;height:76px;border-radius:20px;background:linear-gradient(135deg,#2AABEE 0%,#229ED9 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 12px 30px rgba(34,158,217,0.38),0 4px 12px rgba(0,0,0,0.25);animation:tgPulse 2s ease-in-out infinite;">
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="none" style="margin-right:2px;margin-bottom:1px;">
+            <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" fill="#ffffff"/>
+          </svg>
         </div>
-        <!-- Search bar skeleton -->
-        <div style="padding:8px 16px;">
-          <div class="tg-shell-shimmer" style="height:36px;border-radius:10px;background:rgba(255,255,255,0.06);width:100%;"></div>
-        </div>
-        <!-- Folder Pills row -->
-        <div style="display:flex;gap:8px;padding:4px 16px 10px;border-bottom:1px solid rgba(255,255,255,0.04);">
-          <div style="height:28px;width:44px;border-radius:14px;background:rgba(42,130,218,0.25);"></div>
-          <div style="height:28px;width:64px;border-radius:14px;background:rgba(255,255,255,0.06);"></div>
-          <div style="height:28px;width:60px;border-radius:14px;background:rgba(255,255,255,0.06);"></div>
-          <div style="height:28px;width:68px;border-radius:14px;background:rgba(255,255,255,0.06);"></div>
-        </div>
-        <!-- Chat Rows List -->
-        <div style="flex:1;overflow:hidden;padding:4px 16px;display:flex;flex-direction:column;gap:16px;">
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div class="tg-shell-shimmer" style="width:52px;height:52px;border-radius:26px;flex-shrink:0;"></div>
-            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;">
-              <div style="display:flex;justify-content:space-between;">
-                <div class="tg-shell-shimmer" style="width:40%;height:14px;border-radius:4px;"></div>
-                <div class="tg-shell-shimmer" style="width:12%;height:12px;border-radius:4px;"></div>
-              </div>
-              <div class="tg-shell-shimmer" style="width:70%;height:12px;border-radius:4px;"></div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div class="tg-shell-shimmer" style="width:52px;height:52px;border-radius:26px;flex-shrink:0;"></div>
-            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;">
-              <div style="display:flex;justify-content:space-between;">
-                <div class="tg-shell-shimmer" style="width:48%;height:14px;border-radius:4px;"></div>
-                <div class="tg-shell-shimmer" style="width:12%;height:12px;border-radius:4px;"></div>
-              </div>
-              <div class="tg-shell-shimmer" style="width:60%;height:12px;border-radius:4px;"></div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div class="tg-shell-shimmer" style="width:52px;height:52px;border-radius:26px;flex-shrink:0;"></div>
-            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;">
-              <div style="display:flex;justify-content:space-between;">
-                <div class="tg-shell-shimmer" style="width:36%;height:14px;border-radius:4px;"></div>
-                <div class="tg-shell-shimmer" style="width:12%;height:12px;border-radius:4px;"></div>
-              </div>
-              <div class="tg-shell-shimmer" style="width:80%;height:12px;border-radius:4px;"></div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div class="tg-shell-shimmer" style="width:52px;height:52px;border-radius:26px;flex-shrink:0;"></div>
-            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;">
-              <div style="display:flex;justify-content:space-between;">
-                <div class="tg-shell-shimmer" style="width:55%;height:14px;border-radius:4px;"></div>
-                <div class="tg-shell-shimmer" style="width:12%;height:12px;border-radius:4px;"></div>
-              </div>
-              <div class="tg-shell-shimmer" style="width:65%;height:12px;border-radius:4px;"></div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div class="tg-shell-shimmer" style="width:52px;height:52px;border-radius:26px;flex-shrink:0;"></div>
-            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;">
-              <div style="display:flex;justify-content:space-between;">
-                <div class="tg-shell-shimmer" style="width:42%;height:14px;border-radius:4px;"></div>
-                <div class="tg-shell-shimmer" style="width:12%;height:12px;border-radius:4px;"></div>
-              </div>
-              <div class="tg-shell-shimmer" style="width:50%;height:12px;border-radius:4px;"></div>
-            </div>
-          </div>
-        </div>
-        <!-- Bottom Tab Bar -->
-        <div style="display:flex;align-items:center;justify-content:space-around;padding:10px 16px calc(env(safe-area-inset-bottom, 16px) + 8px);border-top:1px solid rgba(255,255,255,0.06);background:#17212b;">
-          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-            <div style="width:24px;height:24px;border-radius:12px;background:rgba(42,130,218,0.8);"></div>
-            <div style="width:28px;height:8px;border-radius:4px;background:rgba(42,130,218,0.8);"></div>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-            <div style="width:24px;height:24px;border-radius:12px;background:rgba(255,255,255,0.15);"></div>
-            <div style="width:28px;height:8px;border-radius:4px;background:rgba(255,255,255,0.15);"></div>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-            <div style="width:24px;height:24px;border-radius:12px;background:rgba(255,255,255,0.15);"></div>
-            <div style="width:28px;height:8px;border-radius:4px;background:rgba(255,255,255,0.15);"></div>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-            <div style="width:24px;height:24px;border-radius:12px;background:rgba(255,255,255,0.15);"></div>
-            <div style="width:28px;height:8px;border-radius:4px;background:rgba(255,255,255,0.15);"></div>
-          </div>
-        </div>
+        <div style="margin-top:24px;width:26px;height:26px;border-radius:13px;border:2.5px solid rgba(255,255,255,0.12);border-top-color:#2AABEE;animation:tgSpin 0.75s linear infinite;"></div>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>

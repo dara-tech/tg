@@ -38,6 +38,9 @@ export default function YouTubeScreen() {
   const [isResolving, setIsResolving] = useState(false);
   const [liveResults, setLiveResults] = useState<YouTubeVideo[] | null>(null);
 
+  // Determine current active view (declared before effects to avoid TDZ ReferenceError)
+  const isWatchView = Boolean(currentVideo && playerMode !== 'closed' && liveResults === null);
+
   // Feed state
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all');
   const [categoryVideos, setCategoryVideos] = useState<YouTubeVideo[]>([]);
@@ -289,9 +292,6 @@ export default function YouTubeScreen() {
     if (!currentVideo) return [];
     return categoryVideos.filter((v) => v.id !== currentVideo.id).slice(0, 10);
   }, [currentVideo, categoryVideos]);
-
-  // Determine current active view
-  const isWatchView = currentVideo && playerMode !== 'closed' && liveResults === null;
 
   return (
     <div

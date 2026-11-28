@@ -6,9 +6,9 @@ import { BottomNav } from './components/layout/BottomNav';
 
 import HomePage from './app/page';
 import ChatListScreen from './features/chat-list/ChatListScreen';
+import AuthScreen from './features/authentication/AuthScreen';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 
-const AuthScreen = lazy(() => import('./features/authentication/AuthScreen'));
 const ToolsScreen = lazy(() => import('./features/tools/ToolsScreen'));
 const AiScreen = lazy(() => import('./features/ai/AiScreen'));
 const CalendarScreen = lazy(() => import('./features/calendar/CalendarScreen'));
@@ -24,19 +24,7 @@ import { GlobalYouTubePlayer } from './components/youtube/GlobalYouTubePlayer';
 function RouteLoadingFallback() {
   return (
     <div className="flex-1 flex items-center justify-center bg-tg-bg select-none">
-      <div className="relative w-[92px] h-[92px] flex items-center justify-center">
-        {/* Spinning ring directly around the rounded-full Telegram logo */}
-        <div className="absolute inset-0 rounded-full border-[3px] border-white/10 border-t-[#2AABEE] border-r-[#2AABEE]/40 animate-spin" />
-        {/* Rounded-full Telegram circle without any shadow */}
-        <div className="w-[76px] h-[76px] rounded-full bg-[#2AABEE] flex items-center justify-center">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" className="mr-0.5 mb-0.5">
-            <path
-              d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"
-              fill="#ffffff"
-            />
-          </svg>
-        </div>
-      </div>
+      <div className="w-8 h-8 rounded-full border-2 border-tg-primary/20 border-t-tg-primary animate-spin" />
     </div>
   );
 }

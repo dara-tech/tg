@@ -99,13 +99,13 @@ export function BottomNav() {
     paddingBottom: 'max(8px, calc(env(safe-area-inset-bottom, 0px) - 2px))',
   };
 
-  /* ── PILL ── */
+  /* ── PILL (default) ── */
   if (navStyle === 'pill') {
     return (
-      <div className="shrink-0 w-full px-3.5 pt-0.5 pointer-events-none z-30" style={safeWrapperStyle}>
-        <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary/90 backdrop-blur-2xl border border-tg-border/35 rounded-[26px] shadow-sm overflow-hidden">
+      <div className="shrink-0 w-full px-3.5 pt-0 pointer-events-none z-30" style={safeWrapperStyle}>
+        <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary/90 backdrop-blur-2xl border border-tg-border/30 rounded-t-none rounded-b-[28px] shadow-sm overflow-hidden">
           <div className="flex items-stretch justify-around px-2 py-1.5">
-            {TABS.map((tab) => {
+            {TABS.map(tab => {
               const active = pathname.startsWith(tab.href);
               return (
                 <Link
@@ -113,7 +113,7 @@ export function BottomNav() {
                   href={tab.href}
                   prefetch
                   className={clsx(
-                    'flex-1 flex flex-col items-center justify-center gap-0.5 py-1 px-1 rounded-2xl transition-all mx-0.5',
+                    'flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-2xl transition-all mx-0.5',
                     active ? 'bg-tg-blue' : 'active:bg-tg-surface'
                   )}
                 >
@@ -134,11 +134,11 @@ export function BottomNav() {
   if (navStyle === 'classic') {
     return (
       <nav
-        className="shrink-0 w-full bg-tg-bg-secondary/90 backdrop-blur-2xl border-t border-tg-border/20 pt-1"
+        className="shrink-0 w-full bg-tg-bg-secondary/85 backdrop-blur-2xl border-t border-tg-border/15 [data-theme='manga']_&:border-t-0 pt-1 "
         style={safeStyle}
       >
         <div className="flex items-stretch justify-around px-2 pb-1">
-          {TABS.map((tab) => {
+          {TABS.map(tab => {
             const active = pathname.startsWith(tab.href);
             return (
               <Link
@@ -159,13 +159,13 @@ export function BottomNav() {
     );
   }
 
-  /* ── CARD (Dock) ── */
+  /* ── CARD ── */
   if (navStyle === 'card') {
     return (
-      <div className="shrink-0 w-full px-3.5 pt-0.5 pointer-events-none z-30" style={safeWrapperStyle}>
-        <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary/90 backdrop-blur-2xl border border-tg-border/35 rounded-[26px] shadow-sm overflow-hidden">
-          <div className="flex items-stretch justify-around gap-1 px-2.5 py-1.5">
-            {TABS.map((tab) => {
+      <div className="shrink-0 w-full px-3.5 pt-0 pointer-events-none z-30" style={safeWrapperStyle}>
+        <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary/90 backdrop-blur-2xl border border-tg-border/30 rounded-t-none rounded-b-[28px] shadow-sm overflow-hidden">
+          <div className="flex items-stretch justify-around gap-1 px-3 py-1.5">
+            {TABS.map(tab => {
               const active = pathname.startsWith(tab.href);
               return (
                 <Link
@@ -173,8 +173,8 @@ export function BottomNav() {
                   href={tab.href}
                   prefetch
                   className={clsx(
-                    'flex-1 flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all',
-                    active ? 'bg-tg-blue text-white shadow-xs' : 'active:bg-tg-surface'
+                    'flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-2 rounded-xl transition-all',
+                    active ? 'bg-tg-blue text-white' : 'active:bg-tg-surface'
                   )}
                 >
                   {renderTabIcon(tab, active, 'text-white', tab.href === '/dialogs' ? totalUnread : 0)}
@@ -192,10 +192,10 @@ export function BottomNav() {
 
   /* ── MINIMAL ── */
   return (
-    <div className="shrink-0 w-full px-3.5 pt-0.5 pointer-events-none z-30" style={safeWrapperStyle}>
-      <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary/90 backdrop-blur-2xl border border-tg-border/35 rounded-[26px] shadow-sm overflow-hidden">
+    <div className="shrink-0 w-full px-3.5 pt-0 pointer-events-none z-30" style={safeWrapperStyle}>
+      <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary/95 backdrop-blur-2xl border border-tg-border/30 rounded-t-none rounded-b-[28px] shadow-sm overflow-hidden">
         <div className="flex items-stretch justify-around px-2 py-1.5">
-          {TABS.map((tab) => {
+          {TABS.map(tab => {
             const active = pathname.startsWith(tab.href);
             return (
               <Link

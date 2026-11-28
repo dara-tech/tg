@@ -398,7 +398,7 @@
 }
 
 /* Bottom composer input pill: perfectly smooth rounded pill */
-[data-theme='manga'] .rounded-\[22px\] {
+[data-theme='manga'] form .rounded-\[22px\] {
   border: 1px solid rgba(0, 0, 0, 0.12) !important;
   box-shadow: none !important;
   background-color: #FAFAFA !important;
@@ -519,9 +519,15 @@
 }
 
 /* Bottom composer pill in Bento mode */
-[data-theme='bento'] .rounded-\[22px\] {
+[data-theme='bento'] form .rounded-\[22px\] {
   background: #1C1C1E !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Ensure bottom nav links never have individual borders or box shadows */
+nav a, nav a * {
+  border-width: 0 !important;
+  box-shadow: none !important;
 }
 
 /* Search bars in Bento mode */

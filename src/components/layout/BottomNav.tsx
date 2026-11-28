@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import { CircleUserRound, MessagesSquare, Calendar, UsersRound, Bot } from 'lucide-react';
 import { useDialogsStore } from '@/store/dialogs.store';
+import { useAuthStore } from '@/store/auth.store';
 import { NAV_STYLES, useUIStore } from '@/store/ui.store';
 
 const TABS = [
@@ -70,6 +71,7 @@ export function BottomNav() {
   const router   = useRouter();
   const rawNavStyle = useUIStore((s) => s.navStyle);
   const navStyle    = NAV_STYLES[rawNavStyle] ? rawNavStyle : 'minimal';
+  const isAuthorized = useAuthStore((s) => s.isAuthorized);
   const totalUnread = useDialogsStore((s) =>
     s.dialogs.reduce((acc, d) => acc + (!d.isMuted && d.unreadCount > 0 ? d.unreadCount : 0), 0)
   );
@@ -78,9 +80,12 @@ export function BottomNav() {
     pathname.startsWith('/chat/') ||
     pathname.startsWith('/profile/') ||
     pathname === '/auth' ||
-    pathname === '/' ||
+    (pathname === '/' && !isAuthorized) ||
     pathname === '/erp' ||
     pathname === '/bank';
+
+  const isTabActive = (href: string) =>
+    href === '/dialogs' ? (pathname === '/' || pathname.startsWith('/dialogs')) : pathname.startsWith(href);
 
   useEffect(() => {
     if (hide) return;
@@ -106,7 +111,7 @@ export function BottomNav() {
         <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary border border-tg-border/25 shadow-sm rounded-t-none rounded-b-[38px] overflow-hidden">
           <div className="flex items-stretch justify-around px-3 pt-2 pb-2">
             {TABS.map((tab) => {
-              const active = pathname.startsWith(tab.href);
+              const active = isTabActive(tab.href);
               return (
                 <Link
                   key={tab.href}
@@ -139,7 +144,7 @@ export function BottomNav() {
       >
         <div className="flex items-stretch justify-around px-2 pb-1">
           {TABS.map(tab => {
-            const active = pathname.startsWith(tab.href);
+            const active = isTabActive(tab.href);
             return (
               <Link
                 key={tab.href}
@@ -166,7 +171,7 @@ export function BottomNav() {
         <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary border border-tg-border/25 shadow-sm rounded-t-none rounded-b-[38px] overflow-hidden">
           <div className="flex items-stretch justify-around gap-1 px-3 pt-2 pb-2">
             {TABS.map((tab) => {
-              const active = pathname.startsWith(tab.href);
+              const active = isTabActive(tab.href);
               return (
                 <Link
                   key={tab.href}
@@ -196,7 +201,7 @@ export function BottomNav() {
       <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary border border-tg-border/25 shadow-sm rounded-t-none rounded-b-[38px] overflow-hidden">
         <div className="flex items-stretch justify-around px-3 pt-2 pb-2.5">
           {TABS.map((tab) => {
-            const active = pathname.startsWith(tab.href);
+            const active = isTabActive(tab.href);
             return (
               <Link
                 key={tab.href}

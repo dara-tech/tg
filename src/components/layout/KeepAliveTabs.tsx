@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import { useAuthStore } from '@/store/auth.store';
 import ChatListScreen from '@/features/chat-list/ChatListScreen';
 import ContactsScreen from '@/features/contacts/ContactsScreen';
 import CalendarScreen from '@/features/calendar/CalendarScreen';
@@ -10,7 +11,8 @@ import AiScreen from '@/features/ai/AiScreen';
 const TAB_PATHS = ['/dialogs', '/contacts', '/ai', '/calendar', '/settings'] as const;
 type TabPath = (typeof TAB_PATHS)[number];
 
-function matchTab(pathname: string): TabPath | null {
+function matchTab(pathname: string, isAuthorized: boolean): TabPath | null {
+  if (pathname === '/' && isAuthorized) return '/dialogs';
   for (const p of TAB_PATHS) {
     if (pathname === p || pathname.startsWith(`${p}/`)) return p;
   }
@@ -19,7 +21,8 @@ function matchTab(pathname: string): TabPath | null {
 
 export function KeepAliveTabs({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const activeTab = matchTab(pathname);
+  const isAuthorized = useAuthStore((s) => s.isAuthorized);
+  const activeTab = matchTab(pathname, isAuthorized);
   const [mounted, setMounted] = useState<Record<TabPath, boolean>>({
     '/dialogs': true,
     '/contacts': activeTab === '/contacts',

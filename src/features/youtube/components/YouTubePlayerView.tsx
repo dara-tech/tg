@@ -69,6 +69,20 @@ export const YouTubePlayerView = memo(function YouTubePlayerView({
     setAiSummary(null);
     setShowShareModal(false);
 
+    // Instant snap to top on video load so player is 100% visible
+    const snapTop = () => {
+      if (playerContainerRef?.current) {
+        playerContainerRef.current.scrollIntoView({ behavior: 'instant', block: 'start' });
+        const parent = playerContainerRef.current.closest('.overflow-y-auto');
+        if (parent) {
+          parent.scrollTop = 0;
+        }
+      }
+    };
+    snapTop();
+    requestAnimationFrame(snapTop);
+    setTimeout(snapTop, 50);
+
     unlockAndStartBackgroundAudio(currentVideo, (cmd) => {
       try {
         iframeRef.current?.contentWindow?.postMessage(

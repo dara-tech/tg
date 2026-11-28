@@ -60,34 +60,37 @@ export default function YouTubeScreen() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
 
-  // ── Bulletproof Scroll to Top ──
+  // ── Bulletproof Instant Scroll to Top ──
   const scrollToTop = useCallback(() => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0;
-    }
-    window.scrollTo(0, 0);
-    if (document.documentElement) document.documentElement.scrollTop = 0;
-    if (document.body) document.body.scrollTop = 0;
-
-    requestAnimationFrame(() => {
-      if (scrollContainerRef.current) {
-        scrollContainerRef.current.scrollTop = 0;
-        try {
-          scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-        } catch {}
-      }
-      playerContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-
-    setTimeout(() => {
+    const snap = () => {
       if (scrollContainerRef.current) {
         scrollContainerRef.current.scrollTop = 0;
       }
-      playerContainerRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' });
       window.scrollTo(0, 0);
-    }, 60);
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+    };
+
+    snap();
+    requestAnimationFrame(snap);
+    setTimeout(snap, 30);
+    setTimeout(snap, 100);
   }, []);
+
+  // Guarantee that entering watch mode resets scroll directly to top
+  useEffect(() => {
+    if (isWatchView) {
+      scrollToTop();
+      const t1 = setTimeout(scrollToTop, 50);
+      const t2 = setTimeout(scrollToTop, 150);
+      const t3 = setTimeout(scrollToTop, 300);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
+    }
+  }, [currentVideo?.id, isWatchView, scrollToTop]);
 
   // ── Video Play Handler ──
   const handlePlayVideo = useCallback(

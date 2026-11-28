@@ -84,8 +84,11 @@ export function BottomNav() {
     pathname === '/erp' ||
     pathname === '/bank';
 
-  const isTabActive = (href: string) =>
-    href === '/dialogs' ? (pathname === '/' || pathname.startsWith('/dialogs')) : pathname.startsWith(href);
+  const isTabActive = (href: string) => {
+    if (href === '/dialogs') return pathname === '/' || pathname.startsWith('/dialogs');
+    if (href === '/tools') return pathname.startsWith('/tools') || pathname.startsWith('/youtube');
+    return pathname.startsWith(href);
+  };
 
   useEffect(() => {
     if (hide) return;

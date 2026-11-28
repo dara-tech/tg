@@ -17,6 +17,10 @@ import {
 } from 'lucide-react';
 import { type YouTubeVideo } from '@/store/youtube.store';
 import { PlayerLoadingOverlay } from './YouTubeSkeletons';
+import {
+  startBackgroundAudioSession,
+  stopBackgroundAudioSession,
+} from '@/services/youtubeBackgroundAudio.service';
 
 interface YouTubePlayerViewProps {
   currentVideo: YouTubeVideo;
@@ -56,13 +60,26 @@ export const YouTubePlayerView = memo(function YouTubePlayerView({
   const [copied, setCopied] = useState(false);
   const [sharedSuccess, setSharedSuccess] = useState<string | null>(null);
 
-  // Reset states when currentVideo changes
+  // Reset states and initialize background audio session when currentVideo changes
   useEffect(() => {
     setIsVideoLoading(true);
     setIsMuted(true);
     setLiked(false);
     setAiSummary(null);
     setShowShareModal(false);
+
+    startBackgroundAudioSession(currentVideo, (cmd) => {
+      try {
+        iframeRef.current?.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func: cmd, args: '' }),
+          '*'
+        );
+      } catch {}
+    });
+
+    return () => {
+      stopBackgroundAudioSession();
+    };
   }, [currentVideo.id]);
 
   const handleUnmute = () => {

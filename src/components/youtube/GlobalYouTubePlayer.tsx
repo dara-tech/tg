@@ -8,6 +8,11 @@ import {
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useYouTubeStore } from '@/store/youtube.store';
+import { useEffect, useRef } from 'react';
+import {
+  startBackgroundAudioSession,
+  stopBackgroundAudioSession,
+} from '@/services/youtubeBackgroundAudio.service';
 
 export function GlobalYouTubePlayer() {
   const location = useLocation();
@@ -25,13 +30,34 @@ export function GlobalYouTubePlayer() {
 
   // If user is currently ON the YouTube page, the YouTube page itself plays the video at the top!
   // We do NOT want a duplicate floating player or black modal overlay.
-  const isOnYouTubeScreen = location.pathname === '/youtube';
+  const isOnYouTubeScreen =
+    location.pathname === '/youtube' || location.pathname === '/tools';
+
+  const pipIframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    if (currentVideo && playerMode !== 'closed') {
+      startBackgroundAudioSession(currentVideo, (cmd) => {
+        try {
+          pipIframeRef.current?.contentWindow?.postMessage(
+            JSON.stringify({ event: 'command', func: cmd, args: '' }),
+            '*'
+          );
+        } catch {}
+      });
+    } else {
+      stopBackgroundAudioSession();
+    }
+    return () => {
+      stopBackgroundAudioSession();
+    };
+  }, [currentVideo?.id, playerMode]);
 
   if (!currentVideo || playerMode === 'closed' || isOnYouTubeScreen) {
     return null;
   }
 
-  const embedUrl = `https://www.youtube-nocookie.com/embed/${currentVideo.id}?autoplay=1&modestbranding=1&rel=0&playsinline=1`;
+  const embedUrl = `https://www.youtube-nocookie.com/embed/${currentVideo.id}?autoplay=1&enablejsapi=1&modestbranding=1&rel=0&playsinline=1`;
 
   // ──────────────────────────────────────────────
   // Mode 1: Sleek Bottom Mini Audio Bar
@@ -128,6 +154,7 @@ export function GlobalYouTubePlayer() {
             <p className="text-xs font-medium text-white line-clamp-1">{currentVideo.title}</p>
             <p className="text-[10px] text-white/60">{currentVideo.channel}</p>
             <iframe
+              ref={pipIframeRef}
               src={embedUrl}
               title={currentVideo.title}
               className="w-1 h-1 opacity-0 pointer-events-none absolute"
@@ -136,6 +163,7 @@ export function GlobalYouTubePlayer() {
           </div>
         ) : (
           <iframe
+            ref={pipIframeRef}
             src={embedUrl}
             title={currentVideo.title}
             className="w-full h-full border-0"

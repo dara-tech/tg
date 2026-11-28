@@ -200,7 +200,6 @@ export default function AiScreen() {
                           {character.gradient.initial}
                         </div>
                       )}
-                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-1.5 ring-tg-bg" />
                     </div>
 
                     {/* Metadata */}

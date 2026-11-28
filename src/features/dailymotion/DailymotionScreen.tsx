@@ -6,6 +6,7 @@ import {
   type DailymotionCategory,
   fetchDailymotionVideos,
   searchDailymotionVideos,
+  fetchDailymotionChannelInfo,
 } from '@/services/dailymotion.service';
 import { useDailymotionStore } from '@/store/dailymotion.store';
 
@@ -41,7 +42,13 @@ export default function DailymotionScreen() {
   const [isLoadingFeed, setIsLoadingFeed] = useState(false);
 
   // Channel view state
-  const [selectedChannel, setSelectedChannel] = useState<{ name: string; avatar?: string } | null>(null);
+  const [selectedChannel, setSelectedChannel] = useState<{
+    name: string;
+    avatar?: string;
+    id?: string;
+    cover?: string;
+    subscribers?: string;
+  } | null>(null);
   const [channelVideos, setChannelVideos] = useState<DailymotionVideo[]>([]);
   const [isLoadingChannel, setIsLoadingChannel] = useState(false);
 
@@ -184,13 +191,53 @@ export default function DailymotionScreen() {
 
   // ── Channel Navigation Handler ──
   const handleOpenChannel = useCallback(
-    async (channel: { name: string; avatar?: string }) => {
+    async (channel: {
+      name: string;
+      avatar?: string;
+      id?: string;
+      cover?: string;
+      subscribers?: string;
+    }) => {
       setSelectedChannel(channel);
       setIsLoadingChannel(true);
       scrollToTop();
       try {
-        const vids = await searchDailymotionVideos(channel.name, 1);
+        const [vids, channelInfo] = await Promise.all([
+          searchDailymotionVideos(channel.name, 1),
+          channel.id
+            ? fetchDailymotionChannelInfo(channel.id)
+            : fetchDailymotionChannelInfo(channel.name),
+        ]);
         setChannelVideos(vids);
+        if (channelInfo) {
+          setSelectedChannel((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  avatar:
+                    channelInfo.avatar ||
+                    prev.avatar ||
+                    (vids.length > 0 ? vids[0].channelAvatar : undefined),
+                  cover:
+                    channelInfo.cover ||
+                    prev.cover ||
+                    (vids.length > 0 ? vids[0].thumbnail : undefined),
+                  id: channelInfo.id || prev.id,
+                  subscribers: channelInfo.subscribers || prev.subscribers,
+                }
+              : null
+          );
+        } else if (vids.length > 0) {
+          setSelectedChannel((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  avatar: prev.avatar || vids[0].channelAvatar,
+                  cover: prev.cover || vids[0].thumbnail,
+                }
+              : null
+          );
+        }
       } catch {
         setChannelVideos([]);
       } finally {
@@ -261,6 +308,7 @@ export default function DailymotionScreen() {
             scrollToTop();
           }}
           onPlayNextVideo={handlePlayVideo}
+          onOpenChannel={handleOpenChannel}
           playerContainerRef={playerContainerRef}
         />
       ) : selectedChannel ? (

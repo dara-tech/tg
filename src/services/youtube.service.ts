@@ -240,6 +240,44 @@ export async function fetchSearchSuggestions(query: string): Promise<string[]> {
   return [];
 }
 
+export interface YouTubeChannelInfo {
+  id: string;
+  name: string;
+  avatar?: string;
+  cover?: string;
+  subscribers?: string;
+  description?: string;
+}
+
+/**
+ * Fetch YouTube Channel Profile & Panoramic Banner
+ */
+export async function fetchYouTubeChannelDetails(
+  channelId: string,
+  channelName: string = ''
+): Promise<YouTubeChannelInfo | null> {
+  const cleanId = (channelId || '').trim();
+  const cleanName = (channelName || '').trim();
+  if (!cleanId && !cleanName) return null;
+
+  try {
+    const res = await fetch(
+      `/api/youtube/channel?id=${encodeURIComponent(cleanId)}&q=${encodeURIComponent(cleanName)}`
+    );
+    const contentType = res.headers.get('content-type') || '';
+    if (res.ok && contentType.includes('application/json')) {
+      const data = await res.json();
+      if (data && data.channel) {
+        return data.channel;
+      }
+    }
+  } catch (err) {
+    console.warn('Error fetching channel details:', err);
+  }
+
+  return null;
+}
+
 /**
  * Real dynamic category query pages for infinite scroll & random discovery
  */

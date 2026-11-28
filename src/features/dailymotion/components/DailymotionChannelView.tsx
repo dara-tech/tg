@@ -7,14 +7,18 @@ import {
   Play,
   Film,
   Heart,
-  Loader2,
+  Volume2,
 } from 'lucide-react';
 import { type DailymotionVideo } from '@/services/dailymotion.service';
+import { DailymotionChannelSkeleton } from './DailymotionSkeletons';
 
 interface DailymotionChannelViewProps {
   channel: {
     name: string;
     avatar?: string;
+    cover?: string;
+    id?: string;
+    subscribers?: string;
   };
   videos: DailymotionVideo[];
   isLoading: boolean;
@@ -38,6 +42,7 @@ export const DailymotionChannelView = memo(function DailymotionChannelView({
   const [videoSort, setVideoSort] = useState<VideoSort>('latest');
   const [isFollowed, setIsFollowed] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   const channelHandle = useMemo(() => {
     return `@${channel.name.replace(/\s+/g, '').toLowerCase()}`;
@@ -70,11 +75,19 @@ export const DailymotionChannelView = memo(function DailymotionChannelView({
   };
 
   const coverImage = useMemo(() => {
+    if (channel.cover) return channel.cover;
     if (videos.length > 0 && videos[0].thumbnail) {
       return videos[0].thumbnail;
     }
     return null;
-  }, [videos]);
+  }, [channel.cover, videos]);
+
+  const channelAvatar = useMemo(() => {
+    if (channel.avatar) return channel.avatar;
+    const found = videos.find((v) => v.channelAvatar);
+    if (found?.channelAvatar) return found.channelAvatar;
+    return null;
+  }, [channel.avatar, videos]);
 
   return (
     <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full pb-10">
@@ -99,11 +112,12 @@ export const DailymotionChannelView = memo(function DailymotionChannelView({
         <div className="flex flex-col items-center text-center -mt-10">
           {/* Centered Circular Avatar */}
           <div className="relative">
-            {channel.avatar ? (
+            {channelAvatar && !avatarError ? (
               <img
-                src={channel.avatar}
+                src={channelAvatar}
                 alt={channel.name}
                 className="w-20 h-20 min-w-[80px] min-h-[80px] max-w-[80px] max-h-[80px] rounded-full object-cover ring-4 ring-tg-bg shadow-2xl bg-tg-surface"
+                onError={() => setAvatarError(true)}
               />
             ) : (
               <div className="w-20 h-20 min-w-[80px] min-h-[80px] rounded-full bg-gradient-to-tr from-[#0066dc] to-sky-400 text-white font-bold text-2xl flex items-center justify-center ring-4 ring-tg-bg shadow-2xl">
@@ -120,11 +134,14 @@ export const DailymotionChannelView = memo(function DailymotionChannelView({
             <CheckCircle2 className="w-4 h-4 text-[#0066dc] shrink-0 fill-[#0066dc]/20" />
           </div>
 
-          {/* Handle & Video Count */}
+          {/* Handle & Video Count / Subscribers */}
           <p className="text-xs text-tg-text-hint mt-1 font-medium">
             <span>{channelHandle}</span>
             <span className="mx-1.5">•</span>
-            <span>{videos.length > 0 ? `${videos.length} videos` : 'Dailymotion Creator'}</span>
+            <span>
+              {channel.subscribers ||
+                (videos.length > 0 ? `${videos.length} videos` : 'Dailymotion Creator')}
+            </span>
           </p>
 
           <button
@@ -139,48 +156,55 @@ export const DailymotionChannelView = memo(function DailymotionChannelView({
         {/* Action Buttons: Follow & Share */}
         <div className="flex items-center justify-center gap-2.5 pt-1">
           <button
-            onClick={() => setIsFollowed((prev) => !prev)}
-            className={`px-6 py-2 rounded-full text-xs font-bold transition-all shadow-xs active:scale-95 ${
+            onClick={() => setIsFollowed(!isFollowed)}
+            className={`px-6 py-2 rounded-full text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center gap-1.5 ${
               isFollowed
-                ? 'bg-tg-surface text-tg-text border border-tg-border/40 hover:bg-tg-surface/80'
-                : 'bg-[#0066dc] text-white hover:bg-[#0055ba]'
+                ? 'bg-tg-surface border border-tg-border/40 text-tg-text'
+                : 'bg-[#0066dc] text-white hover:bg-[#0052b3]'
             }`}
           >
-            {isFollowed ? 'Following' : 'Follow'}
+            {isFollowed ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-[#0066dc]" />
+                <span>Following</span>
+              </>
+            ) : (
+              <span>Follow</span>
+            )}
           </button>
 
           <button
             onClick={handleShareChannel}
-            className="h-8 px-4 rounded-full bg-tg-surface border border-tg-border/30 text-tg-text text-xs font-medium flex items-center gap-1.5 hover:bg-tg-surface/80 active:scale-95 transition-transform"
+            className="w-9 h-9 rounded-full bg-tg-surface border border-tg-border/30 text-tg-text flex items-center justify-center hover:bg-tg-surface/80 active:scale-95 transition-all shadow-sm"
+            aria-label="Share Channel"
           >
             {copiedLink ? (
-              <Check className="w-3.5 h-3.5 text-emerald-400" />
+              <Check className="w-4 h-4 text-emerald-400" />
             ) : (
-              <Share2 className="w-3.5 h-3.5 text-tg-text-hint" />
+              <Share2 className="w-4 h-4" />
             )}
-            <span>{copiedLink ? 'Copied' : 'Share'}</span>
           </button>
         </div>
       </div>
 
-      {/* ── Sub Navigation Tabs ── */}
-      <div className="flex items-center gap-6 px-4 border-b border-tg-border/15 text-xs font-semibold">
+      {/* ── Navigation Tabs: Videos / About ── */}
+      <div className="flex border-b border-tg-border/20 px-4 bg-tg-bg/50 backdrop-blur-sm sticky top-0 z-10">
         <button
           onClick={() => setActiveTab('videos')}
-          className={`py-3 relative transition-colors ${
+          className={`py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${
             activeTab === 'videos'
-              ? 'text-tg-text border-b-2 border-[#0066dc]'
-              : 'text-tg-text-hint hover:text-tg-text'
+              ? 'border-[#0066dc] text-[#0066dc]'
+              : 'border-transparent text-tg-text-hint hover:text-tg-text'
           }`}
         >
           Videos
         </button>
         <button
           onClick={() => setActiveTab('about')}
-          className={`py-3 relative transition-colors ${
+          className={`py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${
             activeTab === 'about'
-              ? 'text-tg-text border-b-2 border-[#0066dc]'
-              : 'text-tg-text-hint hover:text-tg-text'
+              ? 'border-[#0066dc] text-[#0066dc]'
+              : 'border-transparent text-tg-text-hint hover:text-tg-text'
           }`}
         >
           About
@@ -215,23 +239,21 @@ export const DailymotionChannelView = memo(function DailymotionChannelView({
           </div>
 
           {isLoading ? (
-            <div className="py-20 flex flex-col items-center justify-center gap-3 text-tg-text-hint">
-              <Loader2 className="w-8 h-8 animate-spin text-[#0066dc]" />
-              <p className="text-xs font-medium">Loading channel videos…</p>
-            </div>
+            <DailymotionChannelSkeleton count={4} />
           ) : sortedVideos.length === 0 ? (
             <div className="py-16 text-center text-tg-text-hint space-y-2">
               <Film className="w-10 h-10 text-tg-text-hint mx-auto mb-2 opacity-50" />
-              <p className="text-sm font-semibold text-tg-text">No videos found for this channel</p>
+              <p className="text-sm font-semibold text-tg-text">រកមិនឃើញវីដេអូសម្រាប់ឆានែលនេះទេ</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               {sortedVideos.map((video) => {
                 const isFav = isFavorite(video.id);
+
                 return (
                   <div
                     key={video.id}
-                    className="group rounded-2xl border transition-all duration-200 overflow-hidden bg-tg-surface/60 hover:bg-tg-surface/90 shadow-xs hover:shadow-md border-tg-border/25 hover:border-tg-border/50"
+                    className="group rounded-2xl border border-tg-border/25 overflow-hidden bg-tg-surface/60 hover:bg-tg-surface/90 transition-all shadow-xs hover:shadow-md"
                   >
                     <div
                       onClick={() => onPlayVideo(video)}
@@ -240,21 +262,23 @@ export const DailymotionChannelView = memo(function DailymotionChannelView({
                       <img
                         src={video.thumbnail}
                         alt={video.title}
-                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300 ease-out"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
                         onError={(e) => {
                           e.currentTarget.src = `https://www.dailymotion.com/thumbnail/video/${video.id}`;
                         }}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
-                      {video.duration && (
-                        <span className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-black/85 backdrop-blur-md text-white tracking-wide shadow-md">
-                          {video.duration}
-                        </span>
-                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-[#0066dc] text-white flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
+                          <Play className="w-5 h-5 fill-current ml-0.5" />
+                        </div>
+                      </div>
+                      <span className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-black/85 text-white shadow-md">
+                        {video.duration}
+                      </span>
                     </div>
 
-                    <div className="p-3.5 flex items-start gap-3">
+                    <div className="p-3 flex items-start justify-between gap-2">
                       <div
                         onClick={() => onPlayVideo(video)}
                         className="flex-1 min-w-0 cursor-pointer"
@@ -262,9 +286,7 @@ export const DailymotionChannelView = memo(function DailymotionChannelView({
                         <h3 className="text-xs font-semibold text-tg-text line-clamp-2 leading-snug group-hover:text-[#0066dc] transition-colors">
                           {video.title}
                         </h3>
-                        <p className="text-[11px] text-tg-text-hint truncate mt-1">
-                          {video.views}
-                        </p>
+                        <p className="text-[10px] text-tg-text-hint mt-1">{video.views}</p>
                       </div>
 
                       <button
@@ -272,14 +294,14 @@ export const DailymotionChannelView = memo(function DailymotionChannelView({
                           e.stopPropagation();
                           onToggleFavorite(video);
                         }}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shrink-0 active:scale-90 ${
+                        className={`w-7 h-7 rounded-full flex items-center justify-center transition-all shrink-0 active:scale-90 ${
                           isFav
                             ? 'text-rose-500 bg-rose-500/10'
                             : 'text-tg-text-hint hover:text-tg-text hover:bg-tg-surface'
                         }`}
-                        aria-label="Save video"
+                        aria-label="Save"
                       >
-                        <Heart className={`w-4 h-4 ${isFav ? 'fill-current' : ''}`} />
+                        <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-current' : ''}`} />
                       </button>
                     </div>
                   </div>
@@ -292,15 +314,28 @@ export const DailymotionChannelView = memo(function DailymotionChannelView({
 
       {/* ── Tab Content: About ── */}
       {activeTab === 'about' && (
-        <div className="p-4 space-y-4 text-xs text-tg-text-secondary leading-relaxed">
-          <div className="p-4 rounded-2xl bg-tg-surface border border-tg-border/20 space-y-2">
-            <h4 className="font-bold text-tg-text text-sm">Channel Information</h4>
-            <p>
-              Creator channel <strong>{channel.name}</strong> on Dailymotion. Discover the latest
-              episodes, dramas, music, and highlights from this creator.
+        <div className="p-4 space-y-4">
+          <div className="p-4 rounded-2xl bg-tg-surface border border-tg-border/25 space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-tg-text-secondary">
+              Channel Information
+            </h3>
+            <p className="text-xs text-tg-text leading-relaxed">
+              Welcome to the official {channel.name} channel on Dailymotion. Watch high-definition
+              dramas, movies, series and music videos directly inside Telegram.
             </p>
-            <div className="pt-2 text-[11px] text-tg-text-hint">
-              Total uploaded videos: <strong>{videos.length}</strong>
+            <div className="pt-2 border-t border-tg-border/15 space-y-2 text-xs">
+              <div className="flex justify-between py-1 border-b border-tg-border/10">
+                <span className="text-tg-text-hint">Creator</span>
+                <span className="font-semibold text-tg-text">{channel.name}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-tg-border/10">
+                <span className="text-tg-text-hint">Handle</span>
+                <span className="font-semibold text-tg-text">{channelHandle}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-tg-text-hint">Platform</span>
+                <span className="font-semibold text-[#0066dc]">Dailymotion Partner</span>
+              </div>
             </div>
           </div>
         </div>

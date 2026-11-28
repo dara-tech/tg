@@ -6,7 +6,7 @@ export default async function handler(req: any, res: any) {
 
   if (!q.trim()) {
     res.setHeader('Content-Type', 'application/json');
-    return res.status(200).json({ videos: [] });
+    return res.status(200).json({ videos: [], channel: null });
   }
 
   try {
@@ -28,7 +28,7 @@ export default async function handler(req: any, res: any) {
 
     if (!match) {
       res.setHeader('Content-Type', 'application/json');
-      return res.status(200).json({ videos: [] });
+      return res.status(200).json({ videos: [], channel: null });
     }
 
     const data = JSON.parse(match[1]);
@@ -36,9 +36,27 @@ export default async function handler(req: any, res: any) {
       data?.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents || [];
 
     const videos: any[] = [];
+    let channelInfo: any = null;
+
     for (const section of sections) {
       const items = section?.itemSectionRenderer?.contents || [];
       for (const item of items) {
+        // 1. Channel Renderer (Dedicated Channel Card in search)
+        if (!channelInfo && item?.channelRenderer) {
+          const cr = item.channelRenderer;
+          const cThumbs = cr.thumbnail?.thumbnails;
+          const rawCAvatar = cThumbs?.[cThumbs.length - 1]?.url || cThumbs?.[0]?.url || '';
+          const cAvatar = (rawCAvatar.startsWith('//') ? `https:${rawCAvatar}` : rawCAvatar).replace(/=s\d+-/, '=s176-');
+
+          channelInfo = {
+            id: cr.channelId || '',
+            name: cr.title?.simpleText || '',
+            avatar: cAvatar,
+            subscribers: cr.subscriberCountText?.simpleText || cr.videoCountText?.simpleText || '',
+          };
+        }
+
+        // 2. Video Renderer
         const v = item?.videoRenderer;
         if (v && v.videoId) {
           const channelThumbs =
@@ -48,7 +66,8 @@ export default async function handler(req: any, res: any) {
             channelThumbs?.[channelThumbs.length - 1]?.url ||
             channelThumbs?.[0]?.url ||
             '';
-          const channelAvatar = rawAvatar.startsWith('//') ? `https:${rawAvatar}` : rawAvatar;
+          const fullAvatar = rawAvatar.startsWith('//') ? `https:${rawAvatar}` : rawAvatar;
+          const channelAvatar = fullAvatar ? fullAvatar.replace(/=s\d+-/, '=s176-') : '';
 
           videos.push({
             id: v.videoId,
@@ -66,9 +85,12 @@ export default async function handler(req: any, res: any) {
     }
 
     res.setHeader('Content-Type', 'application/json');
-    return res.status(200).json({ videos: videos.slice(0, 24) });
+    return res.status(200).json({
+      videos: videos.slice(0, 24),
+      channel: channelInfo,
+    });
   } catch (err) {
     res.setHeader('Content-Type', 'application/json');
-    return res.status(200).json({ videos: [] });
+    return res.status(200).json({ videos: [], channel: null });
   }
 }

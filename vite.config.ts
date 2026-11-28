@@ -42,12 +42,119 @@ function apiDevMiddleware(env: Record<string, string>): Plugin {
           return;
         }
 
+        if (url.pathname === '/api/youtube/channel' && req.method === 'GET') {
+          const id = url.searchParams.get('id') || '';
+          const q = url.searchParams.get('q') || '';
+          if (!id.trim() && !q.trim()) {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ channel: null }));
+            return;
+          }
+          try {
+            let channelId = id.trim();
+            let searchChannelInfo: any = null;
+
+            if (!channelId.startsWith('UC')) {
+              const searchRes = await fetch(
+                `https://www.youtube.com/results?search_query=${encodeURIComponent(channelId || q)}`,
+                {
+                  headers: {
+                    'User-Agent':
+                      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                  },
+                }
+              );
+              const searchHtml = await searchRes.text();
+              const sMatch =
+                searchHtml.match(/var ytInitialData = ({.*?});<\/script>/s) ||
+                searchHtml.match(/ytInitialData\s*=\s*({.+?});/);
+
+              if (sMatch) {
+                const sData = JSON.parse(sMatch[1]);
+                const sections =
+                  sData?.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents || [];
+                for (const sec of sections) {
+                  for (const it of sec?.itemSectionRenderer?.contents || []) {
+                    if (it?.channelRenderer) {
+                      const cr = it.channelRenderer;
+                      channelId = cr.channelId || channelId;
+                      const cThumbs = cr.thumbnail?.thumbnails;
+                      const rawCAvatar = cThumbs?.[cThumbs.length - 1]?.url || cThumbs?.[0]?.url || '';
+                      const cAvatar = (rawCAvatar.startsWith('//') ? `https:${rawCAvatar}` : rawCAvatar).replace(/=s\d+-/, '=s176-');
+                      searchChannelInfo = {
+                        id: cr.channelId,
+                        name: cr.title?.simpleText || q,
+                        avatar: cAvatar,
+                        subscribers: cr.subscriberCountText?.simpleText || '',
+                      };
+                      break;
+                    }
+                  }
+                  if (channelId.startsWith('UC')) break;
+                }
+              }
+            }
+
+            if (channelId.startsWith('UC')) {
+              const chanRes = await fetch(`https://www.youtube.com/channel/${channelId}`, {
+                headers: {
+                  'User-Agent':
+                    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                  'Accept-Language': 'en-US,en;q=0.9,km;q=0.8',
+                },
+              });
+
+              const chanHtml = await chanRes.text();
+              const cMatch =
+                chanHtml.match(/var ytInitialData = ({.*?});<\/script>/s) ||
+                chanHtml.match(/ytInitialData\s*=\s*({.+?});/);
+
+              if (cMatch) {
+                const cData = JSON.parse(cMatch[1]);
+                const ph = cData?.header?.pageHeaderRenderer?.content?.pageHeaderViewModel;
+                const banner = ph?.banner?.imageBannerViewModel?.image?.sources?.slice(-1)[0]?.url || undefined;
+                const avatarSources = ph?.image?.decoratedAvatarViewModel?.avatar?.avatarViewModel?.image?.sources;
+                const rawAvatar = avatarSources?.slice(-1)[0]?.url || searchChannelInfo?.avatar;
+                const avatar = rawAvatar ? (rawAvatar.startsWith('//') ? `https:${rawAvatar}` : rawAvatar) : undefined;
+                const name = ph?.title?.dynamicTextViewModel?.text?.content || searchChannelInfo?.name || q;
+                const metadata = ph?.metadata?.contentMetadataViewModel?.metadataRows;
+                const subscribers = metadata?.[0]?.metadataParts?.[0]?.text?.content || searchChannelInfo?.subscribers || undefined;
+
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(
+                  JSON.stringify({
+                    channel: {
+                      id: channelId,
+                      name,
+                      avatar,
+                      cover: banner,
+                      subscribers,
+                    },
+                  })
+                );
+                return;
+              }
+            }
+
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ channel: searchChannelInfo || null }));
+          } catch (err: any) {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ channel: null }));
+          }
+          return;
+        }
+
         if (url.pathname === '/api/youtube/search' && req.method === 'GET') {
           const q = url.searchParams.get('q') || '';
           if (!q.trim()) {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ videos: [] }));
+            res.end(JSON.stringify({ videos: [], channel: null }));
             return;
           }
           try {
@@ -69,7 +176,7 @@ function apiDevMiddleware(env: Record<string, string>): Plugin {
             if (!match) {
               res.statusCode = 200;
               res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ videos: [] }));
+              res.end(JSON.stringify({ videos: [], channel: null }));
               return;
             }
 
@@ -78,9 +185,24 @@ function apiDevMiddleware(env: Record<string, string>): Plugin {
               data?.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents || [];
 
             const videos: any[] = [];
+            let channelInfo: any = null;
+
             for (const section of sections) {
               const items = section?.itemSectionRenderer?.contents || [];
               for (const item of items) {
+                if (!channelInfo && item?.channelRenderer) {
+                  const cr = item.channelRenderer;
+                  const cThumbs = cr.thumbnail?.thumbnails;
+                  const rawCAvatar = cThumbs?.[cThumbs.length - 1]?.url || cThumbs?.[0]?.url || '';
+                  const cAvatar = (rawCAvatar.startsWith('//') ? `https:${rawCAvatar}` : rawCAvatar).replace(/=s\d+-/, '=s176-');
+                  channelInfo = {
+                    id: cr.channelId || '',
+                    name: cr.title?.simpleText || '',
+                    avatar: cAvatar,
+                    subscribers: cr.subscriberCountText?.simpleText || cr.videoCountText?.simpleText || '',
+                  };
+                }
+
                 const v = item?.videoRenderer;
                 if (v && v.videoId) {
                   const channelThumbs =
@@ -90,7 +212,8 @@ function apiDevMiddleware(env: Record<string, string>): Plugin {
                     channelThumbs?.[channelThumbs.length - 1]?.url ||
                     channelThumbs?.[0]?.url ||
                     '';
-                  const channelAvatar = rawAvatar.startsWith('//') ? `https:${rawAvatar}` : rawAvatar;
+                  const fullAvatar = rawAvatar.startsWith('//') ? `https:${rawAvatar}` : rawAvatar;
+                  const channelAvatar = fullAvatar ? fullAvatar.replace(/=s\d+-/, '=s176-') : '';
 
                   videos.push({
                     id: v.videoId,
@@ -109,11 +232,11 @@ function apiDevMiddleware(env: Record<string, string>): Plugin {
 
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ videos: videos.slice(0, 24) }));
+            res.end(JSON.stringify({ videos: videos.slice(0, 24), channel: channelInfo }));
           } catch (err: any) {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ videos: [] }));
+            res.end(JSON.stringify({ videos: [], channel: null }));
           }
           return;
         }

@@ -9,6 +9,7 @@ import {
   searchYouTubeVideos,
   fetchDynamicCategoryVideos,
   fetchCategoryVideosPage,
+  fetchYouTubeChannelDetails,
 } from '@/services/youtube.service';
 import { unlockAndStartBackgroundAudio } from '@/services/youtubeBackgroundAudio.service';
 
@@ -117,6 +118,8 @@ export default function YouTubeScreen() {
       avatar?: string;
       id?: string;
       url?: string;
+      cover?: string;
+      subscribers?: string;
     }) => {
       setSelectedChannel(channel);
       setIsLoadingChannel(true);
@@ -126,8 +129,36 @@ export default function YouTubeScreen() {
       } catch {}
 
       try {
-        const vids = await searchYouTubeVideos(channel.name);
+        const [vids, channelDetails] = await Promise.all([
+          searchYouTubeVideos(channel.name),
+          fetchYouTubeChannelDetails(channel.id || '', channel.name),
+        ]);
+
         setChannelVideos(vids);
+
+        if (channelDetails) {
+          setSelectedChannel((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  avatar: channelDetails.avatar || prev.avatar || (vids.length > 0 ? vids[0].channelAvatar : undefined),
+                  cover: channelDetails.cover || prev.cover || (vids.length > 0 ? vids[0].thumbnail : undefined),
+                  id: channelDetails.id || prev.id,
+                  subscribers: channelDetails.subscribers || prev.subscribers,
+                }
+              : null
+          );
+        } else if (vids.length > 0) {
+          setSelectedChannel((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  avatar: prev.avatar || vids[0].channelAvatar,
+                  cover: prev.cover || vids[0].thumbnail,
+                }
+              : null
+          );
+        }
       } catch {
         setChannelVideos([]);
       } finally {

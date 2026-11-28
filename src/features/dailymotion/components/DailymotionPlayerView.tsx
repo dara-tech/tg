@@ -1,16 +1,17 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import {
   ChevronDown,
   X,
   ThumbsUp,
   Share2,
-  Bookmark,
   Heart,
   Check,
-  Loader2,
   ExternalLink,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { type DailymotionVideo } from '@/services/dailymotion.service';
+import { DailymotionPlayerLoadingOverlay } from './DailymotionSkeletons';
 
 interface DailymotionPlayerViewProps {
   currentVideo: DailymotionVideo;
@@ -19,6 +20,12 @@ interface DailymotionPlayerViewProps {
   onToggleFavorite: () => void;
   onClosePlayer: () => void;
   onPlayNextVideo: (video: DailymotionVideo) => void;
+  onOpenChannel?: (channel: {
+    name: string;
+    avatar?: string;
+    id?: string;
+    cover?: string;
+  }) => void;
   playerContainerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -29,14 +36,22 @@ export const DailymotionPlayerView = memo(function DailymotionPlayerView({
   onToggleFavorite,
   onClosePlayer,
   onPlayNextVideo,
+  onOpenChannel,
   playerContainerRef,
 }: DailymotionPlayerViewProps) {
   const [liked, setLiked] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isVideoLoading, setIsVideoLoading] = useState(true);
+  const [isMuted, setIsMuted] = useState(true);
+  const [avatarError, setAvatarError] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     setLiked(false);
     setCopied(false);
+    setIsVideoLoading(true);
+    setIsMuted(true);
+    setAvatarError(false);
 
     if (playerContainerRef?.current) {
       playerContainerRef.current.scrollIntoView({ behavior: 'instant', block: 'start' });
@@ -54,6 +69,19 @@ export const DailymotionPlayerView = memo(function DailymotionPlayerView({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const handleToggleSound = () => {
+    const nextMuted = !isMuted;
+    setIsMuted(nextMuted);
+    try {
+      iframeRef.current?.contentWindow?.postMessage(
+        JSON.stringify({
+          command: nextMuted ? 'mute' : 'unmute',
+        }),
+        '*'
+      );
+    } catch {}
   };
 
   return (
@@ -81,15 +109,48 @@ export const DailymotionPlayerView = memo(function DailymotionPlayerView({
         </div>
 
         {/* 16:9 Dailymotion Embed Player */}
-        <div className="relative aspect-video w-full bg-black">
+        <div className="relative aspect-video w-full bg-black overflow-hidden">
+          {isVideoLoading && (
+            <DailymotionPlayerLoadingOverlay
+              thumbnail={currentVideo.thumbnail}
+              title={currentVideo.title}
+            />
+          )}
+
           <iframe
-            src={`https://geo.dailymotion.com/player/x8lr5.html?video=${currentVideo.id}&autoplay=1`}
+            ref={iframeRef}
+            key={currentVideo.id}
+            src={`https://geo.dailymotion.com/player/x8lr5.html?video=${currentVideo.id}&autoplay=1&mute=1&playsinline=1&controls=1`}
             title={currentVideo.title}
             className="w-full h-full border-0"
-            allow="autoplay; fullscreen; picture-in-picture; web-share"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
             referrerPolicy="strict-origin-when-cross-origin"
+            onLoad={() => setIsVideoLoading(false)}
           />
+
+          {/* Sound Toggle Button (Matching YouTube style) */}
+          <button
+            onClick={handleToggleSound}
+            className={`absolute bottom-3 right-3 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-semibold backdrop-blur-md border shadow-2xl active:scale-95 transition-all ${
+              isMuted
+                ? 'bg-[#0066dc]/90 border-blue-400/30 animate-pulse'
+                : 'bg-black/80 border-white/20'
+            }`}
+            title={isMuted ? 'បើកសំឡេង (Tap for Sound)' : 'បិទសំឡេង (Mute)'}
+          >
+            {isMuted ? (
+              <>
+                <VolumeX className="w-4 h-4 text-white" />
+                <span>បើកសំឡេង (Sound)</span>
+              </>
+            ) : (
+              <>
+                <Volume2 className="w-4 h-4 text-sky-400" />
+                <span>Sound On</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
@@ -107,12 +168,32 @@ export const DailymotionPlayerView = memo(function DailymotionPlayerView({
 
         {/* Channel Details */}
         <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0066dc] to-sky-500 flex items-center justify-center text-white text-sm font-bold uppercase shadow-xs shrink-0">
-              {currentVideo.channel.charAt(0) || 'D'}
-            </div>
+          <div
+            onClick={() =>
+              onOpenChannel &&
+              onOpenChannel({
+                name: currentVideo.channel,
+                avatar: currentVideo.channelAvatar,
+                id: currentVideo.channelId,
+                cover: currentVideo.channelCover,
+              })
+            }
+            className="flex items-center gap-2.5 min-w-0 cursor-pointer group"
+          >
+            {currentVideo.channelAvatar && !avatarError ? (
+              <img
+                src={currentVideo.channelAvatar}
+                alt={currentVideo.channel}
+                className="w-10 h-10 rounded-full object-cover shrink-0 ring-1 ring-tg-border/30 shadow-xs group-hover:opacity-90 transition-opacity bg-tg-surface"
+                onError={() => setAvatarError(true)}
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0066dc] to-sky-500 flex items-center justify-center text-white text-sm font-bold uppercase shadow-xs shrink-0 group-hover:ring-2 group-hover:ring-[#0066dc]/40 transition-all">
+                {currentVideo.channel.charAt(0) || 'D'}
+              </div>
+            )}
             <div className="min-w-0">
-              <p className="text-xs font-bold text-tg-text truncate">
+              <p className="text-xs font-bold text-tg-text truncate group-hover:text-[#0066dc] transition-colors">
                 {currentVideo.channel}
               </p>
               <p className="text-[10px] text-tg-text-hint">Dailymotion Creator</p>

@@ -1,6 +1,7 @@
-import React, { memo } from 'react';
-import { Heart, Loader2, Film } from 'lucide-react';
+import React, { memo, useState } from 'react';
+import { Heart, Film } from 'lucide-react';
 import { type DailymotionVideo } from '@/services/dailymotion.service';
+import { DailymotionFeedSkeleton } from './DailymotionSkeletons';
 
 interface DailymotionFeedViewProps {
   displayedVideos: DailymotionVideo[];
@@ -13,7 +14,12 @@ interface DailymotionFeedViewProps {
   isFavorite: (id: string) => boolean;
   onToggleFavorite: (video: DailymotionVideo) => void;
   onPlayVideo: (video: DailymotionVideo) => void;
-  onOpenChannel?: (channel: { name: string }) => void;
+  onOpenChannel?: (channel: {
+    name: string;
+    avatar?: string;
+    id?: string;
+    cover?: string;
+  }) => void;
 }
 
 export const DailymotionFeedView = memo(function DailymotionFeedView({
@@ -29,6 +35,8 @@ export const DailymotionFeedView = memo(function DailymotionFeedView({
   onPlayVideo,
   onOpenChannel,
 }: DailymotionFeedViewProps) {
+  const [failedAvatars, setFailedAvatars] = useState<Record<string, boolean>>({});
+
   return (
     <div className="px-3.5 py-2.5 max-w-2xl mx-auto w-full">
       {/* Live Search Indicator */}
@@ -47,16 +55,14 @@ export const DailymotionFeedView = memo(function DailymotionFeedView({
       )}
 
       {isSearching || isLoadingFeed ? (
-        <div className="py-20 flex flex-col items-center justify-center gap-3 text-tg-text-hint">
-          <Loader2 className="w-8 h-8 animate-spin text-[#0066dc]" />
-          <p className="text-xs font-medium">
-            {isSearching ? 'Searching Dailymotion…' : 'Loading popular videos…'}
-          </p>
-        </div>
+        <DailymotionFeedSkeleton
+          count={6}
+          label={isSearching ? 'កំពុងស្វែងរក Dailymotion…' : 'កំពុងផ្ទុកវីដេអូពេញនិយម…'}
+        />
       ) : displayedVideos.length === 0 ? (
         <div className="py-16 text-center text-tg-text-hint space-y-2">
           <Film className="w-10 h-10 text-tg-text-hint mx-auto mb-2 opacity-50" />
-          <p className="text-sm font-semibold text-tg-text">No videos found</p>
+          <p className="text-sm font-semibold text-tg-text">រកមិនឃើញវីដេអូ</p>
           <p className="text-xs max-w-xs mx-auto">
             {activeCategory === 'favorites'
               ? 'Save your favorite videos by tapping the heart icon.'
@@ -68,6 +74,7 @@ export const DailymotionFeedView = memo(function DailymotionFeedView({
           {displayedVideos.map((video) => {
             const isFav = isFavorite(video.id);
             const isCurrent = currentVideoId === video.id;
+            const hasAvatar = Boolean(video.channelAvatar && !failedAvatars[video.id]);
 
             return (
               <div
@@ -108,13 +115,32 @@ export const DailymotionFeedView = memo(function DailymotionFeedView({
                 <div className="p-3.5 flex items-start gap-3">
                   {/* Channel Avatar */}
                   <div
-                    onClick={() => onOpenChannel && onOpenChannel({ name: video.channel })}
+                    onClick={() =>
+                      onOpenChannel &&
+                      onOpenChannel({
+                        name: video.channel,
+                        avatar: video.channelAvatar,
+                        id: video.channelId,
+                        cover: video.channelCover,
+                      })
+                    }
                     className="cursor-pointer shrink-0 mt-0.5"
                     title={`View ${video.channel}`}
                   >
-                    <div className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-full bg-gradient-to-br from-[#0066dc] to-sky-500 flex items-center justify-center text-white text-xs font-bold uppercase ring-1 ring-tg-border/30 hover:ring-[#0066dc]/60 transition-all shadow-xs">
-                      {video.channel.charAt(0) || 'D'}
-                    </div>
+                    {hasAvatar ? (
+                      <img
+                        src={video.channelAvatar}
+                        alt={video.channel}
+                        className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-full object-cover ring-1 ring-tg-border/30 hover:ring-[#0066dc]/60 transition-all shadow-xs bg-tg-surface"
+                        onError={() => {
+                          setFailedAvatars((prev) => ({ ...prev, [video.id]: true }));
+                        }}
+                      />
+                    ) : (
+                      <div className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-full bg-gradient-to-br from-[#0066dc] to-sky-500 flex items-center justify-center text-white text-xs font-bold uppercase ring-1 ring-tg-border/30 hover:ring-[#0066dc]/60 transition-all shadow-xs">
+                        {video.channel.charAt(0) || 'D'}
+                      </div>
+                    )}
                   </div>
 
                   {/* Title & Metadata */}

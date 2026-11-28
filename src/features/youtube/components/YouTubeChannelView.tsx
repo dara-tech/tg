@@ -20,8 +20,10 @@ interface YouTubeChannelViewProps {
   channel: {
     name: string;
     avatar?: string;
+    cover?: string;
     id?: string;
     url?: string;
+    subscribers?: string;
   };
   videos: YouTubeVideo[];
   isLoading: boolean;
@@ -75,11 +77,19 @@ export const YouTubeChannelView = memo(function YouTubeChannelView({
   };
 
   const coverImage = useMemo(() => {
+    if (channel.cover) return channel.cover;
     if (videos.length > 0 && videos[0].thumbnail) {
       return videos[0].thumbnail;
     }
     return channel.avatar || null;
-  }, [videos, channel.avatar]);
+  }, [channel.cover, videos, channel.avatar]);
+
+  const channelAvatar = useMemo(() => {
+    if (channel.avatar) return channel.avatar;
+    const found = videos.find((v) => v.channelAvatar);
+    if (found?.channelAvatar) return found.channelAvatar;
+    return null;
+  }, [channel.avatar, videos]);
 
   return (
     <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full pb-10">
@@ -104,9 +114,9 @@ export const YouTubeChannelView = memo(function YouTubeChannelView({
         <div className="flex flex-col items-center text-center -mt-10">
           {/* Centered Circular Avatar (Strict 1:1 Aspect Ratio) */}
           <div className="relative">
-            {channel.avatar ? (
+            {channelAvatar ? (
               <img
-                src={channel.avatar}
+                src={channelAvatar}
                 alt={channel.name}
                 className="w-20 h-20 min-w-[80px] min-h-[80px] max-w-[80px] max-h-[80px] rounded-full object-cover ring-4 ring-tg-bg shadow-2xl bg-tg-surface"
                 onError={(e) => {
@@ -132,7 +142,9 @@ export const YouTubeChannelView = memo(function YouTubeChannelView({
           <p className="text-xs text-tg-text-hint mt-1 font-medium">
             <span>{channelHandle}</span>
             <span className="mx-1.5">•</span>
-            <span>{videos.length > 0 ? `${videos.length} videos` : 'Official Channel'}</span>
+            <span>
+              {channel.subscribers || (videos.length > 0 ? `${videos.length} videos` : 'Official Channel')}
+            </span>
           </p>
 
           {/* Description snippet & About trigger */}

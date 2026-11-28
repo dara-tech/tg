@@ -62,6 +62,27 @@ export default function ToolsScreen() {
               យូធូប
             </span>
           </button>
+
+          {/* Dailymotion App Icon */}
+          <button
+            onClick={() => router.push('/dailymotion')}
+            className="flex flex-col items-center text-center group active:scale-95 transition-transform focus:outline-none"
+          >
+            <div className="relative w-16 h-16 rounded-[22px] p-2.5 shadow-sm border border-tg-border/30 bg-tg-surface group-hover:border-[#0066dc]/50 transition-all flex items-center justify-center overflow-hidden">
+              <img
+                src="/icons/dailymotion.svg"
+                alt="Dailymotion"
+                className="w-full h-full object-contain drop-shadow-xs group-hover:scale-105 transition-transform"
+              />
+            </div>
+
+            <span className="text-xs font-semibold text-tg-text mt-1.5 group-hover:text-[#0066dc] transition-colors">
+              Dailymotion
+            </span>
+            <span className="text-[10px] text-tg-text-hint font-medium">
+              ដេលីម៉ូសិន
+            </span>
+          </button>
         </div>
       </div>
     </div>

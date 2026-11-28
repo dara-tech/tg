@@ -86,7 +86,12 @@ export function BottomNav() {
 
   const isTabActive = (href: string) => {
     if (href === '/dialogs') return pathname === '/' || pathname.startsWith('/dialogs');
-    if (href === '/tools') return pathname.startsWith('/tools') || pathname.startsWith('/youtube');
+    if (href === '/tools')
+      return (
+        pathname.startsWith('/tools') ||
+        pathname.startsWith('/youtube') ||
+        pathname.startsWith('/dailymotion')
+      );
     return pathname.startsWith(href);
   };
 

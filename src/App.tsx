@@ -19,6 +19,7 @@ const QrScannerScreen = lazy(() => import('./features/qr-scanner/QrScannerScreen
 const SearchScreen = lazy(() => import('./features/search/SearchScreen'));
 const ErpScreen = lazy(() => import('./features/erp/ErpScreen'));
 const YouTubeScreen = lazy(() => import('./features/youtube/YouTubeScreen'));
+const DailymotionScreen = lazy(() => import('./features/dailymotion/DailymotionScreen'));
 import { GlobalYouTubePlayer } from './components/youtube/GlobalYouTubePlayer';
 
 function RouteLoadingFallback() {
@@ -81,6 +82,7 @@ export default function App() {
                 <Route path="/erp" element={<ErpScreen />} />
                 <Route path="/bank" element={<Navigate to="/erp" replace />} />
                 <Route path="/youtube" element={<YouTubeScreen />} />
+                <Route path="/dailymotion" element={<DailymotionScreen />} />
                 <Route path="*" element={<Navigate to="/dialogs" replace />} />
               </Routes>
             </Suspense>

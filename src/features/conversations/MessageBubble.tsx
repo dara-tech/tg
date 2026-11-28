@@ -631,8 +631,8 @@ function AlbumGrid({
             ? 'w-full rounded-none'
             : 'w-full rounded-t-[18px]'
           : hasHeader
-          ? 'w-[280px] sm:w-[320px] max-w-full rounded-b-[18px]'
-          : 'w-[280px] sm:w-[320px] max-w-full rounded-[18px]'
+          ? 'w-[320px] sm:w-[380px] md:w-[420px] max-w-full rounded-b-[18px]'
+          : 'w-[320px] sm:w-[380px] md:w-[420px] max-w-full rounded-[18px]'
       )}
     >
       {rows.map((row, rIdx) => {
@@ -689,22 +689,31 @@ function AlbumGrid({
   );
 }
 
-function getMediaBoxSize(w?: number, h?: number, isFullWidth = false, maxW = 280, maxH = 340) {
+function getMediaBoxSize(w?: number, h?: number, isFullWidth = false, maxW = 380, maxH = 420) {
   if (w && h && w > 0 && h > 0) {
+    if (isFullWidth) {
+      return {
+        width: '100%',
+        maxWidth: '100%',
+        height: 'auto',
+        aspectRatio: `${w} / ${h}`,
+      };
+    }
+
+    const aspect = w / h;
     let targetW = w;
     let targetH = h;
-    const aspect = w / h;
 
     if (aspect >= 1) {
       // Landscape: limit width first
       targetW = Math.min(w, maxW);
       targetH = Math.round(targetW / aspect);
-      if (targetH > 240) {
-        targetH = 240;
+      if (targetH > 280) {
+        targetH = 280;
         targetW = Math.round(targetH * aspect);
       }
-      if (targetH < 130) {
-        targetH = 130;
+      if (targetH < 140) {
+        targetH = 140;
         targetW = Math.round(targetH * aspect);
       }
     } else {
@@ -715,28 +724,28 @@ function getMediaBoxSize(w?: number, h?: number, isFullWidth = false, maxW = 280
         targetW = maxW;
         targetH = Math.round(targetW / aspect);
       }
-      if (targetW < 160) {
-        targetW = 160;
+      if (targetW < 180) {
+        targetW = 180;
         targetH = Math.round(targetW / aspect);
       }
     }
 
-    targetW = Math.min(maxW, Math.max(160, targetW));
-    targetH = Math.min(maxH, Math.max(130, targetH));
+    targetW = Math.min(maxW, Math.max(180, targetW));
+    targetH = Math.min(maxH, Math.max(140, targetH));
 
     return {
-      width: isFullWidth ? '100%' : `${targetW}px`,
+      width: `${targetW}px`,
       maxWidth: `${targetW}px`,
       height: `${targetH}px`,
-      aspectRatio: `${w}/${h}`,
+      aspectRatio: `${w} / ${h}`,
     };
   }
 
   return {
-    width: isFullWidth ? '100%' : '260px',
-    maxWidth: '260px',
-    height: '195px',
-    aspectRatio: '4/3',
+    width: isFullWidth ? '100%' : '300px',
+    maxWidth: isFullWidth ? '100%' : '300px',
+    height: isFullWidth ? 'auto' : '220px',
+    aspectRatio: '16 / 9',
   };
 }
 
@@ -816,10 +825,18 @@ function MediaContent({
 
     return (
       <button
+        type="button"
         onClick={() => handleLoadAndOpen('image')}
-        style={{ width: box.width, maxWidth: box.maxWidth, height: box.height, aspectRatio: box.aspectRatio }}
+        style={{
+          width: isFullWidth ? '100%' : box.width,
+          maxWidth: isFullWidth ? '100%' : box.maxWidth,
+          height: isFullWidth ? undefined : box.height,
+          maxHeight: isFullWidth ? '440px' : undefined,
+          aspectRatio: box.aspectRatio,
+        }}
         className={clsx(
           'relative block overflow-hidden focus:outline-none transition-transform active:scale-[0.99] text-left shrink-0',
+          isFullWidth ? 'w-full' : '',
           radiusClass
         )}
       >
@@ -931,10 +948,18 @@ function MediaContent({
     const box = getMediaBoxSize(media.width, media.height, isFullWidth);
     return (
       <button
+        type="button"
         onClick={() => handleLoadAndOpen('video')}
-        style={{ width: box.width, maxWidth: box.maxWidth, height: box.height, aspectRatio: box.aspectRatio }}
+        style={{
+          width: isFullWidth ? '100%' : box.width,
+          maxWidth: isFullWidth ? '100%' : box.maxWidth,
+          height: isFullWidth ? undefined : box.height,
+          maxHeight: isFullWidth ? '440px' : undefined,
+          aspectRatio: box.aspectRatio,
+        }}
         className={clsx(
           'relative block overflow-hidden bg-black/40 text-left focus:outline-none transition-transform active:scale-[0.99] shrink-0 group/video',
+          isFullWidth ? 'w-full' : '',
           radiusClass
         )}
       >
@@ -1135,6 +1160,7 @@ export function MessageBubble({
   senderMeta,
   showAvatar = true,
   showSenderName = false,
+  isChannel = false,
   selectMode = false,
   selected = false,
   onToggleSelect,
@@ -1163,6 +1189,7 @@ export function MessageBubble({
   };
   showAvatar?: boolean;
   showSenderName?: boolean;
+  isChannel?: boolean;
   selectMode?: boolean;
   selected?: boolean;
   onToggleSelect?: (id: number) => void;
@@ -1272,11 +1299,25 @@ export function MessageBubble({
           )
         )}
 
-        <div className="flex flex-col gap-0.5 max-w-[84%] sm:max-w-[75%] min-w-0">
+        <div
+          className={clsx(
+            'flex flex-col gap-0.5 min-w-0',
+            isChannel
+              ? 'w-full max-w-[94%] sm:max-w-[88%] md:max-w-[560px]'
+              : 'max-w-[86%] sm:max-w-[80%] md:max-w-[480px]'
+          )}
+        >
           <Bubble
             align={message.out ? 'end' : 'start'}
             variant={isEdgeMedia ? 'ghost' : message.out ? 'default' : 'secondary'}
-            className={clsx(isEdgeMedia && 'shadow-none', 'w-fit max-w-full')}
+            className={clsx(
+              isEdgeMedia && 'shadow-none',
+              hasCaption
+                ? isChannel
+                  ? 'w-full max-w-full'
+                  : 'w-fit min-w-[280px] sm:min-w-[320px] max-w-full'
+                : 'w-fit max-w-full'
+            )}
             onContextMenu={openMenu}
             onTouchStart={e => { longPressTimer.current = setTimeout(() => openMenu(e), 450); }}
             onTouchEnd={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
@@ -1356,7 +1397,7 @@ export function MessageBubble({
               {message.text && (
                 <div className={clsx(
                   hasEdgeCaption
-                    ? 'px-3 pt-2 pb-1.5 flex flex-wrap items-end gap-x-2 gap-y-0.5'
+                    ? 'px-3.5 pt-2.5 pb-2 flex flex-wrap items-end gap-x-2 gap-y-1'
                     : hasCaption
                     ? 'pt-2 flex flex-wrap items-end gap-x-2 gap-y-0.5'
                     : 'flex flex-wrap items-end gap-x-2 gap-y-0.5'

@@ -1237,9 +1237,10 @@ export default function ConversationScreen() {
                     key={`msg-${msg.id}-${mIdx}`}
                     message={msg}
                     replyPreviewText={msg.replyTo ? messages.find((x) => x.id === msg.replyTo)?.text : undefined}
-                    showAvatar={mIdx === run.messages.length - 1}
+                    showAvatar={chatMeta.peerType === 'chat' && mIdx === run.messages.length - 1}
                     showSenderName={mIdx === 0 && chatMeta.peerType === 'chat' && Boolean(msg.sender && msg.sender.peerId !== chatMeta.peerId)}
-                    senderMeta={!msg.out ? (msg.sender ?? {
+                    isChannel={chatMeta.peerType === 'channel'}
+                    senderMeta={!msg.out && chatMeta.peerType === 'chat' ? (msg.sender ?? {
                       letters: chatMeta.avatarLetters,
                       color: chatMeta.avatarColor,
                       peerType: chatMeta.peerType,

@@ -1,62 +1,63 @@
 import type { YouTubeVideo } from '@/store/youtube.store';
 
-// 44-byte standard valid PCM silent WAV audio loop
-const SILENT_AUDIO_URI =
-  'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
-
 let silentAudio: HTMLAudioElement | null = null;
-let activeCommandHandler: ((command: string) => void) | null = null;
+let activeCommandHandler: ((command: 'playVideo' | 'pauseVideo' | 'stopVideo') => void) | null = null;
 let isSessionActive = false;
 
-function getOrCreateAudioElement(): HTMLAudioElement {
+function getOrCreateAudio(): HTMLAudioElement {
   if (!silentAudio && typeof window !== 'undefined') {
-    silentAudio = new Audio(SILENT_AUDIO_URI);
+    silentAudio = new Audio('/audio/silence.wav');
     silentAudio.loop = true;
     silentAudio.preload = 'auto';
     silentAudio.setAttribute('playsinline', 'true');
     silentAudio.setAttribute('webkit-playsinline', 'true');
+    silentAudio.setAttribute('x-webkit-airplay', 'allow');
   }
   return silentAudio!;
 }
 
-// Handler for screen lock / tab hidden
-function handleVisibilityChange() {
-  if (!isSessionActive || !document.hidden) return;
+function handleVisibility() {
+  if (!isSessionActive) return;
 
-  const audio = getOrCreateAudioElement();
-  audio.play().catch(() => {});
-
-  if (activeCommandHandler) {
-    // Re-assert playVideo commands to counteract Mobile Safari auto-pause on screen off
-    activeCommandHandler('playVideo');
+  const audio = getOrCreateAudio();
+  if (document.hidden) {
+    // Screen was locked or switched away
+    audio.play().catch(() => {});
+    // Burst command to prevent iOS Safari auto-pause
+    activeCommandHandler?.('playVideo');
     setTimeout(() => activeCommandHandler?.('playVideo'), 150);
-    setTimeout(() => activeCommandHandler?.('playVideo'), 400);
+    setTimeout(() => activeCommandHandler?.('playVideo'), 450);
+    setTimeout(() => activeCommandHandler?.('playVideo'), 900);
+  } else {
+    // User unlocked screen or brought PWA to foreground
+    activeCommandHandler?.('playVideo');
   }
 }
 
 /**
- * Initializes and locks the background audio session for Mobile Safari / PWA
- * Controls Lock Screen Now Playing widget & prevents audio pausing on screen-off.
+ * Call synchronously inside a user gesture (tap/click) or when video starts
+ * to claim the iOS/Android background audio session.
  */
-export function startBackgroundAudioSession(
+export function unlockAndStartBackgroundAudio(
   video: YouTubeVideo,
   onCommand?: (command: 'playVideo' | 'pauseVideo' | 'stopVideo') => void
 ) {
   if (typeof window === 'undefined') return;
 
-  activeCommandHandler = onCommand || null;
   isSessionActive = true;
+  if (onCommand) {
+    activeCommandHandler = onCommand;
+  }
 
-  const audio = getOrCreateAudioElement();
+  const audio = getOrCreateAudio();
   audio.play().catch(() => {
-    // Some browsers require explicit user tap, will resume on first tap
+    // Will resume on subsequent user tap
   });
 
-  // Attach visibility listener for screen off
-  document.removeEventListener('visibilitychange', handleVisibilityChange);
-  document.addEventListener('visibilitychange', handleVisibilityChange);
+  document.removeEventListener('visibilitychange', handleVisibility);
+  document.addEventListener('visibilitychange', handleVisibility);
 
-  // Configure Native MediaSession (iOS Lock Screen / Control Center / Android Media)
+  // Setup Native MediaSession (iOS Lock Screen / Control Center / Android Media)
   if ('mediaSession' in navigator) {
     try {
       navigator.mediaSession.metadata = new MediaMetadata({
@@ -65,6 +66,7 @@ export function startBackgroundAudioSession(
         album: 'Telegram YouTube Hub',
         artwork: [
           { src: video.thumbnail, sizes: '512x512', type: 'image/jpeg' },
+          { src: video.thumbnail, sizes: '256x256', type: 'image/jpeg' },
           { src: video.thumbnail, sizes: '128x128', type: 'image/jpeg' },
         ],
       });
@@ -72,33 +74,39 @@ export function startBackgroundAudioSession(
       navigator.mediaSession.playbackState = 'playing';
 
       navigator.mediaSession.setActionHandler('play', () => {
-        const a = getOrCreateAudioElement();
+        const a = getOrCreateAudio();
         a.play().catch(() => {});
         navigator.mediaSession.playbackState = 'playing';
         activeCommandHandler?.('playVideo');
       });
 
       navigator.mediaSession.setActionHandler('pause', () => {
-        const a = getOrCreateAudioElement();
+        const a = getOrCreateAudio();
         a.pause();
         navigator.mediaSession.playbackState = 'paused';
         activeCommandHandler?.('pauseVideo');
       });
 
       navigator.mediaSession.setActionHandler('stop', () => {
-        const a = getOrCreateAudioElement();
+        const a = getOrCreateAudio();
         a.pause();
         navigator.mediaSession.playbackState = 'none';
         activeCommandHandler?.('stopVideo');
       });
     } catch (e) {
-      console.warn('MediaSession setup error:', e);
+      console.warn('MediaSession error:', e);
     }
   }
 }
 
+export function setBackgroundAudioCommandHandler(
+  handler: (command: 'playVideo' | 'pauseVideo' | 'stopVideo') => void
+) {
+  activeCommandHandler = handler;
+}
+
 /**
- * Cleanly releases background audio session when player is closed
+ * Cleanly releases background audio session
  */
 export function stopBackgroundAudioSession() {
   if (typeof window === 'undefined') return;
@@ -113,7 +121,7 @@ export function stopBackgroundAudioSession() {
     } catch {}
   }
 
-  document.removeEventListener('visibilitychange', handleVisibilityChange);
+  document.removeEventListener('visibilitychange', handleVisibility);
 
   if ('mediaSession' in navigator) {
     try {

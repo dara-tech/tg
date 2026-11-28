@@ -18,7 +18,8 @@ import {
 import { type YouTubeVideo } from '@/store/youtube.store';
 import { PlayerLoadingOverlay } from './YouTubeSkeletons';
 import {
-  startBackgroundAudioSession,
+  unlockAndStartBackgroundAudio,
+  setBackgroundAudioCommandHandler,
   stopBackgroundAudioSession,
 } from '@/services/youtubeBackgroundAudio.service';
 
@@ -68,7 +69,7 @@ export const YouTubePlayerView = memo(function YouTubePlayerView({
     setAiSummary(null);
     setShowShareModal(false);
 
-    startBackgroundAudioSession(currentVideo, (cmd) => {
+    unlockAndStartBackgroundAudio(currentVideo, (cmd) => {
       try {
         iframeRef.current?.contentWindow?.postMessage(
           JSON.stringify({ event: 'command', func: cmd, args: '' }),

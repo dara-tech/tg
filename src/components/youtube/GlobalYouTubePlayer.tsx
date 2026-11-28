@@ -10,7 +10,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useYouTubeStore } from '@/store/youtube.store';
 import { useEffect, useRef } from 'react';
 import {
-  startBackgroundAudioSession,
+  unlockAndStartBackgroundAudio,
   stopBackgroundAudioSession,
 } from '@/services/youtubeBackgroundAudio.service';
 
@@ -37,7 +37,7 @@ export function GlobalYouTubePlayer() {
 
   useEffect(() => {
     if (currentVideo && playerMode !== 'closed') {
-      startBackgroundAudioSession(currentVideo, (cmd) => {
+      unlockAndStartBackgroundAudio(currentVideo, (cmd) => {
         try {
           pipIframeRef.current?.contentWindow?.postMessage(
             JSON.stringify({ event: 'command', func: cmd, args: '' }),

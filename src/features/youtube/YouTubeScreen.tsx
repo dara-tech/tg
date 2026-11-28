@@ -10,6 +10,7 @@ import {
   fetchDynamicCategoryVideos,
   fetchCategoryVideosPage,
 } from '@/services/youtube.service';
+import { unlockAndStartBackgroundAudio } from '@/services/youtubeBackgroundAudio.service';
 
 import { YouTubeHeader } from './components/YouTubeHeader';
 import { CategoryTabs, type CategoryFilter } from './components/CategoryTabs';
@@ -91,6 +92,7 @@ export default function YouTubeScreen() {
   // ── Video Play Handler ──
   const handlePlayVideo = useCallback(
     (video: YouTubeVideo) => {
+      unlockAndStartBackgroundAudio(video);
       setSelectedChannel(null);
       setIsSearchOpen(false);
       playVideo(video, 'pip');

@@ -15,7 +15,7 @@ import {
   Image as ImageIcon,
   ScanText,
   BarChart3,
-  Code2,
+  QrCode,
   FileText,
   ArrowRight,
   Copy,
@@ -51,10 +51,9 @@ interface CustomAiApp {
   customIconSrc: string;
   iconGradient: string;
   category: 'core' | 'creative' | 'business';
-  openMode: 'fullscreen' | 'route' | 'chat';
+  openMode: 'fullscreen' | 'route';
   subAppId?: SubAppId;
   route?: string;
-  chatPersonaId?: string;
 }
 
 const VOICE_CATEGORIES = [
@@ -69,7 +68,7 @@ export default function AiScreen() {
   const router = useRouter();
   const { startAiCall, setAiPersona, aiPersona } = useUIStore();
 
-  // Active full-screen sub-app (like entering an app in banking apps)
+  // Active full-screen sub-app (entering an app in banking apps)
   const [activeSubApp, setActiveSubApp] = useState<SubAppId | null>(null);
 
   // Search inside launcher or sub-apps
@@ -82,7 +81,6 @@ export default function AiScreen() {
   // -------------------------------------------------------------
   const [imagePrompt, setImagePrompt] = useState('');
   const [imageStyle, setImageStyle] = useState('Photorealistic 8K');
-  const [imageAspectRatio, setImageAspectRatio] = useState('1:1');
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<string[]>([
     'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
@@ -93,7 +91,7 @@ export default function AiScreen() {
   );
 
   // -------------------------------------------------------------
-  // Sub-App 2: Khmer AI & Translator State
+  // Sub-App 2: AI Translate & Grammar State
   // -------------------------------------------------------------
   const [translatorInput, setTranslatorInput] = useState('');
   const [translatorOutput, setTranslatorOutput] = useState('');
@@ -120,7 +118,7 @@ export default function AiScreen() {
   const [scannedImage, setScannedImage] = useState<string | null>(null);
 
   // -------------------------------------------------------------
-  // Voice Companions Filtering
+  // Voice Companions Filtering (Inside AI Call App)
   // -------------------------------------------------------------
   const characterList = useMemo(() => {
     return Object.values(AI_PERSONAS).filter((p) => {
@@ -186,52 +184,26 @@ export default function AiScreen() {
   };
 
   // -------------------------------------------------------------
-  // Banking App Style Menu: Custom Apps Definition
+  // Banking App Style Menu: DISTINCT REAL APPS (AI Call is ONE App!)
   // -------------------------------------------------------------
   const APPS_LIST: CustomAiApp[] = [
     {
-      id: 'ai_voice',
-      name: 'AI Voice Call',
-      khmerName: 'ខលសំឡេង AI',
-      tagline: 'Live voice companions in Khmer & English',
-      badge: 'LIVE',
+      id: 'ai_call',
+      name: 'AI Call',
+      khmerName: 'ការខល AI',
+      tagline: 'Live voice companions with Bopha, Lily, Dara & Dev Lead',
+      badge: 'Voice',
       badgeColor: 'bg-rose-500',
-      customIconSrc: '/avatars/lily.png',
+      customIconSrc: '/icons/ai-brain.png',
       iconGradient: 'from-amber-400 via-rose-500 to-pink-500',
       category: 'core',
       openMode: 'fullscreen',
       subAppId: 'voice',
     },
     {
-      id: 'ai_assistant',
-      name: 'AI Assistant',
-      khmerName: 'ជំនួយការឆ្លាតវៃ',
-      tagline: 'Conversational agent for deep reasoning & tasks',
-      badge: 'PRO',
-      badgeColor: 'bg-blue-500',
-      customIconSrc: '/icons/ai-brain.png',
-      iconGradient: 'from-blue-500 via-indigo-500 to-cyan-500',
-      category: 'core',
-      openMode: 'chat',
-      chatPersonaId: 'telegram',
-    },
-    {
-      id: 'khmer_ai',
-      name: 'Khmer AI',
-      khmerName: 'បកប្រែ & វេយ្យាករណ៍',
-      tagline: 'Chuon Nath spell check & multi-language translation',
-      badge: 'ខ្មែរ',
-      badgeColor: 'bg-emerald-600',
-      customIconSrc: '/avatars/grammarpolice.png',
-      iconGradient: 'from-emerald-500 via-teal-500 to-green-600',
-      category: 'core',
-      openMode: 'fullscreen',
-      subAppId: 'khmer',
-    },
-    {
       id: 'ai_image',
       name: 'Image Studio',
-      khmerName: 'បង្កើតរូបភាព',
+      khmerName: 'បង្កើតរូបភាព AI',
       tagline: 'Generate 4K artwork, anime & posters from text',
       badge: '4K',
       badgeColor: 'bg-purple-600',
@@ -242,11 +214,24 @@ export default function AiScreen() {
       subAppId: 'image',
     },
     {
+      id: 'khmer_ai',
+      name: 'AI Translate',
+      khmerName: 'បកប្រែ & អក្ខរាវិរុទ្ធ',
+      tagline: 'Chuon Nath spell check & multi-language translation',
+      badge: 'ខ្មែរ',
+      badgeColor: 'bg-emerald-600',
+      customIconSrc: '/avatars/grammarpolice.png',
+      iconGradient: 'from-emerald-500 via-teal-500 to-green-600',
+      category: 'core',
+      openMode: 'fullscreen',
+      subAppId: 'khmer',
+    },
+    {
       id: 'ai_summarizer',
       name: 'Summarizer',
       khmerName: 'សង្ខេបកិច្ចប្រជុំ',
       tagline: 'Distill transcripts & long chats into action items',
-      badge: 'FAST',
+      badge: 'Notes',
       badgeColor: 'bg-amber-500',
       customIconSrc: '/avatars/dreamteller.svg',
       iconGradient: 'from-amber-500 via-orange-500 to-rose-500',
@@ -259,7 +244,7 @@ export default function AiScreen() {
       name: 'Vision & OCR',
       khmerName: 'ស្កេនរូប & អត្ថបទ',
       tagline: 'Extract text from receipts, documents & images',
-      badge: 'OCR',
+      badge: 'Scan',
       badgeColor: 'bg-sky-600',
       customIconSrc: '/icons/banks/khqr.svg',
       iconGradient: 'from-sky-500 via-blue-600 to-indigo-600',
@@ -269,10 +254,10 @@ export default function AiScreen() {
     },
     {
       id: 'erp_ai',
-      name: 'ERP Copilot',
-      khmerName: 'គ្រប់គ្រងអាជីវកម្ម',
-      tagline: 'Business cash flow, automated invoices & metrics',
-      badge: 'BI',
+      name: 'Bank & ERP',
+      khmerName: 'គ្រប់គ្រងហិរញ្ញវត្ថុ',
+      tagline: 'Business cash flow, automated invoices & records',
+      badge: 'Finance',
       badgeColor: 'bg-orange-500',
       customIconSrc: '/avatars/financemaster.png',
       iconGradient: 'from-orange-500 via-amber-500 to-yellow-600',
@@ -281,24 +266,24 @@ export default function AiScreen() {
       route: '/erp',
     },
     {
-      id: 'dev_architect',
-      name: 'Dev Architect',
-      khmerName: 'សរសេរកូដ & Debug',
-      tagline: 'Senior full-stack engineer for code & databases',
-      badge: 'CODE',
-      badgeColor: 'bg-violet-600',
-      customIconSrc: '/avatars/developer.png',
-      iconGradient: 'from-violet-600 via-purple-700 to-indigo-800',
+      id: 'qr_scanner',
+      name: 'QR Scanner',
+      khmerName: 'ស្កេន QR Code',
+      tagline: 'Scan Bakong KHQR, links & contact codes',
+      badge: 'QR',
+      badgeColor: 'bg-indigo-600',
+      customIconSrc: '/icons/banks/bakong.png',
+      iconGradient: 'from-indigo-500 via-purple-600 to-pink-600',
       category: 'business',
-      openMode: 'chat',
-      chatPersonaId: 'dev',
+      openMode: 'route',
+      route: '/qr-scan',
     },
     {
       id: 'smart_search',
       name: 'Smart Search',
       khmerName: 'ស្វែងរកឆ្លាតវៃ',
       tagline: 'Semantic search across messages, files & channels',
-      badge: 'INDEX',
+      badge: 'Search',
       badgeColor: 'bg-cyan-600',
       customIconSrc: '/avatars/questioner.png',
       iconGradient: 'from-cyan-500 via-blue-600 to-teal-600',
@@ -311,14 +296,6 @@ export default function AiScreen() {
   const handleLaunchApp = (app: CustomAiApp) => {
     if (app.openMode === 'route' && app.route) {
       router.push(app.route);
-      return;
-    }
-    if (app.openMode === 'chat') {
-      const persona =
-        (app.chatPersonaId && AI_PERSONAS[app.chatPersonaId as keyof typeof AI_PERSONAS]) ||
-        AI_PERSONAS.telegram ||
-        Object.values(AI_PERSONAS)[0];
-      handleStartChat(persona);
       return;
     }
     if (app.openMode === 'fullscreen' && app.subAppId) {
@@ -428,7 +405,7 @@ export default function AiScreen() {
   // VIEW A: DEDICATED FULL-SCREEN APP SCREENS (Like entering an app in Bank)
   // =========================================================================
 
-  // 1. DEDICATED APP: AI VOICE COMPANIONS
+  // 1. DEDICATED APP: AI CALL (Holds all personas: Bopha, Lily, Dara, Dev Lead, etc.)
   if (activeSubApp === 'voice') {
     return (
       <div className="flex-1 flex flex-col h-full bg-tg-bg overflow-y-auto scrollbar-hide pb-24 select-none">
@@ -444,9 +421,9 @@ export default function AiScreen() {
             </button>
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-full overflow-hidden border border-tg-border/20 bg-tg-surface p-0.5">
-                <img src="/avatars/lily.png" alt="Voice" className="w-full h-full object-cover rounded-full" />
+                <img src="/icons/ai-brain.png" alt="AI Call" className="w-full h-full object-contain" />
               </div>
-              <h2 className="text-sm font-bold text-tg-text">AI Voice Call</h2>
+              <h2 className="text-sm font-bold text-tg-text">AI Call</h2>
             </div>
             <button
               onClick={() => router.push('/settings')}
@@ -463,7 +440,7 @@ export default function AiScreen() {
               type="text"
               value={voiceSearch}
               onChange={(e) => setVoiceSearch(e.target.value)}
-              placeholder="Search voice companions..."
+              placeholder="Search companions (Bopha, Lily, Dara...)..."
               className="w-full bg-tg-surface border border-tg-border/30 rounded-xl pl-9 pr-8 py-2 text-xs text-tg-text placeholder:text-tg-text-hint focus:outline-none focus:border-tg-blue"
             />
             {voiceSearch && (
@@ -587,7 +564,7 @@ export default function AiScreen() {
             <div className="w-7 h-7 rounded-xl overflow-hidden bg-gradient-to-br from-fuchsia-500 to-purple-600 p-0.5 flex items-center justify-center text-white">
               <ImageIcon className="w-4 h-4" />
             </div>
-            <h2 className="text-sm font-bold text-tg-text">AI Image Studio</h2>
+            <h2 className="text-sm font-bold text-tg-text">Image Studio</h2>
           </div>
           <div className="w-8" />
         </div>
@@ -633,7 +610,7 @@ export default function AiScreen() {
           {/* Prompt Input Box */}
           <div className="p-3.5 rounded-2xl bg-tg-bg-secondary border border-tg-border/30 space-y-2.5">
             <label className="text-xs font-bold text-tg-text flex items-center justify-between">
-              <span>Text Prompt (ពិពណ៌នារូបភាពដែលចង់បង្កើត)</span>
+              <span>Prompt (ពិពណ៌នារូបភាពដែលចង់បង្កើត)</span>
               <span className="text-[10px] text-tg-blue font-semibold">Flux / Imagen 3</span>
             </label>
             <textarea
@@ -740,7 +717,7 @@ export default function AiScreen() {
     );
   }
 
-  // 3. DEDICATED APP: KHMER AI & TRANSLATOR
+  // 3. DEDICATED APP: AI TRANSLATE & GRAMMAR
   if (activeSubApp === 'khmer') {
     return (
       <div className="flex-1 flex flex-col h-full bg-tg-bg overflow-y-auto scrollbar-hide pb-24 select-none">
@@ -757,7 +734,7 @@ export default function AiScreen() {
             <div className="w-7 h-7 rounded-xl overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 p-0.5 flex items-center justify-center text-white">
               <Languages className="w-4 h-4" />
             </div>
-            <h2 className="text-sm font-bold text-tg-text">Khmer AI & Translator</h2>
+            <h2 className="text-sm font-bold text-tg-text">AI Translate</h2>
           </div>
           <div className="w-8" />
         </div>
@@ -911,7 +888,7 @@ export default function AiScreen() {
                     }}
                     className="text-[11px] font-semibold text-tg-blue flex items-center gap-1 hover:underline"
                   >
-                    <Copy className="w-3 h-3" /> Copy
+                    <Copy className="w-3.5 h-3.5" /> Copy
                   </button>
                 </h4>
                 <p className="text-xs text-tg-text-secondary leading-relaxed bg-tg-surface p-3 rounded-xl border border-tg-border/25">
@@ -1059,7 +1036,7 @@ export default function AiScreen() {
   }
 
   // =========================================================================
-  // VIEW B: MAIN BANKING APP STYLE LAUNCHER (Grid of Custom Icons)
+  // VIEW B: MAIN BANKING APP STYLE LAUNCHER (8 Distinct Apps Grid)
   // =========================================================================
   return (
     <div className="flex-1 flex flex-col h-full bg-tg-bg overflow-y-auto scrollbar-hide pb-24 select-none">
@@ -1102,7 +1079,7 @@ export default function AiScreen() {
             type="text"
             value={menuSearch}
             onChange={(e) => setMenuSearch(e.target.value)}
-            placeholder="Search AI apps & services..."
+            placeholder="Search AI apps (AI Call, Image Studio, Translate...)..."
             className="w-full bg-tg-surface border border-tg-border/30 rounded-xl pl-9 pr-8 py-2 text-xs text-tg-text placeholder:text-tg-text-hint focus:outline-none focus:border-tg-blue transition-all"
           />
           {menuSearch && (
@@ -1118,7 +1095,7 @@ export default function AiScreen() {
 
       {/* ── Main Banking Dashboard Body ── */}
       <div className="p-4 space-y-4 max-w-xl mx-auto w-full">
-        {/* Featured Spotlight Card (Like Banking App Promo / Priority Service) */}
+        {/* Featured Spotlight Card */}
         {!menuSearch && (
           <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-600/15 via-indigo-600/15 to-purple-600/15 border border-tg-blue/30 relative overflow-hidden shadow-xs">
             <div className="relative z-10 space-y-2">
@@ -1127,16 +1104,16 @@ export default function AiScreen() {
                   Featured App
                 </span>
                 <span className="text-[11px] text-tg-blue font-semibold">
-                  Live Voice Companions
+                  AI Call & Voice Companions
                 </span>
               </div>
 
               <div>
                 <h3 className="text-base font-bold text-tg-text leading-tight">
-                  Talk to Lily & Bopha in Khmer
+                  AI Call (Voice & Chat)
                 </h3>
                 <p className="text-xs text-tg-text-secondary mt-0.5 line-clamp-2">
-                  Ultra low-latency two-way conversational AI. Tap to start speaking or chat anytime.
+                  Real-time two-way voice companions with Bopha, Lily, Dara, Dev Lead & more.
                 </p>
               </div>
 
@@ -1146,16 +1123,16 @@ export default function AiScreen() {
                   className="px-3.5 py-1.5 rounded-xl bg-tg-blue text-white text-xs font-bold flex items-center gap-1.5 shadow-xs hover:bg-tg-blue/90 active:scale-95 transition-all"
                 >
                   <Mic className="w-3.5 h-3.5" />
-                  <span>Open Voice App</span>
+                  <span>Open AI Call</span>
                 </button>
                 <button
                   onClick={() => {
-                    const lily = AI_PERSONAS.lily;
-                    if (lily) handleStartCall(lily);
+                    const defaultPersona = AI_PERSONAS.bopha || Object.values(AI_PERSONAS)[0];
+                    if (defaultPersona) handleStartCall(defaultPersona);
                   }}
                   className="px-3 py-1.5 rounded-xl bg-tg-surface border border-tg-border/40 text-tg-text text-xs font-semibold flex items-center gap-1.5 hover:bg-tg-surface/80 active:scale-95 transition-all"
                 >
-                  <span>Quick Call Lily</span>
+                  <span>Direct Call</span>
                   <ArrowRight className="w-3 h-3 text-tg-text-hint" />
                 </button>
               </div>
@@ -1167,7 +1144,7 @@ export default function AiScreen() {
           </div>
         )}
 
-        {/* ── Section: All AI Services (Banking App Grid) ── */}
+        {/* ── Section: AI Services (Banking App 4-Column Grid) ── */}
         <div className="space-y-3">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-xs font-bold text-tg-text tracking-wide uppercase">
@@ -1200,13 +1177,12 @@ export default function AiScreen() {
                       alt={app.name}
                       className="w-full h-full object-contain rounded-xl drop-shadow-xs"
                       onError={(e) => {
-                        // Fallback in case of missing asset
                         (e.currentTarget as HTMLElement).style.display = 'none';
                       }}
                     />
                   </div>
 
-                  {/* Optional Corner Badge */}
+                  {/* Corner Badge */}
                   {app.badge && (
                     <span
                       className={`absolute top-1 right-1 px-1 py-0.2 rounded-full text-[8px] font-extrabold text-white leading-tight ${
@@ -1230,7 +1206,7 @@ export default function AiScreen() {
           </div>
         </div>
 
-        {/* ── Section: Quick Launch Categories ── */}
+        {/* ── Section: Quick Highlights ── */}
         <div className="pt-2 space-y-2.5">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-xs font-bold text-tg-text tracking-wide uppercase">
@@ -1239,7 +1215,21 @@ export default function AiScreen() {
           </div>
 
           <div className="grid grid-cols-2 gap-2.5">
-            {/* Quick Card 1: Image Studio */}
+            {/* Quick Card 1: AI Call */}
+            <div
+              onClick={() => setActiveSubApp('voice')}
+              className="p-3 rounded-2xl bg-tg-bg-secondary border border-tg-border/25 hover:border-tg-border/60 cursor-pointer active:scale-[0.98] transition-all flex items-center gap-2.5"
+            >
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 via-rose-500 to-pink-500 p-1 flex items-center justify-center text-white shrink-0">
+                <Mic className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-xs font-bold text-tg-text truncate">AI Call</h4>
+                <p className="text-[10px] text-tg-text-hint truncate">Voice Companions</p>
+              </div>
+            </div>
+
+            {/* Quick Card 2: Image Studio */}
             <div
               onClick={() => setActiveSubApp('image')}
               className="p-3 rounded-2xl bg-tg-bg-secondary border border-tg-border/25 hover:border-tg-border/60 cursor-pointer active:scale-[0.98] transition-all flex items-center gap-2.5"
@@ -1253,7 +1243,7 @@ export default function AiScreen() {
               </div>
             </div>
 
-            {/* Quick Card 2: Khmer AI */}
+            {/* Quick Card 3: AI Translate */}
             <div
               onClick={() => setActiveSubApp('khmer')}
               className="p-3 rounded-2xl bg-tg-bg-secondary border border-tg-border/25 hover:border-tg-border/60 cursor-pointer active:scale-[0.98] transition-all flex items-center gap-2.5"
@@ -1262,8 +1252,22 @@ export default function AiScreen() {
                 <Languages className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <h4 className="text-xs font-bold text-tg-text truncate">Khmer AI</h4>
+                <h4 className="text-xs font-bold text-tg-text truncate">AI Translate</h4>
                 <p className="text-[10px] text-tg-text-hint truncate">បកប្រែ & អក្ខរាវិរុទ្ធ</p>
+              </div>
+            </div>
+
+            {/* Quick Card 4: Bank & ERP */}
+            <div
+              onClick={() => router.push('/erp')}
+              className="p-3 rounded-2xl bg-tg-bg-secondary border border-tg-border/25 hover:border-tg-border/60 cursor-pointer active:scale-[0.98] transition-all flex items-center gap-2.5"
+            >
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 p-1 flex items-center justify-center text-white shrink-0">
+                <BarChart3 className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-xs font-bold text-tg-text truncate">Bank & ERP</h4>
+                <p className="text-[10px] text-tg-text-hint truncate">គ្រប់គ្រងហិរញ្ញវត្ថុ</p>
               </div>
             </div>
           </div>

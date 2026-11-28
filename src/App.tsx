@@ -9,7 +9,7 @@ import ChatListScreen from './features/chat-list/ChatListScreen';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 
 const AuthScreen = lazy(() => import('./features/authentication/AuthScreen'));
-const ContactsScreen = lazy(() => import('./features/contacts/ContactsScreen'));
+const ToolsScreen = lazy(() => import('./features/tools/ToolsScreen'));
 const AiScreen = lazy(() => import('./features/ai/AiScreen'));
 const CalendarScreen = lazy(() => import('./features/calendar/CalendarScreen'));
 const SettingsScreen = lazy(() => import('./features/settings/SettingsScreen'));
@@ -66,7 +66,8 @@ export default function App() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/auth" element={<AuthScreen />} />
                 <Route path="/dialogs" element={<ChatListScreen />} />
-                <Route path="/contacts" element={<ContactsScreen />} />
+                <Route path="/tools" element={<ToolsScreen />} />
+                <Route path="/contacts" element={<Navigate to="/tools" replace />} />
                 <Route path="/ai" element={<AiScreen />} />
                 <Route path="/calendar" element={<CalendarScreen />} />
                 <Route path="/calls" element={<Navigate to="/calendar" replace />} />

@@ -3,14 +3,14 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import clsx from 'clsx';
-import { CircleUserRound, MessagesSquare, Calendar, UsersRound, Bot } from 'lucide-react';
+import { CircleUserRound, MessagesSquare, Calendar, Wrench, Bot } from 'lucide-react';
 import { useDialogsStore } from '@/store/dialogs.store';
 import { useAuthStore } from '@/store/auth.store';
 import { NAV_STYLES, useUIStore } from '@/store/ui.store';
 
 const TABS = [
   { href: '/dialogs',  label: 'Chats',    Icon: MessagesSquare  },
-  { href: '/contacts', label: 'People',   Icon: UsersRound      },
+  { href: '/tools',    label: 'Tools',    Icon: Wrench          },
   { href: '/ai',       label: 'AI Apps',  Icon: Bot, customIconSrc: '/icons/ai-brain.png' },
   { href: '/calendar', label: 'Calendar', Icon: Calendar        },
   { href: '/settings', label: 'Profile',  Icon: CircleUserRound },

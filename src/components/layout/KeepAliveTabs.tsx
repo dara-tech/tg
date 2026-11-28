@@ -3,12 +3,12 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import ChatListScreen from '@/features/chat-list/ChatListScreen';
-import ContactsScreen from '@/features/contacts/ContactsScreen';
+import ToolsScreen from '@/features/tools/ToolsScreen';
 import CalendarScreen from '@/features/calendar/CalendarScreen';
 import SettingsScreen from '@/features/settings/SettingsScreen';
 import AiScreen from '@/features/ai/AiScreen';
 
-const TAB_PATHS = ['/dialogs', '/contacts', '/ai', '/calendar', '/settings'] as const;
+const TAB_PATHS = ['/dialogs', '/tools', '/contacts', '/ai', '/calendar', '/settings'] as const;
 type TabPath = (typeof TAB_PATHS)[number];
 
 function matchTab(pathname: string, isAuthorized: boolean): TabPath | null {
@@ -25,6 +25,7 @@ export function KeepAliveTabs({ children }: { children: React.ReactNode }) {
   const activeTab = matchTab(pathname, isAuthorized);
   const [mounted, setMounted] = useState<Record<TabPath, boolean>>({
     '/dialogs': true,
+    '/tools': activeTab === '/tools',
     '/contacts': activeTab === '/contacts',
     '/ai': activeTab === '/ai',
     '/calendar': activeTab === '/calendar',
@@ -44,9 +45,14 @@ export function KeepAliveTabs({ children }: { children: React.ReactNode }) {
           <ChatListScreen />
         </div>
       )}
+      {mounted['/tools'] && (
+        <div className={activeTab === '/tools' ? 'flex-1 min-h-0 flex flex-col h-full' : 'hidden'}>
+          <ToolsScreen />
+        </div>
+      )}
       {mounted['/contacts'] && (
         <div className={activeTab === '/contacts' ? 'flex-1 min-h-0 flex flex-col h-full' : 'hidden'}>
-          <ContactsScreen />
+          <ToolsScreen />
         </div>
       )}
       {mounted['/ai'] && (

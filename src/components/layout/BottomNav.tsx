@@ -105,16 +105,20 @@ export function BottomNav() {
       <div className="shrink-0 w-full px-4 pt-0 -mb-1 pointer-events-none z-30" style={safeWrapperStyle}>
         <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary border border-tg-border/25 shadow-sm rounded-t-none rounded-b-[38px] overflow-hidden">
           <div className="flex items-stretch justify-around px-3 pt-2 pb-2">
-            {TABS.map(tab => {
+            {TABS.map((tab, idx) => {
               const active = pathname.startsWith(tab.href);
+              const isFirst = idx === 0;
+              const isLast = idx === TABS.length - 1;
               return (
                 <Link
                   key={tab.href}
                   href={tab.href}
                   prefetch
                   className={clsx(
-                    'flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-2xl transition-all mx-0.5',
-                    active ? 'bg-tg-blue' : 'active:bg-tg-surface'
+                    'flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-[22px] transition-all mx-0.5',
+                    isFirst && 'rounded-bl-[32px]',
+                    isLast && 'rounded-br-[32px]',
+                    active ? 'bg-tg-blue text-white shadow-xs' : 'active:bg-tg-surface'
                   )}
                 >
                   {renderTabIcon(tab, active, 'text-white', tab.href === '/dialogs' ? totalUnread : 0)}
@@ -165,16 +169,20 @@ export function BottomNav() {
       <div className="shrink-0 w-full px-4 pt-0 -mb-1 pointer-events-none z-30" style={safeWrapperStyle}>
         <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary border border-tg-border/25 shadow-sm rounded-t-none rounded-b-[38px] overflow-hidden">
           <div className="flex items-stretch justify-around gap-1 px-3 pt-2 pb-2">
-            {TABS.map(tab => {
+            {TABS.map((tab, idx) => {
               const active = pathname.startsWith(tab.href);
+              const isFirst = idx === 0;
+              const isLast = idx === TABS.length - 1;
               return (
                 <Link
                   key={tab.href}
                   href={tab.href}
                   prefetch
                   className={clsx(
-                    'flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-2 rounded-xl transition-all',
-                    active ? 'bg-tg-blue text-white' : 'active:bg-tg-surface'
+                    'flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-2 rounded-[22px] transition-all',
+                    isFirst && 'rounded-bl-[32px]',
+                    isLast && 'rounded-br-[32px]',
+                    active ? 'bg-tg-blue text-white shadow-xs' : 'active:bg-tg-surface'
                   )}
                 >
                   {renderTabIcon(tab, active, 'text-white', tab.href === '/dialogs' ? totalUnread : 0)}
@@ -195,15 +203,21 @@ export function BottomNav() {
     <div className="shrink-0 w-full px-4 pt-0 -mb-1 pointer-events-none z-30" style={safeWrapperStyle}>
       <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary border border-tg-border/25 shadow-sm rounded-t-none rounded-b-[38px] overflow-hidden">
         <div className="flex items-stretch justify-around px-3 pt-2 pb-2.5">
-          {TABS.map(tab => {
+          {TABS.map((tab, idx) => {
             const active = pathname.startsWith(tab.href);
+            const isFirst = idx === 0;
+            const isLast = idx === TABS.length - 1;
             return (
               <Link
                 key={tab.href}
                 href={tab.href}
                 prefetch
                 aria-label={tab.label}
-                className="flex-1 flex flex-col items-center justify-center gap-1.5 py-1 px-1 rounded-2xl transition-all active:scale-95"
+                className={clsx(
+                  'flex-1 flex flex-col items-center justify-center gap-1.5 py-1 px-1 rounded-[22px] transition-all active:scale-95',
+                  isFirst && 'rounded-bl-[32px]',
+                  isLast && 'rounded-br-[32px]'
+                )}
               >
                 {renderTabIcon(tab, active, 'text-tg-text', tab.href === '/dialogs' ? totalUnread : 0)}
                 <span

@@ -103,7 +103,7 @@ export function BottomNav() {
   if (navStyle === 'pill') {
     return (
       <div className="shrink-0 w-full px-4 pt-0 -mb-1 pointer-events-none z-30" style={safeWrapperStyle}>
-        <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary/90 backdrop-blur-2xl border border-tg-border/30 rounded-t-none rounded-b-[38px] shadow-sm overflow-hidden">
+        <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary border border-tg-border/25 shadow-sm rounded-t-none rounded-b-[38px] overflow-hidden">
           <div className="flex items-stretch justify-around px-3 pt-2 pb-2">
             {TABS.map(tab => {
               const active = pathname.startsWith(tab.href);
@@ -163,7 +163,7 @@ export function BottomNav() {
   if (navStyle === 'card') {
     return (
       <div className="shrink-0 w-full px-4 pt-0 -mb-1 pointer-events-none z-30" style={safeWrapperStyle}>
-        <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary/90 backdrop-blur-2xl border border-tg-border/30 rounded-t-none rounded-b-[38px] shadow-sm overflow-hidden">
+        <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary border border-tg-border/25 shadow-sm rounded-t-none rounded-b-[38px] overflow-hidden">
           <div className="flex items-stretch justify-around gap-1 px-3 pt-2 pb-2">
             {TABS.map(tab => {
               const active = pathname.startsWith(tab.href);
@@ -193,7 +193,7 @@ export function BottomNav() {
   /* ── MINIMAL ── */
   return (
     <div className="shrink-0 w-full px-4 pt-0 -mb-1 pointer-events-none z-30" style={safeWrapperStyle}>
-      <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary/95 backdrop-blur-2xl border border-tg-border/30 rounded-t-none rounded-b-[38px] shadow-sm overflow-hidden">
+      <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary border border-tg-border/25 shadow-sm rounded-t-none rounded-b-[38px] overflow-hidden">
         <div className="flex items-stretch justify-around px-3 pt-2 pb-2.5">
           {TABS.map(tab => {
             const active = pathname.startsWith(tab.href);

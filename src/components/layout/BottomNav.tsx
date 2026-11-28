@@ -10,7 +10,7 @@ import { NAV_STYLES, useUIStore } from '@/store/ui.store';
 
 const TABS = [
   { href: '/dialogs',  label: 'Chats',    Icon: MessagesSquare  },
-  { href: '/tools',    label: 'Tools',    Icon: Wrench          },
+  { href: '/tools',    label: 'YouTube',  Icon: Wrench, customIconSrc: '/icons/youtube.svg' },
   { href: '/ai',       label: 'AI Apps',  Icon: Bot, customIconSrc: '/icons/ai-brain.png' },
   { href: '/calendar', label: 'Calendar', Icon: Calendar        },
   { href: '/settings', label: 'Profile',  Icon: CircleUserRound },

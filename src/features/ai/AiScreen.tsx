@@ -44,8 +44,6 @@ export default function AiScreen() {
     });
   }, [activeCategory, searchQuery]);
 
-  const activePersonaConfig = AI_PERSONAS[aiPersona as keyof typeof AI_PERSONAS] || AI_PERSONAS.telegram || Object.values(AI_PERSONAS)[0];
-
   const handleStartCall = (persona: PersonaConfig) => {
     unlockAudioPlayback();
     setAiPersona(persona.id);
@@ -169,45 +167,6 @@ export default function AiScreen() {
 
       {/* ── Main Content Area ── */}
       <div className="p-4 space-y-3.5 max-w-2xl mx-auto w-full">
-        {/* Active Hero Banner (only on All with no search) */}
-        {activeCategory === 'all' && searchQuery === '' && activePersonaConfig && (
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-tg-blue/15 to-purple-500/10 border border-tg-blue/25 flex items-center justify-between gap-3 shadow-sm">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 border border-tg-blue/30 shadow-sm bg-tg-surface">
-                {activePersonaConfig.avatar ? (
-                  <img
-                    src={activePersonaConfig.avatar}
-                    alt={activePersonaConfig.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center font-bold text-sm text-tg-text">
-                    {activePersonaConfig.gradient.initial}
-                  </div>
-                )}
-                <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-tg-bg" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-tg-blue">
-                    Current Active
-                  </span>
-                </div>
-                <h3 className="text-sm font-bold text-tg-text truncate">{activePersonaConfig.name}</h3>
-                <p className="text-[11px] text-tg-text-hint truncate">{activePersonaConfig.tagline}</p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => handleStartCall(activePersonaConfig)}
-              className="py-2 px-3.5 rounded-full bg-tg-blue hover:bg-tg-blue/90 active:scale-95 text-white font-semibold text-xs flex items-center gap-1.5 shrink-0 shadow-sm transition-all"
-            >
-              <Phone className="w-3.5 h-3.5 fill-current" />
-              <span>Call Now</span>
-            </button>
-          </div>
-        )}
-
         {/* ── Character Cards List ── */}
         <div className="space-y-2.5">
           {characterList.map((character) => {

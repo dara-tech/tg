@@ -11,7 +11,7 @@ import { NAV_STYLES, useUIStore } from '@/store/ui.store';
 const TABS = [
   { href: '/dialogs',  label: 'Chats',    Icon: MessagesSquare  },
   { href: '/contacts', label: 'People',   Icon: UsersRound      },
-  { href: '/ai',       label: 'AI Voice', Icon: Bot, customIconSrc: '/icons/ai-brain.png' },
+  { href: '/ai',       label: 'AI Apps',  Icon: Bot, customIconSrc: '/icons/ai-brain.png' },
   { href: '/calendar', label: 'Calendar', Icon: Calendar        },
   { href: '/settings', label: 'Profile',  Icon: CircleUserRound },
 ];

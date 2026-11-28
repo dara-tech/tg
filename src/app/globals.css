@@ -486,12 +486,12 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
-/* Bottom Navigation Bar in Bento mode: native iOS translucent dock */
+/* Bottom Navigation Bar in Bento mode: match Bento card aesthetics */
 [data-theme='bento'] nav {
-  background: rgba(20, 20, 24, 0.85) !important;
-  backdrop-filter: blur(24px) !important;
-  -webkit-backdrop-filter: blur(24px) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background-color: var(--tg-bg-secondary) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  border-top: none !important;
+  border-top-width: 0 !important;
 }
 
 /* Bento Speech Bubbles */

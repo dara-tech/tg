@@ -20,6 +20,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const root = document.documentElement;
     const safeTheme = BG_THEMES[theme] ? theme : 'black';
     root.dataset.theme = safeTheme;
+    root.style.removeProperty('background-color');
+    document.body.style.removeProperty('background-color');
 
     if (safeTheme === 'manga') {
       // Manga UI requires strict monochrome ink consistency across all elements

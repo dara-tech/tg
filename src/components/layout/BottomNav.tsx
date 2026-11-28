@@ -92,17 +92,17 @@ export function BottomNav() {
   if (hide) return null;
 
   const safeStyle: React.CSSProperties = {
-    paddingBottom: 'max(8px, env(safe-area-inset-bottom, 0px))',
+    paddingBottom: 'max(0px, calc(env(safe-area-inset-bottom, 0px) - 14px))',
   };
 
   const safeWrapperStyle: React.CSSProperties = {
-    paddingBottom: 'max(4px, calc(env(safe-area-inset-bottom, 0px) - 4px))',
+    paddingBottom: 'max(0px, calc(env(safe-area-inset-bottom, 0px) - 14px))',
   };
 
   /* ── PILL (default) ── */
   if (navStyle === 'pill') {
     return (
-      <div className="shrink-0 w-full px-3.5 pt-0 pointer-events-none z-30" style={safeWrapperStyle}>
+      <div className="shrink-0 w-full px-3.5 pt-0 -mb-1.5 pointer-events-none z-30" style={safeWrapperStyle}>
         <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary/90 backdrop-blur-2xl border border-tg-border/30 rounded-t-none rounded-b-[28px] shadow-sm overflow-hidden">
           <div className="flex items-stretch justify-around px-2 py-1.5">
             {TABS.map(tab => {
@@ -162,7 +162,7 @@ export function BottomNav() {
   /* ── CARD ── */
   if (navStyle === 'card') {
     return (
-      <div className="shrink-0 w-full px-3.5 pt-0 pointer-events-none z-30" style={safeWrapperStyle}>
+      <div className="shrink-0 w-full px-3.5 pt-0 -mb-1.5 pointer-events-none z-30" style={safeWrapperStyle}>
         <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary/90 backdrop-blur-2xl border border-tg-border/30 rounded-t-none rounded-b-[28px] shadow-sm overflow-hidden">
           <div className="flex items-stretch justify-around gap-1 px-3 py-1.5">
             {TABS.map(tab => {
@@ -192,32 +192,31 @@ export function BottomNav() {
 
   /* ── MINIMAL ── */
   return (
-    <nav
-      className="shrink-0 w-full bg-tg-bg-secondary/95 backdrop-blur-2xl border-t border-tg-border/20 pt-1.5 z-30"
-      style={safeStyle}
-    >
-      <div className="flex items-stretch justify-around px-2 pb-1">
-        {TABS.map(tab => {
-          const active = pathname.startsWith(tab.href);
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              prefetch
-              aria-label={tab.label}
-              className="flex-1 flex flex-col items-center justify-center gap-1.5 py-1 px-1 rounded-2xl transition-all active:scale-95"
-            >
-              {renderTabIcon(tab, active, 'text-tg-text', tab.href === '/dialogs' ? totalUnread : 0)}
-              <span
-                className={clsx(
-                  'w-1.5 h-1.5 rounded-full transition-all duration-200',
-                  active ? 'bg-[#ff3b30] scale-100 opacity-100' : 'bg-transparent scale-0 opacity-0'
-                )}
-              />
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+    <div className="shrink-0 w-full px-3.5 pt-0 -mb-1.5 pointer-events-none z-30" style={safeWrapperStyle}>
+      <nav className="max-w-md mx-auto w-full pointer-events-auto bg-tg-bg-secondary/95 backdrop-blur-2xl border border-tg-border/30 rounded-t-none rounded-b-[28px] shadow-sm overflow-hidden">
+        <div className="flex items-stretch justify-around px-2 py-1.5">
+          {TABS.map(tab => {
+            const active = pathname.startsWith(tab.href);
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                prefetch
+                aria-label={tab.label}
+                className="flex-1 flex flex-col items-center justify-center gap-1.5 py-1 px-1 rounded-2xl transition-all active:scale-95"
+              >
+                {renderTabIcon(tab, active, 'text-tg-text', tab.href === '/dialogs' ? totalUnread : 0)}
+                <span
+                  className={clsx(
+                    'w-1.5 h-1.5 rounded-full transition-all duration-200',
+                    active ? 'bg-[#ff3b30] scale-100 opacity-100' : 'bg-transparent scale-0 opacity-0'
+                  )}
+                />
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+    </div>
   );
 }
